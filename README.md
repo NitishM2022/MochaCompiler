@@ -2,9 +2,9 @@
 
 **Naming convention:**
 
-* code file: `./PAX/test0YY_description.txt` : test numbering starts from whatever my tests end at and must be consecutive; the description is an optional short text (less than 10 chars)
-* input file: `./PAX/test0YY.in` : input for testcase
-* output file: `./PAX/test0YY.out` the output (solution). You are expected to provide the solution. However, make sure this is not hand-generated.
+* code file: `./PAX/test_F25_YY_description.txt` : `YY` is the test number; test numbering starts from whatever my tests end at and must be consecutive; the description is an optional short text
+* input file: `./PAX/test_F25_YY.in` : input for testcase
+* output file: `./PAX/test_F25_YY.out` the output (solution). You are expected to provide the solution. However, make sure this is not hand-generated.
 
 All student test cases must have the header: 
 * first line: name of the author `// <author>`
