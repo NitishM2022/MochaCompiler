@@ -26,7 +26,7 @@ At least one testcase must be submitted to the **shared GitHub repository** by *
 * second line: a brief description of the test case, and if necessary, what is expected
 
 ```
-// <author> 
+// <author>
 // <testcase-description>
 ```
 
