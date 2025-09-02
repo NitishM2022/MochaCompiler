@@ -14,7 +14,7 @@ Do not change package declaration, i.e., keep the first line of `Scanner.java` a
 * PA 1 allows late submission. However the penalty for late code submission is *h<sup>2</sup>/24 + h*, where h is the whole number of hours late rounded up
 
 ## Testcase
-At least one testcase must be committed to the **shared GitHub repository** by **12:00am on 09/04**
+At least one testcase must be committed and pushed to the **shared GitHub repository** by **12:00am on 09/04**
 
 ### Naming Convention
 
