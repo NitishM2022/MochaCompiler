@@ -7,18 +7,20 @@ PA1 code must be submitted to **Gradescope** by  **12:00am on 09/07** (as mentio
 * `Scanner.java`
 * `Token.java`
 
+Do not change package declaration, i.e., keep the first line of `Scanner.java` and `Token.java` as-is.
+
 ### Deductions
 
-* For PAs **without** a hard deadline, the penalty for late code submission is *h<sup>2</sup>/24 + h*, where h is the whole number of hours late rounded up
+* PA 1 allows late submission. However the penalty for late code submission is *h<sup>2</sup>/24 + h*, where h is the whole number of hours late rounded up
 
 ## Testcase
-At least one testcase must be submitted to the **shared GitHub repository** by **12:00am on 09/04**
+At least one testcase must be committed to the **shared GitHub repository** by **12:00am on 09/04**
 
 ### Naming Convention
 
-* code file: `./PAX/test_F25_YY_description.txt` : `YY` is the test number; test numbering starts from whatever my tests end at and must be consecutive; the description is an optional short text
-* input file: `./PAX/test_F25_YY.in` : input for testcase
-* output file: `./PAX/test_F25_YY.out` the output (solution). You are expected to provide the solution. However, make sure this is not hand-generated.
+* code file: `./PA1/test_F25_YY_description.txt` : `YY` is the test number; test numbering starts from whatever my tests end at and must be consecutive; the description is an optional short text
+* input file: `./PA1/test_F25_YY.in` : input for testcase
+* output file: `./PA1/test_F25_YY.out` the output (solution). You are expected to provide the solution. However, make sure this is not hand-generated.
 
 ### Header Format
 
