@@ -16,6 +16,5 @@ CLOSE_PAREN
 OPEN_BRACE
 CLOSE_BRACE
 IDENT	carriage
-Carriage return!!!!
 RETURN
 EOF
