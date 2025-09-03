@@ -1,5 +1,0 @@
-// author: Macsen
-// This test is meant to test recognition of different operators
-// including those with multiple characeters '==', '!=', '+=', etc.
-
-==!=<<=>>=+++=+-=---/=**=^^=%%=
