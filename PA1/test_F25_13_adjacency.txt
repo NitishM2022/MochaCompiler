@@ -1,0 +1,5 @@
+// Adjacency Test - Test that scanners can distinguish tokens without the need for whitespace
+if(x>0)return-1;
+my_var++;
+float f=.5;
+int i=.5;
