@@ -4,4 +4,4 @@ int	value=10;
 value++;
 float	factor=2.5;
 factor*=value;
-bool	isDone=value>=11;
+bool	isDone=value>=11
