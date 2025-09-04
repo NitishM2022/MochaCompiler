@@ -1,7 +1,0 @@
-// Author : Yu Zhong
-//  I Accidentally submit the same file twice, so ignore this part
-
-int qmark?var = 0;       
-float tilde~f = -0.3;    
-int bang!id = 5;         
-int quote = 'x';         
