@@ -1,7 +1,7 @@
 package mocha;
 
-import java.io.BufferedReader;
-import java.io.Reader;
+// import java.io.BufferedReader;
+import java.io.*;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -19,6 +19,16 @@ public class Scanner implements Iterator<Token> {
     // reader will be a FileReader over the source file
     public Scanner (String sourceFileName, Reader reader) {
         // TODO: initialize scanner
+        input = new BufferedReader(reader);
+        System.out.println("Input: "+sourceFileName);
+        closed = false;
+        lineNum = 0;
+        charPos = 0;
+
+        try{
+        nextChar = input.read();}catch(IOException e){
+            e.printStackTrace();
+        }
     }
 
     // signal an error message
@@ -36,8 +46,21 @@ public class Scanner implements Iterator<Token> {
      * advance the charPos or lineNum, etc.
      */
     private int readChar () {
-        // TODO: implement
-        return -1;
+        int c = nextChar;
+        //nextChar not EOF -> load new nextChar
+        if (c != -1){
+            try{
+                nextChar = input.read();
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+            charPos++;
+            if (c == '\n'){
+                charPos = 0;
+                lineNum++;
+            }
+        }
+        return c;
     }
 
     /*
@@ -46,8 +69,10 @@ public class Scanner implements Iterator<Token> {
      */
     @Override
     public boolean hasNext () {
-        // TODO: implement
-        return false;
+        if (nextChar == -1 && closed){
+            return false;
+        }
+        return true;
     }
 
     /*
@@ -60,15 +85,137 @@ public class Scanner implements Iterator<Token> {
      */
     @Override
     public Token next () {
+        String lex = null;
+        Token tk = null;
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
+        // int c = 0;
 
-        // TODO: implement
-        return null;
+        while (Character.isWhitespace(nextChar)){
+            readChar();
+        }
+
+        if (nextChar == -1){
+            try{
+                input.close();
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+            closed = true;
+            tk = Token.EOF(lineNum, charPos);
+            return tk;
+        }
+        if (Character.isDigit(nextChar)){
+            lex = numToken(nextChar);
+        }
+        else if (Character.isLetter(nextChar)){
+            lex = idToken(nextChar);
+        }else{
+            lex = symToken(nextChar);
+            if(lex == "//"){
+                return next();
+            }
+        }
+        // System.out.println("next() lex = "+lex);
+        if (lex != null){
+            tk = new Token(lex, lineNum, charPos);
+        }
+        return tk;
+    }
+    
+    private String idToken(int i){
+        readChar();
+        String s = Character.toString(i);
+        while (Character.isLetterOrDigit(nextChar) || nextChar == '_'){
+            s += (char)nextChar;
+            readChar();
+        }
+        return s;
     }
 
+    private String numToken(int i){
+        String s = Character.toString(i);
+        boolean isFloat = false;
+        readChar();
+        while (Character.isDigit(nextChar) || nextChar == '.'){
+            if(nextChar == '.'){
+                if(isFloat){
+                    break;
+                }else{
+                    isFloat = true;
+                }
+            }
+            s += (char)nextChar;
+            readChar();
+        }
+        // if(s.charAt(s.length()-1) == '.'){
+        //     //invalid float
+
+        // }
+        return s;
+    }
+
+    private String symToken(int i){
+        String s = Character.toString(i);
+        readChar();
+        if("(){}[],.:;".indexOf(i)!= -1){
+            return s;
+        }
+        else if("+-=^*/%<>!".indexOf(i)!= -1){
+            if (i == '/'){
+                if (nextChar == '*' || nextChar == '/'){
+                    if (!commentReader()){
+                        return "/*/";
+                    }else{
+                        return "//";
+                    }
+                }
+            }
+            else if((nextChar == '=') ||
+            (i == '+' && nextChar == '+')||
+            (i == '-' && nextChar == '-'))
+            {
+                s += (char)nextChar;
+                readChar();
+            }
+        }else{
+            while((!Character.isLetterOrDigit(nextChar)) &&
+            ("(){}[],.:;+-=^*/%<>".indexOf(nextChar) == -1)){
+                s+= (char)nextChar;
+                readChar();
+            }
+        }
+        return s;
+    }
     // OPTIONAL: add any additional helper or convenience methods
     //           that you find make for a cleaner design
     //           (useful for handling special case Tokens)
+
+    // validate comment
+    private boolean commentReader(){
+        //[nextChar]
+        // boolean done = false;
+        int i = readChar(); // i = / | *
+        if (i == '/'){
+            while (i != '\n'){
+                i = readChar();
+            } 
+            return true;
+        }else if (i=='*'){//multiline [nextChar]
+            i = readChar();
+            while(i != '*' && nextChar != -1 && !(i == '/' && nextChar == '/')){
+                // if /*[any]
+                i = readChar();
+            }
+            if (i == '*' && nextChar == '/'){
+                readChar(); // so nc set for next()
+                return true;
+            }else if (nextChar == -1 || (i == '/' && nextChar == '/')){//eof or new comment 
+                return false;
+            }
+        }
+            System.out.println("commentReader invalid char");
+            return false;
+    }
 }

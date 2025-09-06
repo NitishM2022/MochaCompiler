@@ -106,9 +106,13 @@ public class Token {
             return defaultLexeme != null;
         }
 
+        public String getLexeme(){
+            return this.defaultLexeme;
+        }
         // OPTIONAL: convenience function - boolean matches (String lexeme)
         //           to report whether a Token.Kind has the given lexeme
         //           may be useful
+
     }
 
     private int lineNum;
@@ -137,12 +141,25 @@ public class Token {
     public Token (String lexeme, int lineNum, int charPos) {
         this.lineNum = lineNum;
         this.charPos = charPos;
-
+        
         // TODO: based on the given lexeme determine and set the actual kind
-
+        this.lexeme = lexeme;
+        
         // if we don't match anything, signal error
-        this.kind = Kind.ERROR;
-        this.lexeme = "Unrecognized lexeme: " + lexeme;
+        this.kind = this.kind();
+        if ((this.kind.name()).equals("ERROR")){
+            if(Character.isLetter(lexeme.charAt(0))){
+                this.kind = Kind.IDENT;
+            }else if (Character.isDigit(lexeme.charAt(0))){
+                if(lexeme.indexOf('.')==-1){
+                    this.kind = Kind.INT_VAL;
+                }else{
+                    this.kind = Kind.FLOAT_VAL;
+                }
+            }
+        }
+        // this.lexeme = "Unrecognized lexeme: " + lexeme;
+        // System.out.println("TK lex: <"+lexeme+"> lineNum: "+lineNum+" charPos: "+charPos);
     }
 
     public int lineNumber () {
@@ -154,13 +171,18 @@ public class Token {
     }
 
     public String lexeme () {
-        // TODO: implement
-        return null;
+        
+        return this.lexeme;
     }
 
     public Kind kind () {
-        // TODO: implement
-        return null;
+        Kind[] kList = Kind.values();
+        for (Kind k : kList){
+            if(k.getLexeme().equals(this.lexeme)){
+                return k;
+            }
+        }
+        return Kind.ERROR;
     }
 
     // TODO: function to query a token about its kind - boolean is (Token.Kind kind)
