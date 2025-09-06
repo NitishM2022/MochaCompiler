@@ -14,19 +14,21 @@ public class Scanner implements Iterator<Token> {
     private int charPos;    // character offset on current line
 
     private String scan;    // current lexeme being scanned in
+    private int cache;
     private int nextChar;   // contains the next char (-1 == EOF)
 
     // reader will be a FileReader over the source file
     public Scanner (String sourceFileName, Reader reader) {
         // TODO: initialize scanner
         input = new BufferedReader(reader);
-        System.out.println("Input: "+sourceFileName);
+        // System.out.println("Input: "+sourceFileName);
         closed = false;
-        lineNum = 0;
-        charPos = 0;
+        lineNum = 1;
+        charPos = 1;
 
         try{
-        nextChar = input.read();}catch(IOException e){
+            nextChar = input.read();
+        }catch(IOException e){
             e.printStackTrace();
         }
     }
@@ -95,7 +97,13 @@ public class Scanner implements Iterator<Token> {
         while (Character.isWhitespace(nextChar)){
             readChar();
         }
-
+        if (cache == '/' && nextChar == '/'){// for /* [abc] //
+            cache = -1;
+            while(nextChar != '\n'){
+                readChar();
+            }
+            return next();
+        }
         if (nextChar == -1){
             try{
                 input.close();
@@ -107,7 +115,7 @@ public class Scanner implements Iterator<Token> {
             return tk;
         }
         if (Character.isDigit(nextChar)){
-            lex = numToken(nextChar);
+            lex = numToken(Character.toString(nextChar));
         }
         else if (Character.isLetter(nextChar)){
             lex = idToken(nextChar);
@@ -134,8 +142,7 @@ public class Scanner implements Iterator<Token> {
         return s;
     }
 
-    private String numToken(int i){
-        String s = Character.toString(i);
+    private String numToken(String s){
         boolean isFloat = false;
         readChar();
         while (Character.isDigit(nextChar) || nextChar == '.'){
@@ -172,12 +179,14 @@ public class Scanner implements Iterator<Token> {
                     }
                 }
             }
-            else if((nextChar == '=') ||
+            if((nextChar == '=') ||
             (i == '+' && nextChar == '+')||
             (i == '-' && nextChar == '-'))
             {
                 s += (char)nextChar;
                 readChar();
+            }else if (i == '-' && Character.isDigit(nextChar)){
+                s = numToken("-"+Character.toString(nextChar));
             }
         }else{
             while((!Character.isLetterOrDigit(nextChar)) &&
@@ -204,14 +213,15 @@ public class Scanner implements Iterator<Token> {
             return true;
         }else if (i=='*'){//multiline [nextChar]
             i = readChar();
-            while(i != '*' && nextChar != -1 && !(i == '/' && nextChar == '/')){
+            while(nextChar != -1 && !(i=='*' && nextChar == '/')){
                 // if /*[any]
                 i = readChar();
             }
             if (i == '*' && nextChar == '/'){
                 readChar(); // so nc set for next()
                 return true;
-            }else if (nextChar == -1 || (i == '/' && nextChar == '/')){//eof or new comment 
+            }else if (nextChar == -1 ){//eof or new comment
+                cache = i;
                 return false;
             }
         }

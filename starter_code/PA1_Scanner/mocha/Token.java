@@ -150,13 +150,19 @@ public class Token {
         if ((this.kind.name()).equals("ERROR")){
             if(Character.isLetter(lexeme.charAt(0))){
                 this.kind = Kind.IDENT;
-            }else if (Character.isDigit(lexeme.charAt(0))){
-                if(lexeme.indexOf('.')==-1){
+            }else if (Character.isDigit(lexeme.charAt(0)) || lexeme.charAt(0)=='-'){
+                int l = lexeme.indexOf('.');
+                if(l==-1){
                     this.kind = Kind.INT_VAL;
                 }else{
-                    this.kind = Kind.FLOAT_VAL;
+                    if(l != lexeme.length()-1){
+                        this.kind = Kind.FLOAT_VAL;
+                    }
                 }
             }
+        }
+        if(lexeme == "/*/"){
+            this.kind = Kind.ERROR;
         }
         // this.lexeme = "Unrecognized lexeme: " + lexeme;
         // System.out.println("TK lex: <"+lexeme+"> lineNum: "+lineNum+" charPos: "+charPos);
