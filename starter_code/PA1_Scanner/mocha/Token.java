@@ -157,6 +157,12 @@ public class Token {
                 }else{
                     if(l != lexeme.length()-1){
                         this.kind = Kind.FLOAT_VAL;
+                        for(int i = 0; i < lexeme.length(); i++){
+                            int c_i = lexeme.charAt(i);
+                            if(!(Character.isDigit(c_i) || (c_i == '.' && i != lexeme.length()-1) || (i == 0 && c_i == '-'))){
+                                this.kind = Kind.ERROR;
+                            }
+                        }
                     }
                 }
             }
