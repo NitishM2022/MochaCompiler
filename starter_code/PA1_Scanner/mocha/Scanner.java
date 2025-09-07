@@ -103,6 +103,10 @@ public class Scanner implements Iterator<Token> {
                 readChar();
             }
             return next();
+        }else if (cache == '!' && nextChar == '='){// for /* [abc] //
+            cache = -1;
+            tk = new Token("!=", lineNum, charPos);
+            return tk;
         }
         if (nextChar == -1){
             try{
@@ -156,10 +160,25 @@ public class Scanner implements Iterator<Token> {
             s += (char)nextChar;
             readChar();
         }
-        // if(s.charAt(s.length()-1) == '.'){
-        //     //invalid float
-
-        // }
+        if(s.charAt(s.length()-1) == '.'){
+            while(!(Character.isLetterOrDigit(nextChar) || "^*/%+-<>=(){}[].:,;".indexOf(nextChar) != -1 || nextChar == '\n')){//any standalone non alphanumeric
+                if(nextChar == '!'){
+                    readChar();
+                    if(nextChar == '='){
+                        cache = '!';
+                        break;
+                    }else{
+                        s+= '!';
+                        continue;
+                    }
+                }
+                if(nextChar ==-1){
+                    return s;
+                }
+                s += (char)nextChar;
+                readChar();
+            }
+        }
         return s;
     }
 
