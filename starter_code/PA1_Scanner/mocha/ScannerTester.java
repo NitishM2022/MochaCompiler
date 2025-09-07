@@ -43,6 +43,7 @@ public class ScannerTester {
                 case INT_VAL:
                 case FLOAT_VAL:
                 case IDENT:
+                case ERROR:
                     System.out.println("\t" + t.lexeme());
                     break;
                 default:
