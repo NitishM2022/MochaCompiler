@@ -209,7 +209,7 @@ public class Scanner implements Iterator<Token> {
             }
         }else{
             while((!Character.isLetterOrDigit(nextChar)) &&
-            ("(){}[],.:;+-=^*/%<>".indexOf(nextChar) == -1)){
+            ("(){}[],.:;+-=^*/%<>".indexOf(nextChar) == -1 && nextChar != -1)){
                 s+= (char)nextChar;
                 readChar();
             }
