@@ -15,7 +15,7 @@ Do not change package declaration, i.e., keep the first line of `Parser.java` an
 
 * Requirements for full credit on private tests:
   * CSCE 434: 9/14 private tests passing
-  * CSCE 605: 12/14 private tsts passing
+  * CSCE 605: 12/14 private tests passing
 * PA2 allows late submission. However the penalty for late code submission is *h<sup>2</sup>/24 + h*, where h is the whole number of hours late rounded up
 * PA2 is fully autograded through Gradscope, but students may submit regrade requests if they believe that points were improperly deducted (see syllabus for limitations)
 
