@@ -21,10 +21,10 @@ public class ParserTester {
             System.exit(-1);
         }
 
-        Scanner s = null;
+        mocha.Scanner s = null;
         String sourceFile = cmd.getOptionValue("src");
         try {
-            s = new Scanner(new FileReader(sourceFile));
+            s = new mocha.Scanner(new FileReader(sourceFile));
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -38,19 +38,20 @@ public class ParserTester {
             try {
                 in = new FileInputStream(inputFilename);
             }
-
             catch (IOException e) {
                 System.err.println("Error accessing the data file: \"" + inputFilename + "\"");
                 System.exit(-2);
             }
         }
 
-        Parser p = new Parser(s, in);
+        mocha.Parser p = new mocha.Parser(s, in);
         p.parse();
         if (p.hasError()) {
             System.out.println("Error parsing file.");
             System.out.println(p.errorReport());
             System.exit(-4);
+        } else {
+            System.out.println("Success");
         }
     }
 }
