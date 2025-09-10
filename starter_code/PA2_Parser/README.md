@@ -6,10 +6,12 @@ PA2 code must be submitted to **Gradescope** by  **12:00am on 09/23** (as mentio
 
 ### Files to Submit
 
+* `Scanner.java`
+* `Token.java`
 * `Parser.java`
 * `NonTerminal.java`
 
-Do not change package declaration, i.e., keep the first line of `Parser.java` and `NonTerminal.java` as-is
+Do not change package declaration, i.e., keep the first line of all `*.java` files as-is
 
 ### Grading
 
