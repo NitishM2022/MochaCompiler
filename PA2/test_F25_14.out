@@ -1,1 +1,3 @@
-SyntaxError(14,9)[Expected SEMICOLON but got RETURN.]
+Error parsing file.
+SyntaxError(14,2)[Expected SEMICOLON but got RETURN.]
+
