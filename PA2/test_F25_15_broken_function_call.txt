@@ -4,16 +4,17 @@
 
 main
 
+int hold;
+
 function fail(int sent): void{
 	return;
 
 };
-
-int hold;
 
 {
 	hold = 34;
 	fail(hold);
 	hold = 45;
 	
+
 }.
