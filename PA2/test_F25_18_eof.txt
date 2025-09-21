@@ -1,3 +1,6 @@
+// Author: Joshua Lass
+// Should throw an error because it is not EOF
+
 main
 
 {
