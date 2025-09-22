@@ -1,1 +1,2 @@
-Success
+Error parsing file.
+SyntaxError(17,2)[Expected PERIOD but got EOF.]
