@@ -1,3 +1,2 @@
 Error parsing file.
-
-SyntaxError(16,6)[Expected ASSIGN or CALL but got OPEN_PAREN.]
+SyntaxError(16,6)[Expected a token from ASSIGN but got OPEN_PAREN.]
