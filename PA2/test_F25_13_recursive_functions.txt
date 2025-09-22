@@ -4,29 +4,29 @@
 
 main
 
-function isOdd(int number): boolean {
+function isOdd(int number): bool {
 	if (number == 0) then
 		return false;
 	else
-		return isEven(number - 1);
-	fi
-}
+		return call isEven(number - 1);
+	fi;
+};
 
-function isEven(int number): boolean {
+function isEven(int number): bool {
 	if (number == 0) then
 		return false;
 	else
-		return isOdd(number - 1);
-	fi
-}
+		return call isOdd(number - 1);
+	fi;
+};
 
 function pow(int number, int exp): int {
 	if (exp == 0) then
 		return 1;
 	else
 		return number * call pow(number, exp - 1);
-	fi
-}
+	fi;
+};
 
 {
 	call printBool(call isEven(3));
