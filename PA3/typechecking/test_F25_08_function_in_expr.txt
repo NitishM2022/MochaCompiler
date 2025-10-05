@@ -1,0 +1,16 @@
+//Check if functions in expressions are handled properly
+// Author: Hannah Lucas
+
+main
+
+function f(int x) : int {
+    x += 5;
+    return x;
+};
+
+{
+    int a, b, c;
+    a = 7;
+    c = 22;
+    b = f(a) + a + f(c) + c;
+}.
