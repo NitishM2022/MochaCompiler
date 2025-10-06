@@ -1,5 +1,5 @@
 // Author: Gabriel De Conto
-//
+// Tests error for missing symbol
 
 main
 
