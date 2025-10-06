@@ -1,0 +1,12 @@
+// author: Will Tatum
+// void function used in an expression
+
+// 1 type error: void value used in arithmetic
+function printTwo(): void {
+    call printInt(2); call println();
+};
+main
+{
+    int x;
+    x = 1 + call printTwo();
+}.
