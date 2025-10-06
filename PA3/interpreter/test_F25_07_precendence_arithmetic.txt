@@ -1,4 +1,5 @@
 // author: Will Tatum
+// tests arithmetic precendence
 
 main
 {
