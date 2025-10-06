@@ -1,0 +1,41 @@
+// Nitish Malluru
+// Function return type and parameter type mismatches
+
+main
+
+int x;
+float y;
+bool z;
+
+function getInt() : int {
+    return 42;
+};
+
+function getFloat() : float {
+    return 3.14;
+};
+
+function getBool() : bool {
+    return true;
+};
+
+function processInt(int val) : int {
+    return val * 2;
+};
+
+{
+    // Type error: assigning int function to float variable
+    y = call getInt();
+    
+    // Type error: assigning float function to int variable  
+    x = call getFloat();
+    
+    // Type error: assigning bool function to int variable
+    x = call getBool();
+    
+    // Type error: passing float to int parameter
+    x = call processInt(y);
+    
+    // Type error: passing bool to int parameter
+    x = call processInt(z);
+}.
