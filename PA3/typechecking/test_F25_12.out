@@ -1,0 +1,7 @@
+TypeError(28,5)[Assignment type mismatch: float = int]
+TypeError(31,5)[Assignment type mismatch: int = float]
+TypeError(34,5)[Assignment type mismatch: int = bool]
+TypeError(37,14)[Call with args [float] matches no function signature.]
+TypeError(37,5)[Assignment type mismatch: int = ErrorType(Function call failed)]
+TypeError(40,14)[Call with args [bool] matches no function signature.]
+TypeError(40,5)[Assignment type mismatch: int = ErrorType(Function call failed)]

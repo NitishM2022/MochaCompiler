@@ -1,0 +1,6 @@
+Error type-checking file
+TypeError(23,5)[Call with args TypeList(float) matches no function signature.]
+TypeError(24,5)[Call with args TypeList(int) matches no function signature.]
+TypeError(25,5)[Call with args TypeList(bool) matches no function signature.]
+TypeError(26,5)[Call with args TypeList() matches no function signature.]
+TypeError(27,5)[Call with args TypeList(void) matches no function signature.]
