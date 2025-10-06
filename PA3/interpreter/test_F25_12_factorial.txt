@@ -1,0 +1,33 @@
+// Aditya Viswanadha
+// Calculates the factorial of n using a repeat-until loop.
+
+function factorial(int n) : int {
+
+    int result; // Local variable for calculation.
+    int i;      // Local loop counter.
+    result = 1;
+    i = n;
+    if (i > 0) then
+        repeat
+            result = result * i;
+            i -= 1;
+        until (i == 0);
+    fi;
+    return result;
+};
+
+{
+    global_var = 99; //  global variable.
+
+    
+    call printInt( call factorial( call readInt() ) );
+    call println();
+
+    
+    call printInt( call factorial(0) );
+    call println();
+
+    
+    call printInt(global_var); // print to make sure it doesn't change
+    call println();
+}.
