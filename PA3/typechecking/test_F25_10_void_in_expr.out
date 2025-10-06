@@ -1,0 +1,2 @@
+Error type-checking file.
+TypeError(10,11)[Cannot add int to void.]
