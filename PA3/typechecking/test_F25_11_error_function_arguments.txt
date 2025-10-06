@@ -1,0 +1,28 @@
+// Author: Gabriel De Conto
+// Test function argument errors with different types
+
+main
+
+int i;
+bool t;
+float f;
+
+function a(int x) : void {
+    return;             
+};
+
+function b(bool z) : void {
+    return;
+};
+
+function c(float y) : void {
+    return;
+};
+
+{
+    call a(f);
+    call b(i);
+    call c(t);
+    call a();
+    call b(a(i));
+}.
