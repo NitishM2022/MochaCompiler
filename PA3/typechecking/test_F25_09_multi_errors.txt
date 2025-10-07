@@ -27,6 +27,5 @@ function fail(int x) : int {
 
     call printInt(println());
     call fail();   
-
-    int a;               
+        
 }.
