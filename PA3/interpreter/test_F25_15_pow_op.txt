@@ -1,0 +1,23 @@
+// Andrew Li
+// testing functionality of pow operator
+
+main
+int a, b, c;
+float x, y, z;
+{
+    a = 5;
+    b = 10;
+    c = 20;
+    call printInt(1^0); call println();
+    call printInt(1^1); call println();
+    call printInt(b^a); call println();
+    call printInt(c^a); call println();
+
+    x = 5.0;
+    y = 10.0;
+    z = 20.0;
+    call printFloat(1.0^0.0); call println();
+    call printFloat(1.0^1.0); call println();
+    call printFloat(y^x); call println();
+    call printFloat(z^x); call println();
+}.
