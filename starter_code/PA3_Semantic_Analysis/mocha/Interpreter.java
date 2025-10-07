@@ -1,0 +1,549 @@
+package mocha;
+
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
+import java.util.Scanner;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Locale;
+
+import ast.*;
+import types.*;
+
+public class Interpreter implements NodeVisitor {
+    private SymbolTable symbolTable;
+    private Map<String, Object> memory;
+    private Scanner inputScanner;
+    private StringBuilder output;
+    private Stack<Object> valueStack;
+        
+    public Interpreter(SymbolTable symbolTable, InputStream input) {
+        this.symbolTable = symbolTable;
+        this.memory = new HashMap<>();
+        this.inputScanner = new Scanner(input);
+        this.output = new StringBuilder();
+        this.valueStack = new Stack<>();
+    }
+    
+    public String getOutput() {
+        return output.toString();
+    }
+    
+    public void interpret(AST ast) {
+        Computation comp = ast.getComputation();
+        comp.accept(this);
+    }
+    
+    // Helper methods
+    private Object getStoredValue() {
+        return valueStack.isEmpty() ? null : valueStack.pop();
+    }
+
+    private static Object defaultFor(Type t) {
+        if (t instanceof IntType) return 0;
+        if (t instanceof FloatType) return 0.0f;
+        if (t instanceof BoolType) return false;
+        return null;
+    }
+
+    // ----- Array Helper Methods (Needed for Flat Access) -----
+
+    /**
+     * Traverses a left-recursive ArrayIndex chain to the base Designator and
+     * collects all index expressions (outermost to innermost) into indexExprsOut.
+     */
+    private Symbol unwindArrayIndexChain(Expression expr, List<Expression> indexExprsOut) {
+        if (expr instanceof ArrayIndex) {
+            ArrayIndex ai = (ArrayIndex) expr;
+            Symbol baseSym = unwindArrayIndexChain(ai.base(), indexExprsOut);
+            indexExprsOut.add(ai.index());
+            return baseSym;
+        } else if (expr instanceof Designator) {
+            String name = ((Designator) expr).name().lexeme();
+            try {
+                return symbolTable.lookup(name);
+            } catch (mocha.SymbolNotFoundError e) {
+                throw new RuntimeException("Unknown array variable: " + name);
+            }
+        } else {
+            throw new RuntimeException("Invalid base expression for array access: " + expr.getClass().getSimpleName());
+        }
+    }
+
+    private static List<Integer> computeStrides(List<Integer> dims) {
+        ArrayList<Integer> strides = new ArrayList<>(dims.size());
+        int acc = 1;
+        for (int i = dims.size() - 1; i >= 0; i--) {
+            strides.add(0, acc);
+            acc *= dims.get(i);
+        }
+        return strides;
+    }
+
+    private static int computeFlatOffset(List<Integer> dims, List<Integer> indices) {
+        if (indices.size() != dims.size()) {
+            throw new RuntimeException("Index count mismatch. Expected " + dims.size() + " indices, got " + indices.size());
+        }
+        List<Integer> strides = computeStrides(dims);
+        int off = 0;
+        for (int i = 0; i < indices.size(); i++) {
+            int idx = indices.get(i);
+            int dim = dims.get(i);
+            if (idx < 0 || idx >= dim) throw new RuntimeException("Array index out of bounds: " + idx);
+            off += idx * strides.get(i);
+        }
+        return off;
+    }
+    
+    // Expression evaluation
+    @Override
+    public void visit(IntegerLiteral node) {
+        valueStack.push(node.getValue());
+    }
+    
+    @Override
+    public void visit(FloatLiteral node) {
+        valueStack.push(node.getValue());
+    }
+    
+    @Override
+    public void visit(BoolLiteral node) {
+        valueStack.push(node.getValue());
+    }
+    
+    @Override
+    public void visit(Designator node) {
+        String name = node.name().lexeme();
+        try { symbolTable.lookup(name); } catch (mocha.SymbolNotFoundError e) { throw new RuntimeException("Unknown variable: " + name); }
+        Object value = memory.get(name);
+        if (value == null) {
+            throw new RuntimeException("Variable " + name + " not initialized");
+        }
+        valueStack.push(value);
+    }
+    
+    @Override
+    public void visit(ArrayIndex node) {
+        ArrayList<Expression> indexExprs = new ArrayList<>();
+        Symbol sym = unwindArrayIndexChain(node, indexExprs);
+
+        ArrayList<Integer> indices = new ArrayList<>();
+        for (Expression idxExpr : indexExprs) {
+            idxExpr.accept(this);
+            Object v = getStoredValue();
+            if (!(v instanceof Integer)) throw new RuntimeException("Array index must be integer");
+            indices.add((Integer) v);
+        }
+
+        if (!(sym.type() instanceof ArrayType)) throw new RuntimeException("Variable is not an array: " + sym.name());
+        ArrayType at = (ArrayType) sym.type();
+        List<Integer> dims = at.getDimensions();
+        Object[] data = (Object[]) memory.get(sym.name());
+        int offset = computeFlatOffset(dims, indices);
+        valueStack.push(data[offset]);
+    }
+    
+    @Override
+    public void visit(AddressOf node) {
+        throw new RuntimeException("Address-of operator not supported in interpreter");
+    }
+    
+    @Override
+    public void visit(Dereference node) {
+        throw new RuntimeException("Dereference operator not supported in interpreter");
+    }
+    
+    @Override
+    public void visit(Addition node) {
+        node.getLeft().accept(this);
+        node.getRight().accept(this);
+        
+        Object right = getStoredValue();
+        Object left = getStoredValue();
+        
+        if (left instanceof Integer && right instanceof Integer) {
+            valueStack.push((Integer) left + (Integer) right);
+        } else if (left instanceof Float && right instanceof Float) {
+            valueStack.push((Float) left + (Float) right);
+        } else {
+            throw new RuntimeException("Invalid addition operands");
+        }
+    }
+    
+    @Override
+    public void visit(Subtraction node) {
+        node.getLeft().accept(this);
+        node.getRight().accept(this);
+        
+        Object right = getStoredValue();
+        Object left = getStoredValue();
+        
+        if (left instanceof Integer && right instanceof Integer) {
+            valueStack.push((Integer) left - (Integer) right);
+        } else if (left instanceof Float && right instanceof Float) {
+            valueStack.push((Float) left - (Float) right);
+        } else {
+            throw new RuntimeException("Invalid subtraction operands");
+        }
+    }
+    
+    @Override
+    public void visit(Multiplication node) {
+        node.getLeft().accept(this);
+        node.getRight().accept(this);
+        
+        Object right = getStoredValue();
+        Object left = getStoredValue();
+        
+        if (left instanceof Integer && right instanceof Integer) {
+            valueStack.push((Integer) left * (Integer) right);
+        } else if (left instanceof Float && right instanceof Float) {
+            valueStack.push((Float) left * (Float) right);
+        } else {
+            throw new RuntimeException("Invalid multiplication operands");
+        }
+    }
+    
+    @Override
+    public void visit(Division node) {
+        node.getLeft().accept(this);
+        node.getRight().accept(this);
+        
+        Object right = getStoredValue();
+        Object left = getStoredValue();
+        
+        if (left instanceof Integer && right instanceof Integer) {
+            if ((Integer) right == 0) {
+                throw new RuntimeException("Division by zero");
+            }
+            valueStack.push((Integer) left / (Integer) right);
+        } else if (left instanceof Float && right instanceof Float) {
+            valueStack.push((Float) left / (Float) right);
+        } else {
+            throw new RuntimeException("Invalid division operands");
+        }
+    }
+    
+    @Override
+    public void visit(LogicalAnd node) {
+        // Short-circuit version 
+        // node.getLeft().accept(this);
+        // Object left = getStoredValue();
+        // if (!(left instanceof Boolean && (Boolean) left)) {
+        //     valueStack.push(false);
+        //     return;
+        // }
+        // node.getRight().accept(this);
+        // Object right = getStoredValue();
+        // valueStack.push(left instanceof Boolean && right instanceof Boolean && (Boolean) left && (Boolean) right);
+
+        // Assignment semantics: evaluate both sides (no short-circuit) to preserve side-effects
+        node.getLeft().accept(this);
+        Object left = getStoredValue();
+        node.getRight().accept(this);
+        Object right = getStoredValue();
+        boolean lv = (left instanceof Boolean) ? (Boolean) left : false;
+        boolean rv = (right instanceof Boolean) ? (Boolean) right : false;
+        valueStack.push(lv && rv);
+    }
+    
+    @Override
+    public void visit(LogicalOr node) {
+        // Short-circuit version
+        // node.getLeft().accept(this);
+        // Object left = getStoredValue();
+        // if (left instanceof Boolean && (Boolean) left) {
+        //     valueStack.push(true);
+        //     return;
+        // }
+        // node.getRight().accept(this);
+        // Object right = getStoredValue();
+        // valueStack.push(right instanceof Boolean && (Boolean) right);
+
+        // Assignment semantics: evaluate both sides (no short-circuit) to preserve side-effects
+        node.getLeft().accept(this);
+        Object left = getStoredValue();
+        node.getRight().accept(this);
+        Object right = getStoredValue();
+        boolean lv = (left instanceof Boolean) ? (Boolean) left : false;
+        boolean rv = (right instanceof Boolean) ? (Boolean) right : false;
+        valueStack.push(lv || rv);
+    }
+    
+    @Override
+    public void visit(LogicalNot node) {
+        node.operand().accept(this);
+        valueStack.push(!(Boolean) getStoredValue());
+    }
+    
+    @Override
+    public void visit(Relation node) {
+        node.getLeft().accept(this);
+        node.getRight().accept(this);
+        
+        Object right = getStoredValue();
+        Object left = getStoredValue();
+        
+        // Type coercion for relations
+        if (left instanceof Integer && right instanceof Float) {
+            left = ((Integer) left).floatValue();
+        } else if (left instanceof Float && right instanceof Integer) {
+            right = ((Integer) right).floatValue();
+        }
+        
+        boolean result = false;
+        switch (node.getOperator().kind()) {
+            case EQUAL_TO:
+                result = left.equals(right);
+                break;
+            case NOT_EQUAL:
+                result = !left.equals(right);
+                break;
+            case GREATER_THAN:
+                result = ((Comparable) left).compareTo(right) > 0;
+                break;
+            case LESS_THAN:
+                result = ((Comparable) left).compareTo(right) < 0;
+                break;
+            case GREATER_EQUAL:
+                result = ((Comparable) left).compareTo(right) >= 0;
+                break;
+            case LESS_EQUAL:
+                result = ((Comparable) left).compareTo(right) <= 0;
+                break;
+        }
+        valueStack.push(result);
+    }
+    
+    @Override
+    public void visit(Power node) {
+        node.getLeft().accept(this);
+        node.getRight().accept(this);
+        
+        Object right = getStoredValue();
+        Object left = getStoredValue();
+        
+        if (left instanceof Integer && right instanceof Integer) {
+            valueStack.push((int) Math.pow((Integer) left, (Integer) right));
+        } else if (left instanceof Number && right instanceof Number) {
+            valueStack.push((float) Math.pow(((Number) left).doubleValue(), ((Number) right).doubleValue()));
+        } else {
+            throw new RuntimeException("Invalid power operands");
+        }
+    }
+    
+    @Override
+    public void visit(Modulo node) {
+        node.getLeft().accept(this);
+        node.getRight().accept(this);
+        
+        Object right = getStoredValue();
+        Object left = getStoredValue();
+        
+        if (left instanceof Integer && right instanceof Integer) {
+            if ((Integer) right == 0) {
+                throw new RuntimeException("Modulo by zero");
+            }
+            valueStack.push((Integer) left % (Integer) right);
+        } else if (left instanceof Float && right instanceof Float) {
+            float rv = (Float) right;
+            if (rv == 0.0f) {
+                throw new RuntimeException("Modulo by zero");
+            }
+            valueStack.push((Float) left % (Float) right);
+        } else {
+            throw new RuntimeException("Invalid modulo operands");
+        }
+    }
+    
+    @Override
+    public void visit(FunctionCall node) {
+        String funcName = node.name().lexeme();
+        
+        // Handle predefined functions
+        switch (funcName) {
+            case "readInt":
+                output.append("int? ");
+                if (inputScanner.hasNextInt()) {
+                    valueStack.push(inputScanner.nextInt());
+                } else {
+                    throw new RuntimeException("No integer input available");
+                }
+                break;
+            case "readFloat":
+                output.append("float? ");
+                if (inputScanner.hasNextFloat()) {
+                    valueStack.push(inputScanner.nextFloat());
+                } else {
+                    throw new RuntimeException("No float input available");
+                }
+                break;
+            case "readBool":
+                output.append("true or false? ");
+                if (inputScanner.hasNextBoolean()) {
+                    valueStack.push(inputScanner.nextBoolean());
+                } else {
+                    throw new RuntimeException("No boolean input available");
+                }
+                break;
+            case "printInt":
+                node.arguments().accept(this);
+                Object intVal = getStoredValue();
+                output.append(intVal.toString()).append(" ");
+                break;
+            case "printFloat":
+                node.arguments().accept(this);
+                Object floatVal = getStoredValue();
+                if (floatVal instanceof Number) {
+                    String s = String.format(Locale.US, "%.2f", ((Number) floatVal).doubleValue());
+                    output.append(s).append(" ");
+                } else {
+                    output.append(floatVal.toString()).append(" ");
+                }
+                break;
+            case "printBool":
+                node.arguments().accept(this);
+                Object boolVal = getStoredValue();
+                output.append(boolVal.toString()).append(" ");
+                break;
+            case "println":
+                output.append("\n");
+                break;
+            default:
+                throw new RuntimeException("Unknown function: " + funcName);
+        }
+    }
+    
+    // Statement execution
+    @Override
+    public void visit(Assignment node) {
+        // Evaluate the value
+        node.getSource().accept(this);
+        Object value = getStoredValue();
+        
+        // Store in the appropriate variable
+        if (node.getDestination() instanceof Designator) {
+            String name = ((Designator) node.getDestination()).name().lexeme();
+            try { symbolTable.lookup(name); } catch (mocha.SymbolNotFoundError e) { throw new RuntimeException("Unknown variable: " + name); }
+            memory.put(name, value);
+        } else if (node.getDestination() instanceof ArrayIndex) {
+            ArrayList<Expression> indexExprs = new ArrayList<>();
+            Symbol sym = unwindArrayIndexChain(node.getDestination(), indexExprs);
+
+            ArrayList<Integer> indices = new ArrayList<>();
+            for (Expression idxExpr : indexExprs) {
+                idxExpr.accept(this);
+                Object v = getStoredValue();
+                if (!(v instanceof Integer)) throw new RuntimeException("Array index must be integer");
+                indices.add((Integer) v);
+            }
+
+            if (!(sym.type() instanceof ArrayType)) throw new RuntimeException("Variable is not an array: " + sym.name());
+            ArrayType at = (ArrayType) sym.type();
+            List<Integer> dims = at.getDimensions();
+            Object[] data = (Object[]) memory.get(sym.name());
+            int offset = computeFlatOffset(dims, indices);
+            data[offset] = value;
+        }
+    }
+    
+    @Override
+    public void visit(IfStatement node) {
+        node.condition().accept(this);
+        boolean condition = (Boolean) getStoredValue();
+        
+        if (condition) {
+            node.thenBlock().accept(this);
+        } else if (node.elseBlock() != null) {
+            node.elseBlock().accept(this);
+        }
+    }
+    
+    @Override
+    public void visit(ReturnStatement node) {
+        if (node.value() != null) {
+            node.value().accept(this);
+            // Return value is on the stack for function calls
+        }
+        // Early return - would need to implement proper flow control
+    }
+    
+    @Override
+    public void visit(Computation node) {
+        // Initialize globals via standard visitation
+        node.variables().accept(this);
+        // Ignore functions in interpreter mode
+        // Execute main sequence
+        node.mainStatementSequence().accept(this);
+    }
+    
+    @Override
+    public void visit(VariableDeclaration node) {
+        // Initialize declared variables with default values
+        Type varType = node.type();
+        for (Token nameTok : node.names()) {
+            Symbol sym = symbolTable.lookup(nameTok.lexeme());
+            Object value;
+            if (varType instanceof ArrayType) {
+                ArrayType at = (ArrayType) varType;
+                List<Integer> dims = at.getDimensions();
+                int total = 1;
+                for (int d : dims) total *= d;
+                Object elementDefault = defaultFor(at.getBaseType());
+
+                // IMPORTANT: Allocate Object array, NOT ArrayList
+                Object[] data = new Object[total];
+                Arrays.fill(data, elementDefault);
+                value = data;
+            } else {
+                value = defaultFor(varType);
+            }
+            memory.put(nameTok.lexeme(), value);
+        }
+    }
+    
+    @Override
+    public void visit(FunctionDeclaration node) {
+        // Not supported in interpreter mode
+    }
+    
+    @Override
+    public void visit(StatementSequence node) {
+        for (Statement stmt : node.getStatements()) {
+            stmt.accept(this);
+        }
+    }
+    
+    @Override
+    public void visit(ArgumentList node) {
+        for (Expression arg : node.args()) {
+            arg.accept(this);
+        }
+    }
+    
+    @Override
+    public void visit(DeclarationList node) {
+        for (Node decl : node.declarations()) {
+            decl.accept(this);
+        }
+    }
+    
+    @Override
+    public void visit(FunctionBody node) {
+        // Not supported in interpreter mode
+    }
+    
+    // Unused methods
+    @Override
+    public void visit(WhileStatement node) {
+        throw new RuntimeException("While loops not supported in interpreter");
+    }
+    
+    @Override
+    public void visit(RepeatStatement node) {
+        throw new RuntimeException("Repeat loops not supported in interpreter");
+    }
+}

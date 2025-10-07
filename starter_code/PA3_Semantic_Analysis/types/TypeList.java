@@ -26,5 +26,26 @@ public class TypeList extends Type implements Iterable<Type> {
     }
 
     //TODO more helper here
+    @Override
+    public boolean equivalent(Type other) {
+        if (other instanceof TypeList) {
+            TypeList otherList = (TypeList) other;
+            if (this.list.size() != otherList.list.size()) {
+                return false;
+            }
+            for (int i = 0; i < this.list.size(); i++) {
+                if (!this.list.get(i).equivalent(otherList.list.get(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    @Override
+    public String toString() {
+        return "TypeList" + list.toString();
+    }
     
 }

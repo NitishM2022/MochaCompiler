@@ -11,6 +11,14 @@ public abstract class Type {
         return new ErrorType("Cannot divide " + this + " by " + that + ".");
     }
 
+    public Type power (Type that) {
+        return new ErrorType("Cannot raise " + this + " to the power of " + that + ".");
+    }
+
+    public Type mod (Type that) {
+        return new ErrorType("Cannot perform modulo " + this + " % " + that + ".");
+    }
+
     public Type add (Type that) {
         return new ErrorType("Cannot add " + this + " to " + that + ".");
     }
@@ -53,6 +61,10 @@ public abstract class Type {
 
     public Type call (Type args) {
         return new ErrorType("Cannot call " + this + " using " + args + ".");
+    }
+
+    public boolean equivalent (Type other) {
+        return this.getClass().equals(other.getClass());
     }
 
 }

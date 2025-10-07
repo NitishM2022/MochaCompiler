@@ -8,6 +8,7 @@ public interface NodeVisitor {
     public void visit (FloatLiteral node);
 
     // designator
+    public void visit (Designator node);
     public void visit (AddressOf node);
     public void visit (ArrayIndex node);
     public void visit (Dereference node);

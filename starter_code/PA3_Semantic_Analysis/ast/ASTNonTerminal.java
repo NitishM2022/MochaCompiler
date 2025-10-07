@@ -24,6 +24,8 @@ public enum ASTNonTerminal {
     ArgumentList("ArgumentList"),
 
     ArrayIndex("ArrayIndex"),
+    AddressOf("AddressOf"),
+    Dereference("Dereference"),
 
     Addition("Addition"),
     Subtraction("Subtraction"),
