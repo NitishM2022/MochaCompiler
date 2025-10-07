@@ -1,7 +1,8 @@
 package mocha;
 
-// import java.io.BufferedReader;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -14,23 +15,17 @@ public class Scanner implements Iterator<Token> {
     private int charPos;    // character offset on current line
 
     private String scan;    // current lexeme being scanned in
-    private int cache;
     private int nextChar;   // contains the next char (-1 == EOF)
 
     // reader will be a FileReader over the source file
     public Scanner (String sourceFileName, Reader reader) {
         // TODO: initialize scanner
-        input = new BufferedReader(reader);
-        // System.out.println("Input: "+sourceFileName);
-        closed = false;
-        lineNum = 1;
-        charPos = 1;
-
-        try{
-            nextChar = input.read();
-        }catch(IOException e){
-            e.printStackTrace();
-        }
+        this.input = new BufferedReader(reader);
+        this.closed = false;
+        this.lineNum = 1;
+        this.charPos = 0;
+        this.scan = "";
+        this.nextChar = readChar();
     }
 
     // signal an error message
@@ -48,21 +43,19 @@ public class Scanner implements Iterator<Token> {
      * advance the charPos or lineNum, etc.
      */
     private int readChar () {
-        int c = nextChar;
-        //nextChar not EOF -> load new nextChar
-        if (c != -1){
-            try{
-                nextChar = input.read();
-            }catch (IOException e){
-                e.printStackTrace();
-            }
-            charPos++;
-            if (c == '\n'){
-                charPos = 0;
+        // TODO: implement
+        try {
+            int ch = input.read();
+            if (ch == '\n') {
                 lineNum++;
+                charPos = 0;            
+            } else if (ch != -1) {
+                charPos++;
             }
+            return ch;
+        } catch (IOException e) {
+            return -1;
         }
-        return c;
     }
 
     /*
@@ -71,10 +64,7 @@ public class Scanner implements Iterator<Token> {
      */
     @Override
     public boolean hasNext () {
-        if (nextChar == -1 && closed){
-            return false;
-        }
-        return true;
+        return !closed;
     }
 
     /*
@@ -87,164 +77,201 @@ public class Scanner implements Iterator<Token> {
      */
     @Override
     public Token next () {
-        String lex = null;
-        Token tk = null;
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
-        // int c = 0;
 
-        while (Character.isWhitespace(nextChar)){
-            readChar();
+        // Skip whitespace
+        while (nextChar != -1 && Character.isWhitespace(nextChar)) {
+            nextChar = readChar();
         }
-        if (cache == '/' && nextChar == '/'){// for /* [abc] //
-            cache = -1;
-            while(nextChar != '\n'){
-                readChar();
-            }
-            return next();
-        }else if (cache == '!' && nextChar == '='){// for /* [abc] //
-            cache = -1;
-            tk = new Token("!=", lineNum, charPos);
-            return tk;
-        }
-        if (nextChar == -1){
-            try{
-                input.close();
-            }catch (IOException e){
-                e.printStackTrace();
-            }
+
+        if (nextChar == -1) {
             closed = true;
-            tk = Token.EOF(lineNum, charPos);
-            return tk;
+            try { input.close(); } catch (IOException e) {}
+            return Token.EOF(lineNum, charPos);
         }
-        if (Character.isDigit(nextChar)){
-            lex = numToken(Character.toString(nextChar));
-        }
-        else if (Character.isLetter(nextChar)){
-            lex = idToken(nextChar);
-        }else{
-            lex = symToken(nextChar);
-            if(lex == "//"){
+
+        int startLine = lineNum;
+        int startChar = charPos;
+
+        // comments
+        if (nextChar == '/') {
+            int tempNext = peekNextChar();
+            if (tempNext == '/') {
+                // single line
+                nextChar = readChar();
+                nextChar = readChar();
+                while (nextChar != -1 && nextChar != '\n') {
+                    nextChar = readChar();
+                }
+                return next();
+            } else if (tempNext == '*') {
+                // block comment
+                nextChar = readChar();
+                nextChar = readChar();
+                boolean commentClosed = false;
+                while (nextChar != -1) {
+                    if (nextChar == '*') {
+                        nextChar = readChar();
+                        if (nextChar == '/') {
+                            nextChar = readChar();
+                            commentClosed = true;
+                            break;
+                        }
+                    } else {
+                        nextChar = readChar();
+                    }
+                }
+                if (!commentClosed) {
+                    return Token.Error("/*", startLine, startChar);
+                }
                 return next();
             }
         }
-        // System.out.println("next() lex = "+lex);
-        if (lex != null){
-            tk = new Token(lex, lineNum, charPos);
+        
+        if (Character.isDigit(nextChar) || (nextChar == '-' && Character.isDigit(peekNextChar()))) {
+            return handleNumber(startLine, startChar);
         }
-        return tk;
-    }
-    
-    private String idToken(int i){
-        readChar();
-        String s = Character.toString(i);
-        while (Character.isLetterOrDigit(nextChar) || nextChar == '_'){
-            s += (char)nextChar;
-            readChar();
+
+        if (Character.isLetter(nextChar)) {
+            return handleIdentifier(startLine, startChar);
         }
-        return s;
+
+        //need to allow ! for != match
+        if (isSingleCharOperatorOrDelimiter((char) nextChar) || nextChar == '!') {
+            return handleOperator(startLine, startChar);
+        }
+        
+        String invalidRun = consumeInvalidRun();
+        return Token.Error(invalidRun, startLine, startChar);
     }
 
-    private String numToken(String s){
-        boolean isFloat = false;
-        readChar();
-        while (Character.isDigit(nextChar) || nextChar == '.'){
-            if(nextChar == '.'){
-                if(isFloat){
-                    break;
-                }else{
-                    isFloat = true;
-                }
-            }
-            s += (char)nextChar;
-            readChar();
-        }
-        if(s.charAt(s.length()-1) == '.'){
-            while(!(Character.isLetterOrDigit(nextChar) || "^*/%+-<>=(){}[].:,;".indexOf(nextChar) != -1 || nextChar == '\n')){//any standalone non alphanumeric
-                if(nextChar == '!'){
-                    readChar();
-                    if(nextChar == '='){
-                        cache = '!';
-                        break;
-                    }else{
-                        s+= '!';
-                        continue;
-                    }
-                }
-                if(nextChar ==-1){
-                    return s;
-                }
-                s += (char)nextChar;
-                readChar();
-            }
-        }
-        return s;
-    }
-
-    private String symToken(int i){
-        String s = Character.toString(i);
-        readChar();
-        if("(){}[],.:;".indexOf(i)!= -1){
-            return s;
-        }
-        else if("+-=^*/%<>!".indexOf(i)!= -1){
-            if (i == '/'){
-                if (nextChar == '*' || nextChar == '/'){
-                    if (!commentReader()){
-                        return "/*/";
-                    }else{
-                        return "//";
-                    }
-                }
-            }
-            if((nextChar == '=') ||
-            (i == '+' && nextChar == '+')||
-            (i == '-' && nextChar == '-'))
-            {
-                s += (char)nextChar;
-                readChar();
-            }else if (i == '-' && Character.isDigit(nextChar)){
-                s = numToken("-"+Character.toString(nextChar));
-            }
-        }else{
-            while((!Character.isLetterOrDigit(nextChar)) &&
-            ("(){}[],.:;+-=^*/%<>".indexOf(nextChar) == -1 && nextChar != -1)){
-                s+= (char)nextChar;
-                readChar();
-            }
-        }
-        return s;
-    }
     // OPTIONAL: add any additional helper or convenience methods
     //           that you find make for a cleaner design
     //           (useful for handling special case Tokens)
+    private int peekNextChar() {
+        try {
+            input.mark(1);
+            int ch = input.read();
+            input.reset();
+            return ch;
+        } catch (IOException e) {
+            return -1;
+        }
+    }
 
-    // validate comment
-    private boolean commentReader(){
-        //[nextChar]
-        // boolean done = false;
-        int i = readChar(); // i = / | *
-        if (i == '/'){
-            while (i != '\n'){
-                i = readChar();
-            } 
-            return true;
-        }else if (i=='*'){//multiline [nextChar]
-            i = readChar();
-            while(nextChar != -1 && !(i=='*' && nextChar == '/')){
-                // if /*[any]
-                i = readChar();
-            }
-            if (i == '*' && nextChar == '/'){
-                readChar(); // so nc set for next()
+    // consume longest run of invalid chars
+    private String consumeInvalidRun() {
+        String invalid = "";
+        while (nextChar != -1
+                && !Character.isWhitespace(nextChar)
+                && !isSingleCharOperatorOrDelimiter((char) nextChar)
+                && !Character.isLetterOrDigit(nextChar)) {
+            invalid += (char) nextChar;
+            nextChar = readChar();
+        }
+        return invalid;
+    }
+
+    private boolean isTwoCharOperator(String op) {
+        return op.equals("==") || op.equals("!=") || op.equals("<=") || 
+               op.equals(">=") || op.equals("+=") || op.equals("-=") || 
+               op.equals("*=") || op.equals("/=") || op.equals("%=") || 
+               op.equals("^=") || op.equals("++") || op.equals("--");
+    }
+
+    // Helper: check if a char is a valid single-character operator or delimiter
+    private boolean isSingleCharOperatorOrDelimiter(char c) {
+        switch (c) {
+            case '^':
+            case '*':
+            case '/':
+            case '%':
+            case '+':
+            case '-':
+            case '<':
+            case '>':
+            case '=':
+            case '(':
+            case ')':
+            case '{':
+            case '}':
+            case '[':
+            case ']':
+            case ',':
+            case ':': 
+            case ';':
+            case '.':
                 return true;
-            }else if (nextChar == -1 ){//eof or new comment
-                cache = i;
+            default:
                 return false;
+        }
+    }
+
+    private Token handleNumber(int startLine, int startChar) {
+        String lexeme = "";
+        
+        if (nextChar == '-') {
+            lexeme += (char) nextChar;
+            nextChar = readChar();
+        }
+        
+        while (nextChar != -1 && Character.isDigit(nextChar)) {
+            lexeme += (char) nextChar;
+            nextChar = readChar();
+        }
+        
+        if (nextChar == '.') {
+            lexeme += (char) nextChar;
+            nextChar = readChar();
+
+            // must have digit after decimal point
+            if (!Character.isDigit(nextChar)) {
+                String invalidPart = consumeInvalidRun();
+                return Token.Error(lexeme + invalidPart, startLine, startChar);
+            }
+            
+            while (nextChar != -1 && Character.isDigit(nextChar)) {
+                lexeme += (char) nextChar;;
+                nextChar = readChar();
+            }
+            return Token.FloatVal(lexeme, startLine, startChar);
+        }
+        return Token.IntVal(lexeme, startLine, startChar);        
+    }
+
+    private Token handleIdentifier(int startLine, int startChar) {
+        String lexeme = "";
+        
+        while (nextChar != -1 && (Character.isLetterOrDigit(nextChar) || nextChar == '_')) {
+            lexeme += (char) nextChar;
+            nextChar = readChar();
+        }
+        
+        return new Token(lexeme, startLine, startChar);
+    }
+
+    private Token handleOperator(int startLine, int startChar) {
+        String lexeme = "";
+        
+        lexeme += (char) nextChar;
+        nextChar = readChar();
+        
+        if (nextChar != -1) {
+            String twoCharOp = lexeme + (char) nextChar;
+            if (isTwoCharOperator(twoCharOp)) {
+                lexeme += (char) nextChar;
+                nextChar = readChar();
+                return Token.Operator(lexeme, startLine, startChar);
             }
         }
-            System.out.println("commentReader invalid char");
-            return false;
+        
+        if (isSingleCharOperatorOrDelimiter(lexeme.charAt(0))) {
+            return Token.Operator(lexeme, startLine, startChar);
+        } else {
+            String invalidRun = lexeme + consumeInvalidRun();
+            return Token.Error(invalidRun, startLine, startChar);
+        }
     }
 }
