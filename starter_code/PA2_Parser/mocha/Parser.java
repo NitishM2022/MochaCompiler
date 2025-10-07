@@ -153,30 +153,281 @@ public class Parser {
 
     // TODO: implement operators and type grammar rules
 
-    // literal = integerLit | floatLit
+    // literal = boolLit | integerLit | floatLit
     private Token literal () {
         return matchNonTerminal(NonTerminal.LITERAL);
     }
 
     // designator = ident { "[" relExpr "]" }
     private void designator () {
-        int lineNum = lineNumber();
-        int charPos = charPosition();
-
         Token ident = expectRetrieve(Token.Kind.IDENT);
-
-        // TODO: get designated value from appropriate map from IDENT to value
         
+        while (accept(Token.Kind.OPEN_BRACKET)) {
+            relExpr();
+            expect(Token.Kind.CLOSE_BRACKET);
+        }
     }
 
-    // TODO: implement remaining grammar rules
+    // groupExpr = literal | designator | "not" relExpr | relation | funcCall
+    private void groupExpr () {
+        if (have(NonTerminal.LITERAL)) {
+            literal();
+        } else if (have(NonTerminal.DESIGNATOR)) {
+            designator();
+        } else if (have(Token.Kind.NOT)) {
+            expect(Token.Kind.NOT);
+            relExpr();
+        } else if (have(NonTerminal.RELATION)) {
+            relation();
+        } else if (have(NonTerminal.FUNC_CALL)) {
+            funcCall();
+        } else {
+            String errorMessage = reportSyntaxError(NonTerminal.GROUP_EXPR);
+            throw new QuitParseException(errorMessage);
+        }
+    }
 
-    // computation	= "main" {varDecl} {funcDecl} "{" statSeq "}" "."
+    // powExpr = groupExpr { powOp groupExpr }
+    private void powExpr () {
+        groupExpr();
+        while (accept(NonTerminal.POW_OP)) {
+            groupExpr();
+        }
+    }
+
+    // multExpr = powExpr { multOp powExpr }
+    private void multExpr () {
+        powExpr();
+        while (accept(NonTerminal.MUL_OP)) {
+            powExpr();
+        }
+    }
+
+    // addExpr = multExpr { addOp multExpr }
+    private void addExpr () {
+        multExpr();
+        while (accept(NonTerminal.ADD_OP)) {
+            multExpr();
+        }
+    }
+
+    // relExpr = addExpr { relOp addExpr }
+    private void relExpr () {
+        addExpr();
+        while (accept(NonTerminal.REL_OP)) {
+            addExpr();
+        }
+    }
+
+    // relation = "(" relExpr ")"
+    private void relation () {
+        expect(Token.Kind.OPEN_PAREN);
+        relExpr();
+        expect(Token.Kind.CLOSE_PAREN);
+    }
+
+    // assign = designator ( ( assignOp relExpr ) | unaryOp )
+    private void assign () {
+        designator();
+        
+        if (accept(NonTerminal.ASSIGN_OP)) {
+            relExpr();
+        } else if (accept(NonTerminal.UNARY_OP)) {
+        } else {
+            String errorMessage = reportSyntaxError(NonTerminal.ASSIGN);
+            throw new QuitParseException(errorMessage);
+        }
+    }
+
+    // funcCall = "call" ident "(" [ relExpr { "," relExpr } ] ")"
+    private void funcCall () {
+        expect(Token.Kind.CALL);
+        expect(Token.Kind.IDENT);
+        expect(Token.Kind.OPEN_PAREN);
+        
+        if (have(NonTerminal.REL_EXPR)) {
+            relExpr();
+            while (accept(Token.Kind.COMMA)) {
+                relExpr();
+            }
+        }
+        
+        expect(Token.Kind.CLOSE_PAREN);
+    }
+
+    // ifStat = "if" relation "then" statSeq [ "else" statSeq ] "fi"
+    private void ifStat () {
+        expect(Token.Kind.IF);
+        relation();
+        expect(Token.Kind.THEN);
+        statSeq();
+        
+        if (accept(Token.Kind.ELSE)) {
+            statSeq();
+        }
+        
+        expect(Token.Kind.FI);
+    }
+
+    // whileStat = "while" relation "do" statSeq "od"
+    private void whileStat () {
+        expect(Token.Kind.WHILE);
+        relation();
+        expect(Token.Kind.DO);
+        statSeq();
+        expect(Token.Kind.OD);
+    }
+
+    // repeatStat = "repeat" statSeq "until" relation
+    private void repeatStat () {
+        expect(Token.Kind.REPEAT);
+        statSeq();
+        expect(Token.Kind.UNTIL);
+        relation();
+    }
+
+    // returnStat = "return" [ relExpr ]
+    private void returnStat () {
+        expect(Token.Kind.RETURN);
+        
+        if (have(NonTerminal.REL_EXPR)) {
+            relExpr();
+        }
+    }
+
+    // statement = assign | funcCall | ifStat | whileStat | repeatStat | returnStat
+    private void statement () {
+        if (have(NonTerminal.ASSIGN)) {
+            assign();
+        } else if (have(NonTerminal.FUNC_CALL)) {
+            funcCall();
+        } else if (have(NonTerminal.IF_STAT)) {
+            ifStat();
+        } else if (have(NonTerminal.WHILE_STAT)) {
+            whileStat();
+        } else if (have(NonTerminal.REPEAT_STAT)) {
+            repeatStat();
+        } else if (have(NonTerminal.RETURN_STAT)) {
+            returnStat();
+        } else {
+            String errorMessage = reportSyntaxError(NonTerminal.STATEMENT);
+            throw new QuitParseException(errorMessage);
+        }
+    }
+
+    // statSeq = statement ";" { statement ";" }
+    private void statSeq () {
+        statement();
+        expect(Token.Kind.SEMICOLON);
+        
+        while (have(NonTerminal.STATEMENT)) {
+            statement();
+            expect(Token.Kind.SEMICOLON);
+        }
+    }
+
+    // typeDecl = type { "[" integerLit "]" }
+    private void typeDecl () {
+        if (!accept(NonTerminal.TYPE_DECL)) {
+            String errorMessage = reportSyntaxError(NonTerminal.TYPE_DECL);
+            throw new QuitParseException(errorMessage);
+        }
+        
+        while (accept(Token.Kind.OPEN_BRACKET)) {
+            expect(Token.Kind.INT_VAL);
+            expect(Token.Kind.CLOSE_BRACKET);
+        }
+    }
+
+    // varDecl = typeDecl ident { "," ident } ";"
+    private void varDecl () {
+        typeDecl();
+        expect(Token.Kind.IDENT);
+        
+        while (accept(Token.Kind.COMMA)) {
+            expect(Token.Kind.IDENT);
+        }
+        
+        expect(Token.Kind.SEMICOLON);
+    }
+
+    // paramType = type { "[" "]" }
+    private void paramType () {
+        if (!accept(NonTerminal.PARAM_TYPE)) {
+            String errorMessage = reportSyntaxError(NonTerminal.PARAM_TYPE);
+            throw new QuitParseException(errorMessage);
+        }
+        
+        while (accept(Token.Kind.OPEN_BRACKET)) {
+            expect(Token.Kind.CLOSE_BRACKET);
+        }
+    }
+
+    // paramDecl = paramType ident
+    private void paramDecl () {
+        paramType();
+        expect(Token.Kind.IDENT);
+    }
+
+    // formalParam = "(" [ paramDecl { "," paramDecl } ] ")"
+    private void formalParam () {
+        expect(Token.Kind.OPEN_PAREN);
+        
+        if (have(NonTerminal.PARAM_DECL)) {
+            paramDecl();
+            while (accept(Token.Kind.COMMA)) {
+                paramDecl();
+            }
+        }
+        
+        expect(Token.Kind.CLOSE_PAREN);
+    }
+
+    // funcBody = "{" { varDecl } statSeq "}" ";"
+    private void funcBody () {
+        expect(Token.Kind.OPEN_BRACE);
+        
+        while (have(NonTerminal.VAR_DECL)) {
+            varDecl();
+        }
+        
+        statSeq();
+        expect(Token.Kind.CLOSE_BRACE);
+        expect(Token.Kind.SEMICOLON);
+    }
+
+    // funcDecl = "function" ident formalParam ":" ( "void" | type ) funcBody
+    private void funcDecl () {
+        expect(Token.Kind.FUNC);
+        expect(Token.Kind.IDENT);
+        formalParam();
+        expect(Token.Kind.COLON);
+        
+        if (have(Token.Kind.VOID)) {
+            expect(Token.Kind.VOID);
+        } else if (have(Token.Kind.BOOL) || have(Token.Kind.INT) || have(Token.Kind.FLOAT)) {
+            typeDecl();
+        } else {
+            String errorMessage = reportSyntaxError(NonTerminal.TYPE_DECL);
+            throw new QuitParseException(errorMessage);
+        }
+        
+        funcBody();
+    }
+
+    // computation = "main" {varDecl} {funcDecl} "{" statSeq "}" "."
     private void computation () {
         
         expect(Token.Kind.MAIN);
-
+        
         // deal with varDecl
+        while (have(NonTerminal.VAR_DECL)) {
+            varDecl();
+        }
+
+        while (have(NonTerminal.FUNC_DECL)) {
+            funcDecl();
+        }
 
         expect(Token.Kind.OPEN_BRACE);
         statSeq();
