@@ -1,0 +1,13 @@
+// Andy Chiu
+// Test integer overflow and buffer overflow
+main
+
+int[3] buffer;
+int x, y;
+
+{
+    x = call readInt();
+    y = 2147483647;
+    call printInt(buffer[x + y]);
+    call printInt(buffer[100]);
+}.
