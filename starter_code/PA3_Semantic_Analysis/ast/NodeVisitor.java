@@ -9,7 +9,6 @@ public interface NodeVisitor {
 
     // designator
     public void visit (Designator node);
-    public void visit (AddressOf node);
     public void visit (ArrayIndex node);
     public void visit (Dereference node);
 
@@ -33,7 +32,8 @@ public interface NodeVisitor {
     public void visit (Assignment node);
     // funcCall
     public void visit (ArgumentList node);
-    public void visit (FunctionCall node);
+    public void visit (FunctionCallExpression node);
+    public void visit (FunctionCallStatement node);
     // ifStat
     public void visit (IfStatement node);
     // whileStat

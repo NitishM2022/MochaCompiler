@@ -2,7 +2,7 @@ package ast;
 
 import mocha.Token;
 
-public class Power extends Node implements Expression {
+public class Power extends Expression {
     private Expression left;
     private Token operator;
     private Expression right;

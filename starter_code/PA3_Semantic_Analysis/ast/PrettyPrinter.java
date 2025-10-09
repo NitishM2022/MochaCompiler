@@ -41,14 +41,6 @@ public class PrettyPrinter implements NodeVisitor {
     }
 
     @Override
-    public void visit(AddressOf node) {
-        println(node, "");
-        depth++;
-        node.operand().accept(this);
-        depth--;
-    }
-
-    @Override
     public void visit(ArrayIndex node) {
         println(node, "");
         depth++;
@@ -176,10 +168,18 @@ public class PrettyPrinter implements NodeVisitor {
     }
 
     @Override
-    public void visit(FunctionCall node) {
+    public void visit(FunctionCallExpression node) {
         println(node, "[" + node.name().lexeme() + "]");
         depth++;
         node.arguments().accept(this);
+        depth--;
+    }
+
+    @Override
+    public void visit(FunctionCallStatement node) {
+        println(node, "[" + node.getFunctionCall().name().lexeme() + "]");
+        depth++;
+        node.getFunctionCall().arguments().accept(this);
         depth--;
     }
 

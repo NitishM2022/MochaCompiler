@@ -2,7 +2,7 @@ package ast;
 
 import mocha.Token;
 
-public class Multiplication extends Node implements Expression {
+public class Multiplication extends Expression {
     private Expression left;
     private Token operator;
     private Expression right;

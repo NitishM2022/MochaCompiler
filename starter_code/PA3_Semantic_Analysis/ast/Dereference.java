@@ -1,6 +1,6 @@
 package ast;
 
-public class Dereference extends Node implements Expression {
+public class Dereference extends Expression {
 
     private final Expression operand;
 

@@ -1,61 +1,75 @@
 package types;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class ArrayType extends Type {
 
-    private final Type baseType;
-    private final List<Integer> dimensions; // sizes per dimension, outermost first
+    private final Type elementType; // type of each element; can be ArrayType itself
+    private final int size;         // -1 if unknown
 
-    public ArrayType(Type baseType) {
-        this.baseType = baseType;
-        this.dimensions = new ArrayList<>();
+    public ArrayType(Type elementType, int size) {
+        this.elementType = elementType;
+        this.size = size;
     }
 
-    public ArrayType(Type baseType, List<Integer> dimensions) {
-        this.baseType = baseType;
-        this.dimensions = new ArrayList<>(dimensions);
+    public Type getElementType() {
+        return elementType;
     }
 
-    public Type getBaseType() {
-        return baseType;
-    }
-
-    public List<Integer> getDimensions() {
-        return dimensions;
+    public int getSize() {
+        return size;
     }
 
     @Override
     public String toString() {
-        return "ArrayType(" + baseType + ", dims=" + dimensions + ")";
+        StringBuilder sb = new StringBuilder();
+        
+        // Find the base type (non-array type)
+        Type baseType = this;
+        int depth = 0;
+        while (baseType instanceof ArrayType) {
+            baseType = ((ArrayType) baseType).getElementType();
+            depth++;
+        }
+        
+        // Start with base type
+        sb.append(baseType.toString());
+        
+        // Add dimensions from outermost to innermost
+        Type currentType = this;
+        for (int i = 0; i < depth; i++) {
+            ArrayType at = (ArrayType) currentType;
+            int size = at.getSize();
+            sb.append(size < 0 ? "[]" : "[" + size + "]");
+            currentType = at.getElementType();
+        }
+        
+        return sb.toString();
     }
 
     @Override
     public boolean equivalent(Type that) {
-        if (that instanceof ArrayType) {
-            ArrayType other = (ArrayType) that;
-            // Arrays are equivalent if base types are equivalent and they have the same number of dimensions.
-            // Ignore specific declared sizes for equivalence so that int[] matches int[4].
-            return this.baseType.equivalent(other.baseType)
-                && this.dimensions.size() == other.dimensions.size();
-        }
-        return false;
+        if (!(that instanceof ArrayType)) return false;
+        ArrayType other = (ArrayType) that;
+        // element types must be equivalent; ignore exact size
+        return this.elementType.equivalent(other.elementType);
     }
 
     @Override
     public Type index(Type that) {
         if (!(that instanceof IntType)) {
-            return new ErrorType("Array index must be int, not " + that + ".");
+            return new ErrorType("Cannot index " + this + " with " + that + ".");
         }
-        if (dimensions.isEmpty()) {
-            return new ErrorType("Cannot index non-array type " + baseType + ".");
+        // Indexing reduces one level of array
+        return elementType; // elementType may itself be an ArrayType for multi-dim arrays
+    }
+
+    @Override
+    public Type assign(Type source) {
+        if (source instanceof ArrayType) {
+            ArrayType other = (ArrayType) source;
+            if (this.equivalent(other)) {
+                return this;
+            }
         }
-        if (dimensions.size() == 1) {
-            return baseType;
-        }
-        // Preserve unknown sizes (-1) and remaining dims
-        List<Integer> rest = new ArrayList<>(dimensions.subList(1, dimensions.size()));
-        return new ArrayType(baseType, rest);
+        return new ErrorType("Cannot assign " + source + " to " + this + ".");
     }
 }

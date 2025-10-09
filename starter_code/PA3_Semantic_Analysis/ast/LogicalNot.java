@@ -1,6 +1,6 @@
 package ast;
 
-public class LogicalNot extends Node implements Expression {
+public class LogicalNot extends Expression {
 
     private final Expression operand;
 

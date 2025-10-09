@@ -7,7 +7,7 @@ public class IntType extends Type {
         if (source instanceof IntType) {
             return this;
         }
-        return new ErrorType("Cannot assign " + source + " to int.");
+        return new ErrorType("Cannot assign " + source + " to " + this + ".");
     }
 
     @Override
@@ -15,7 +15,7 @@ public class IntType extends Type {
         if (that instanceof IntType) {
             return new IntType();
         }
-        return new ErrorType("Cannot add " + that + " to int.");
+        return new ErrorType("Cannot add " + this + " to " + that + ".");
     }
 
     @Override
@@ -23,7 +23,7 @@ public class IntType extends Type {
         if (that instanceof IntType) {
             return new IntType();
         }
-        return new ErrorType("Cannot subtract " + that + " from int.");
+        return new ErrorType("Cannot subtract " + that + " from " + this + ".");
     }
 
     @Override
@@ -31,7 +31,7 @@ public class IntType extends Type {
         if (that instanceof IntType) {
             return new IntType();
         }
-        return new ErrorType("Cannot multiply int with " + that + ".");
+        return new ErrorType("Cannot multiply " + this + " with " + that + ".");
     }
 
     @Override
@@ -39,7 +39,7 @@ public class IntType extends Type {
         if (that instanceof IntType) {
             return new IntType();
         }
-        return new ErrorType("Cannot divide int by " + that + ".");
+        return new ErrorType("Cannot divide " + this + " by " + that + ".");
     }
 
     @Override
@@ -47,7 +47,7 @@ public class IntType extends Type {
         if (that instanceof IntType) {
             return new BoolType();
         }
-        return new ErrorType("Cannot compare int with " + that + ".");
+        return new ErrorType("Cannot compare " + this + " with " + that + ".");
     }
 
     @Override
@@ -55,7 +55,7 @@ public class IntType extends Type {
         if (that instanceof IntType) {
             return new IntType();
         }
-        return new ErrorType("Cannot raise int to the power of " + that + ".");
+        return new ErrorType("Cannot raise " + this + " to " + that + ".");
     }
 
     @Override
@@ -63,7 +63,7 @@ public class IntType extends Type {
         if (that instanceof IntType) {
             return new IntType();
         }
-        return new ErrorType("Cannot perform modulo int % " + that + ".");
+        return new ErrorType("Cannot modulo " + this + " by " + that + ".");
     }
 
     @Override

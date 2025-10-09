@@ -2,7 +2,7 @@ package ast;
 
 import mocha.Token;
 
-public class Division extends Node implements Expression {
+public class Division extends Expression {
     private Expression left;
     private Token operator;
     private Expression right;

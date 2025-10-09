@@ -2,7 +2,7 @@ package ast;
 
 import mocha.Token;
 
-public class Assignment extends Node implements Statement {
+public class Assignment extends Statement {
     
     private Expression destination;
     private Token operator;

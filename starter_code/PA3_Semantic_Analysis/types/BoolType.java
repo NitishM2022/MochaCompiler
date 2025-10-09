@@ -7,7 +7,7 @@ public class BoolType extends Type {
         if (source instanceof BoolType) {
             return this;
         }
-        return new ErrorType("Cannot assign " + source + " to bool.");
+        return new ErrorType("Cannot assign " + source + " to " + this + ".");
     }
 
     @Override

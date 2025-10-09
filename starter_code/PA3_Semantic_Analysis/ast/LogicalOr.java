@@ -2,7 +2,7 @@ package ast;
 
 import mocha.Token;
 
-public class LogicalOr extends Node implements Expression {
+public class LogicalOr extends Expression {
     private Expression left;
     private Token operator;
     private Expression right;

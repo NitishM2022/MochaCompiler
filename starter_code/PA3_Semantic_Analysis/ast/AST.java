@@ -124,11 +124,19 @@ public class AST {
         }
         
         @Override
-        public void visit(FunctionCall node) {
+        public void visit(FunctionCallExpression node) {
             result.append(ASTNonTerminal.FunctionCall.toString());
             result.append("\n");
             
             node.arguments().accept(this);
+        }
+        
+        @Override
+        public void visit(FunctionCallStatement node) {
+            result.append(ASTNonTerminal.FunctionCall.toString());
+            result.append("\n");
+            
+            node.getFunctionCall().accept(this);
         }
         
         @Override
@@ -299,14 +307,6 @@ public class AST {
             for (Node decl : node.declarations()) {
                 decl.accept(this);
             }
-        }
-        
-        @Override
-        public void visit(AddressOf node) {
-            result.append(ASTNonTerminal.AddressOf.toString());
-            result.append("\n");
-            
-            node.operand().accept(this);
         }
         
         @Override

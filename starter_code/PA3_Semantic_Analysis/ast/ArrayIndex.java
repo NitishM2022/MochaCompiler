@@ -1,6 +1,8 @@
 package ast;
 
-public class ArrayIndex extends Node implements Expression {
+import types.Type;
+
+public class ArrayIndex extends Expression {
 
     private final Expression base;
     private final Expression index;

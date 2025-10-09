@@ -2,7 +2,7 @@ package ast;
 
 import mocha.Token;
 
-public class Subtraction extends Node implements Expression {
+public class Subtraction extends Expression {
     
     private Expression left;
     private Token operator;

@@ -3,7 +3,7 @@ package ast;
 import java.util.ArrayList;
 import java.util.List;
 
-public class StatementSequence extends Node implements Statement {
+public class StatementSequence extends Statement {
     
     private List<Statement> statements;
     

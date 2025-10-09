@@ -2,7 +2,7 @@ package ast;
 
 import mocha.Token;
 
-public class IntegerLiteral extends Node implements Expression {
+public class IntegerLiteral extends Expression {
     
     private int value;
     private Token token;

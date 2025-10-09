@@ -100,13 +100,13 @@ public class Compiler {
         
         // Use the stored AST - it should have been set by genAST() call
         if (parsedAST == null || parsedAST.getComputation() == null) {
-            System.out.println("Error: AST not available. Call genAST() first.");
-            return;
+            genAST();
         }
         
         Interpreter interpreter = new Interpreter(this.symbolTable, in);
         interpreter.interpret(parsedAST);
         System.out.print(interpreter.getOutput());
+        System.out.flush();
     }
 
     public int[] compile () {
@@ -414,7 +414,7 @@ public class Compiler {
     }
 
     // funcCall = "call" ident "(" [ relExpr { "," relExpr } ] ")"
-    private FunctionCall funcCall () {
+    private FunctionCallExpression funcCall () {
         expect(Token.Kind.CALL);
         Token name = expectRetrieve(Token.Kind.IDENT);
         expect(Token.Kind.OPEN_PAREN);
@@ -434,7 +434,7 @@ public class Compiler {
         expect(Token.Kind.CLOSE_PAREN);        
         tryResolveFunction(name);
 
-        return new FunctionCall(name.lineNumber(), name.charPosition(), name, args);
+        return new FunctionCallExpression(name.lineNumber(), name.charPosition(), name, args);
     }
 
     // ifStat = "if" relation "then" statSeq [ "else" statSeq ] "fi"
@@ -488,7 +488,8 @@ public class Compiler {
         if (have(NonTerminal.ASSIGN)) {
             return assign();
         } else if (have(NonTerminal.FUNC_CALL)) {
-            return funcCall();
+            FunctionCallExpression funcCall = funcCall();
+            return new FunctionCallStatement(funcCall.lineNumber(), funcCall.charPosition(), funcCall);
         } else if (have(NonTerminal.IF_STAT)) {
             return ifStat();
         } else if (have(NonTerminal.WHILE_STAT)) {
@@ -532,7 +533,13 @@ public class Compiler {
         }
         
         if (dims.isEmpty()) return tokenToType(base);
-        return new types.ArrayType(tokenToType(base), dims);
+        
+        // Create recursive ArrayType structure
+        Type currentType = tokenToType(base);
+        for (int i = dims.size() - 1; i >= 0; i--) {
+            currentType = new types.ArrayType(currentType, dims.get(i));
+        }
+        return currentType;
     }
 
     private VariableDeclaration varDecl() {
@@ -565,7 +572,13 @@ public class Compiler {
             dims.add(Integer.valueOf(-1));
         }
         if (dims.isEmpty()) return tokenToType(base);
-        return new types.ArrayType(tokenToType(base), dims);
+        
+        // Create recursive ArrayType structure
+        Type currentType = tokenToType(base);
+        for (int i = dims.size() - 1; i >= 0; i--) {
+            currentType = new types.ArrayType(currentType, dims.get(i));
+        }
+        return currentType;
     }
 
     private Symbol paramDecl() {

@@ -1,6 +1,6 @@
 package ast;
 
-public class RepeatStatement extends Node implements Statement {
+public class RepeatStatement extends Statement {
 
     private final StatementSequence body;
     private final Expression condition; // until condition

@@ -1,6 +1,6 @@
 package ast;
 
-public class WhileStatement extends Node implements Statement {
+public class WhileStatement extends Statement {
 
     private final Expression condition;
     private final StatementSequence body;

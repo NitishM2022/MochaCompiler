@@ -7,7 +7,7 @@ public class FloatType extends Type {
         if (source instanceof FloatType) {
             return this;
         }
-        return new ErrorType("Cannot assign " + source + " to float.");
+        return new ErrorType("Cannot assign " + source + " to " + this + ".");
     }
 
     @Override
@@ -15,7 +15,7 @@ public class FloatType extends Type {
         if (that instanceof FloatType) {
             return new FloatType();
         }
-        return new ErrorType("Cannot add " + that + " to float.");
+        return new ErrorType("Cannot add " + this + " to " + that + ".");
     }
 
     @Override
@@ -23,7 +23,7 @@ public class FloatType extends Type {
         if (that instanceof FloatType) {
             return new FloatType();
         }
-        return new ErrorType("Cannot subtract " + that + " from float.");
+        return new ErrorType("Cannot subtract " + that + " from " + this + ".");
     }
 
     @Override
@@ -31,7 +31,7 @@ public class FloatType extends Type {
         if (that instanceof FloatType) {
             return new FloatType();
         }
-        return new ErrorType("Cannot multiply float with " + that + ".");
+        return new ErrorType("Cannot multiply " + this + " with " + that + ".");
     }
 
     @Override
@@ -39,7 +39,7 @@ public class FloatType extends Type {
         if (that instanceof FloatType) {
             return new FloatType();
         }
-        return new ErrorType("Cannot divide float by " + that + ".");
+        return new ErrorType("Cannot divide " + this + " by " + that + ".");
     }
 
     @Override
@@ -47,7 +47,7 @@ public class FloatType extends Type {
         if (that instanceof FloatType) {
             return new BoolType();
         }
-        return new ErrorType("Cannot compare float with " + that + ".");
+        return new ErrorType("Cannot compare " + this + " with " + that + ".");
     }
 
     @Override
@@ -55,7 +55,15 @@ public class FloatType extends Type {
         if (that instanceof FloatType) {
             return new FloatType();
         }
-        return new ErrorType("Cannot raise float to the power of " + that + ".");
+        return new ErrorType("Cannot raise " + this + " to " + that + ".");
+    }
+
+    @Override
+    public Type mod(Type that) {
+        if (that instanceof FloatType) {
+            return new FloatType();
+        }
+        return new ErrorType("Cannot modulo " + this + " by " + that + ".");
     }
 
     @Override

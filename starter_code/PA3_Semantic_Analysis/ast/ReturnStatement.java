@@ -1,6 +1,6 @@
 package ast;
 
-public class ReturnStatement extends Node implements Statement {
+public class ReturnStatement extends Statement {
 
     private final Expression value; // may be null
 

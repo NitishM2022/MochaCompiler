@@ -12,11 +12,11 @@ public abstract class Type {
     }
 
     public Type power (Type that) {
-        return new ErrorType("Cannot raise " + this + " to the power of " + that + ".");
+        return new ErrorType("Cannot raise " + this + " to " + that + ".");
     }
 
     public Type mod (Type that) {
-        return new ErrorType("Cannot perform modulo " + this + " % " + that + ".");
+        return new ErrorType("Cannot modulo " + this + " by " + that + ".");
     }
 
     public Type add (Type that) {

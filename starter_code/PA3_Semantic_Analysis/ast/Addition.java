@@ -1,8 +1,9 @@
 package ast;
 
 import mocha.Token;
+import types.Type;
 
-public class Addition extends Node implements Expression {
+public class Addition extends Expression {
     
     private Expression left;
     private Token operator;

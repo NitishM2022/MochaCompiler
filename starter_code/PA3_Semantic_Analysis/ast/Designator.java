@@ -1,8 +1,9 @@
 package ast;
 
 import mocha.Token;
+import types.Type;
 
-public class Designator extends Node implements Expression {
+public class Designator extends Expression {
 
     private final Token name;
 

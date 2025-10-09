@@ -1,6 +1,6 @@
 package ast;
 
-public class IfStatement extends Node implements Statement {
+public class IfStatement extends Statement {
 
     private final Expression condition;
     private final StatementSequence thenBlock;
