@@ -1,0 +1,24 @@
+// Siqi Guo
+// Tests 3x3 matrix determinant calculation using arrays
+
+main
+
+int[3][3] matrix;
+int det;
+
+{
+    matrix[0][0] = call readInt();
+    matrix[0][1] = call readInt();
+    matrix[0][2] = call readInt();
+    matrix[1][0] = call readInt();
+    matrix[1][1] = call readInt();
+    matrix[1][2] = call readInt();
+    matrix[2][0] = call readInt();
+    matrix[2][1] = call readInt();
+    matrix[2][2] = call readInt();
+
+    det = matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) - matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) + matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]);
+    
+    call printInt(det);
+    call println();
+}.

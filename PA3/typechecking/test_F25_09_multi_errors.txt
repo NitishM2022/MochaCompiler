@@ -1,0 +1,31 @@
+// Mason Roberson
+// Multiple errors should be picked up on
+
+
+main
+
+int a;
+float f;
+bool b;
+int[3] arr;
+
+function fail(int x) : int {
+    return;             
+};
+
+{
+    a = 5.0;            
+    f = call readInt();
+    b = a + 2;  
+
+    if (a + b) then 
+        call printInt(arr[true]);
+    fi;
+
+    arr[-1] = 7;        
+    call println(1);     
+
+    call printInt(println());
+    call fail();   
+        
+}.

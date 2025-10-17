@@ -1,0 +1,15 @@
+// Author: Gabriel De Conto
+// Tests error for missing symbol
+
+main
+
+int a;
+int b;
+int c;
+
+{
+    a = 1;
+    b = 2;
+    c = 3;
+    d = a + b + c;
+}.
