@@ -1,0 +1,26 @@
+// cp cf 
+// be careful with global vars, I'm not expecting you to handle global vars as constant
+// but you can
+
+main 
+
+int x, y, z;
+
+function foo(int y) : bool {
+	int z;
+	z = 5;
+	if (x < z + y) then
+		return true;
+	else 
+		return false;
+	fi;
+};
+
+{
+	x = 14;
+	y = 5;
+	z = 10;
+	call printBool(call foo(y));
+	x = 9;
+	call printBool(call foo(y));
+}.

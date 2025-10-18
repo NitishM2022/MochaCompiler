@@ -1,0 +1,16 @@
+// cp
+
+main
+
+int x;
+
+{
+
+    x = 2;
+
+    call printInt(x); // 2 
+    while (x < 5) do // should not propagate x = 2 here 
+
+        x++;
+    od;
+}.

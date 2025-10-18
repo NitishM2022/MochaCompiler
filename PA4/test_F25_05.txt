@@ -1,0 +1,24 @@
+// Test for max (cp, cpp, cse, cf)
+main
+
+int a, b, c, d, e, x, y, z;
+
+// max 
+{
+    a = call readInt();
+    b = call readInt();
+    x = 1;
+    y = a + b;
+    z = y * y;
+    c = x * y;
+    e = a + b;
+    d = e * e;
+    e = x - 1;
+    b = e + 4;
+    x = a + b;
+    y = y * x;
+    
+    call printInt(x);
+    call printInt(y);
+
+}.
