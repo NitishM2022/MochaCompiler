@@ -1,0 +1,15 @@
+test_F25_00, cp cf dce 
+test_F25_00, max
+test_F25_01, cf cp loop
+test_F25_02, dce
+test_F25_02, cf
+test_F25_02, max
+test_F25_03, cse
+test_F25_03, ofe
+test_F25_04, cp
+test_F25_05, max
+test_F25_06, cp cf
+test_F25_07, cp cf
+test_F25_08, cpp loop
+test_F25_09, cp cf loop
+test_F25_10, cse
