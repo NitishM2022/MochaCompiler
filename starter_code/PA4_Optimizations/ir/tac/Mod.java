@@ -1,8 +1,8 @@
 package ir.tac;
 
-public class Add extends Assign {
+public class Mod extends Assign {
     
-    public Add(int id, Variable dest, Value left, Value right) {
+    public Mod(int id, Variable dest, Value left, Value right) {
         super(id, dest, left, right);
     }
     
@@ -13,6 +13,8 @@ public class Add extends Assign {
     
     @Override
     public String toString() {
-        return "add " + getDest() + " " + getLeft() + " " + getRight();
+        return "mod " + getDest() + " " + getLeft() + " " + getRight();
     }
 }
+
+
