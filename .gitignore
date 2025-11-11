@@ -34,3 +34,6 @@ replay_pid*
 personal_tests/
 *.out_tmp
 target/
+# reports and test results
+reports/
+PA4_test_results/

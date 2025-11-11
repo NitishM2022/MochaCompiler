@@ -1,0 +1,217 @@
+package mocha;
+
+public class Token {
+
+    public enum Kind {
+        // boolean operators
+        AND("and"),
+        OR("or"),
+        NOT("not"),
+
+        // arithmetic operators
+        POW("^"),
+
+        MUL("*"),
+        DIV("/"),
+        MOD("%"),
+
+        ADD("+"),
+        SUB("-"),
+
+        // relational operators
+        EQUAL_TO("=="),
+        NOT_EQUAL("!="),
+        LESS_THAN("<"),
+        LESS_EQUAL("<="),
+        GREATER_EQUAL(">="),
+        GREATER_THAN(">"),
+
+        // assignment operators
+        ASSIGN("="),
+        ADD_ASSIGN("+="),
+        SUB_ASSIGN("-="),
+        MUL_ASSIGN("*="),
+        DIV_ASSIGN("/="),
+        MOD_ASSIGN("%="),
+        POW_ASSIGN("^="),
+
+        // unary increment/decrement
+        UNI_INC("++"),
+        UNI_DEC("--"),
+
+        // primitive types
+        VOID("void"),
+        BOOL("bool"),
+        INT("int"),
+        FLOAT("float"),
+
+        // boolean literals
+        TRUE("true"),
+        FALSE("false"),
+
+        // region delimiters
+        OPEN_PAREN("("),
+        CLOSE_PAREN(")"),
+        OPEN_BRACE("{"),
+        CLOSE_BRACE("}"),
+        OPEN_BRACKET("["),
+        CLOSE_BRACKET("]"),
+
+        // field/record delimiters
+        COMMA(","),
+        COLON(":"),
+        SEMICOLON(";"),
+        PERIOD("."),
+
+        // control flow statements
+        IF("if"),
+        THEN("then"),
+        ELSE("else"),
+        FI("fi"),
+
+        WHILE("while"),
+        DO("do"),
+        OD("od"),
+
+        REPEAT("repeat"),
+        UNTIL("until"),
+
+        CALL("call"),
+        RETURN("return"),
+
+        // keywords
+        MAIN("main"),
+        FUNC("function"),
+
+        // special cases
+        INT_VAL(),
+        FLOAT_VAL(),
+        IDENT(),
+
+        EOF(),
+
+        ERROR();
+
+        private String defaultLexeme;
+
+        Kind () {
+            defaultLexeme = "";
+        }
+
+        Kind (String lexeme) {
+            defaultLexeme = lexeme;
+        }
+
+        public boolean hasStaticLexeme () {
+            return defaultLexeme != null && !defaultLexeme.isEmpty();
+        }
+
+        // OPTIONAL: convenience function - boolean matches (String lexeme)
+        //           to report whether a Token.Kind has the given lexeme
+        //           may be useful
+        public boolean matches(String lexeme){
+            return hasStaticLexeme() && defaultLexeme.equals(lexeme);
+        }
+    }
+
+    private int lineNum;
+    private int charPos;
+    Kind kind;  // package-private
+    private String lexeme = "";
+
+
+    // TODO: implement remaining factory functions for handling special cases (EOF below)
+
+    public static Token EOF (int linePos, int charPos) {
+        Token tok = new Token(linePos, charPos);
+        tok.kind = Kind.EOF;
+        return tok;
+    }
+
+    private Token (int lineNum, int charPos) {
+        this.lineNum = lineNum;
+        this.charPos = charPos;
+
+        // no lexeme provide, signal error
+        this.kind = Kind.ERROR;
+        this.lexeme = "No Lexeme Given";
+    }
+    
+    public static Token IntVal(String lexeme, int lineNum, int charPos) {
+        Token tok = new Token(lineNum, charPos);
+        tok.lexeme = lexeme;
+        tok.kind = Kind.INT_VAL;
+        return tok;
+    }
+    
+    public static Token FloatVal(String lexeme, int lineNum, int charPos) {
+        Token tok = new Token(lineNum, charPos);
+        tok.lexeme = lexeme;
+        tok.kind = Kind.FLOAT_VAL;
+        return tok;
+    }
+
+    public Token (String lexeme, int lineNum, int charPos) {
+        this.lineNum = lineNum;
+        this.charPos = charPos;
+        this.lexeme = lexeme;
+        for (Kind k : Kind.values()) {
+            if (k.hasStaticLexeme() && k.defaultLexeme.equals(lexeme)) {
+                this.kind = k;
+                return;
+            }
+        }
+        this.kind = Kind.IDENT;
+    }
+        
+    public static Token Operator(String lexeme, int lineNum, int charPos) {
+        Token tok = new Token(lineNum, charPos);
+        tok.lexeme = lexeme;
+        for (Kind k : Kind.values()) {
+            if (k.hasStaticLexeme() && k.defaultLexeme.equals(lexeme)) {
+                tok.kind = k;
+                return tok;
+            }
+        }
+        tok.kind = Kind.ERROR;
+        return tok;
+    }
+        
+    public static Token Error(String lexeme, int lineNum, int charPos) {
+        Token tok = new Token(lineNum, charPos);
+        tok.lexeme = lexeme;
+        tok.kind = Kind.ERROR;
+        return tok;
+    }
+
+    public int lineNumber () {
+        return lineNum;
+    }
+
+    public int charPosition () {
+        return charPos;
+    }
+
+    public String lexeme () {
+        // TODO: implement
+        return lexeme;
+    }
+
+    public Kind kind () {
+        // TODO: implement
+        return kind;
+    }
+
+    // TODO: function to query a token about its kind - boolean is (Token.Kind kind)
+    public boolean is(Kind kind){
+        return this.kind == kind;
+    }
+
+    // OPTIONAL: add any additional helper or convenience methods
+    //           that you find make for a cleaner design
+
+    @Override
+    public String toString () {
+        return "Line: " + lineNum + ", Char: " + charPos + ", Lexeme: " + lexeme;
+    }
+}
