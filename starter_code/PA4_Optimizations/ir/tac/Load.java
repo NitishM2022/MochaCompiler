@@ -51,7 +51,7 @@ public class Load extends TAC {
     
     @Override
     public String toString() {
-        return "load " + dest + " " + addr;
+        return dest + " = load " + addr;
     }
 }
 

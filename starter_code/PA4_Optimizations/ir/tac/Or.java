@@ -13,7 +13,7 @@ public class Or extends Assign {
     
     @Override
     public String toString() {
-        return formatInfix("||");
+        return getDest() + " = " + getLeft() + " || " + getRight();
     }
 }
 

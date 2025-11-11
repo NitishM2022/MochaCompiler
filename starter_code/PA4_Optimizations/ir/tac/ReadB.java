@@ -32,7 +32,7 @@ public class ReadB extends TAC {
     
     @Override
     public String toString() {
-        return "readB";
+        return dest + " = readB";
     }
 }
 

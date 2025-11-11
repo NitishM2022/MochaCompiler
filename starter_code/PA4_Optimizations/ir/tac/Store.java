@@ -52,7 +52,7 @@ public class Store extends TAC {
     
     @Override
     public String toString() {
-        return "store " + addr + " " + src;
+        return "*" + addr + " = " + src;
     }
 }
 
