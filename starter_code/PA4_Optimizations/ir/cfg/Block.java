@@ -1,20 +1,19 @@
 package ir.cfg;
 
 public abstract class Block implements Visitable {
-
     boolean visited;
 
-    protected Block () {
+    protected Block() {
         visited = false;
     }
 
-    public boolean visited () {
+    public boolean visited() {
         return visited;
     }
 
-    public void markVisited () {
+    public void markVisited() {
         visited = true;
     }
 
-    public abstract void resetVisited ();
+    public abstract void resetVisited();
 }
