@@ -603,7 +603,10 @@ public class TypeChecker implements NodeVisitor {
             // Check if variable already exists (global variables)
             try {
                 Symbol existing = symbolTable.lookup(nameTok.lexeme());
-                if (!existing.type().equivalent(varType)) {
+                if (existing.isFunction()) {
+                    reportError(nameTok.lineNumber(), nameTok.charPosition(), 
+                        "Variable " + nameTok.lexeme() + " cannot have the same name as a function");
+                } else if (!existing.type().equivalent(varType)) {
                     reportError(nameTok.lineNumber(), nameTok.charPosition(), 
                         "Variable " + nameTok.lexeme() + " type mismatch");
                 }

@@ -105,7 +105,6 @@ public class Compiler {
         
         Interpreter interpreter = new Interpreter(this.symbolTable, in);
         interpreter.interpret(parsedAST);
-        System.out.print(interpreter.getOutput());
         System.out.flush();
     }
 

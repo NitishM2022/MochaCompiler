@@ -17,14 +17,12 @@ public class Interpreter implements NodeVisitor {
     private SymbolTable symbolTable;
     private Map<String, Object> memory;
     private Scanner inputScanner;
-    private StringBuilder output;
     private Stack<Object> valueStack;
         
     public Interpreter(SymbolTable symbolTable, InputStream input) {
         this.symbolTable = symbolTable;
         this.memory = new HashMap<>();
         this.inputScanner = new Scanner(input);
-        this.output = new StringBuilder();
         this.valueStack = new Stack<>();
     }
     
@@ -53,9 +51,6 @@ public class Interpreter implements NodeVisitor {
         return currentType;
     }
     
-    public String getOutput() {
-        return output.toString();
-    }
     
     public void interpret(AST ast) {
         Computation comp = ast.getComputation();
@@ -392,55 +387,55 @@ public class Interpreter implements NodeVisitor {
         // Handle predefined functions
         switch (funcName) {
             case "readInt":
-                output.append("int? ");
+                System.out.print("int? ");
                 if (inputScanner.hasNextInt()) {
-                    valueStack.push(inputScanner.nextInt());
+                    int value = inputScanner.nextInt();
+                    valueStack.push(value);
                 } else {
                     throw new RuntimeException("No integer input available");
                 }
                 break;
             case "readFloat":
-                output.append("float? ");
+                System.out.print("float? ");
                 if (inputScanner.hasNextFloat()) {
-                    valueStack.push(inputScanner.nextFloat());
+                    float value = inputScanner.nextFloat();
+                    valueStack.push(value);
                 } else {
                     throw new RuntimeException("No float input available");
                 }
                 break;
             case "readBool":
-                output.append("true or false? ");
+                System.out.print("true or false? ");
                 if (inputScanner.hasNextBoolean()) {
-                    valueStack.push(inputScanner.nextBoolean());
+                    boolean value = inputScanner.nextBoolean();
+                    valueStack.push(value);
                 } else {
-                    throw new RuntimeException("No boolean input available");
+                    // Default to false if no boolean input available
+                    valueStack.push(false);
                 }
                 break;
             case "printInt":
                 node.arguments().accept(this);
                 Object intVal = getStoredValue();
-                output.append(intVal.toString()).append(" ");
+                System.out.print(intVal.toString() + " ");
                 break;
             case "printFloat":
                 node.arguments().accept(this);
                 Object floatVal = getStoredValue();
                 if (floatVal instanceof Number) {
                     String s = String.format(Locale.US, "%.2f", ((Number) floatVal).doubleValue());
-                    output.append(s).append(" ");
+                    System.out.print(s + " ");
                 } else {
-                    output.append(floatVal.toString()).append(" ");
+                    System.out.print(floatVal.toString() + " ");
                 }
                 break;
             case "printBool":
                 node.arguments().accept(this);
                 Object boolVal = getStoredValue();
-                output.append(boolVal.toString()).append(" ");
+                System.out.print(boolVal.toString() + " ");
                 break;
             case "println":
-                // Remove trailing space if present, then add newline
-                if (output.length() > 0 && output.charAt(output.length() - 1) == ' ') {
-                    output.setLength(output.length() - 1);
-                }
-                output.append("\n");
+                System.out.println();
                 break;
             default:
                 // User-defined functions - just return (no-op for now)
@@ -653,7 +648,8 @@ public class Interpreter implements NodeVisitor {
             node.value().accept(this);
             // Return value is on the stack for function calls
         }
-        // Early return - would need to implement proper flow control
+        // Early return - throw exception to break out of execution
+        throw new RuntimeException("EARLY_RETURN");
     }
     
     @Override
@@ -662,7 +658,17 @@ public class Interpreter implements NodeVisitor {
         node.variables().accept(this);
         // Ignore functions in interpreter mode
         // Execute main sequence
-        node.mainStatementSequence().accept(this);
+        try {
+            node.mainStatementSequence().accept(this);
+        } catch (RuntimeException e) {
+            if (e.getMessage().equals("EARLY_RETURN")) {
+                // Early return encountered, stop execution
+                return;
+            } else {
+                // Re-throw other exceptions
+                throw e;
+            }
+        }
     }
     
     @Override
