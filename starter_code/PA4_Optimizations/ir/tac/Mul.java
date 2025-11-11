@@ -13,7 +13,7 @@ public class Mul extends Assign {
     
     @Override
     public String toString() {
-        return "mul " + getDest() + " " + getLeft() + " " + getRight();
+        return formatInfix("*");
     }
 }
 

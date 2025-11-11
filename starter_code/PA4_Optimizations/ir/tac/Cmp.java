@@ -70,7 +70,19 @@ public class Cmp extends TAC {
     
     @Override
     public String toString() {
-        return "cmp" + op + " " + dest + " " + left + " " + right;
+        return dest + " = (" + left + " " + mapOpToSymbol(op) + " " + right + ")";
+    }
+
+    private String mapOpToSymbol(String op) {
+        return switch (op) {
+            case "eq" -> "==";
+            case "ne" -> "!=";
+            case "lt" -> "<";
+            case "le" -> "<=";
+            case "gt" -> ">";
+            case "ge" -> ">=";
+            default -> op;
+        };
     }
 }
 

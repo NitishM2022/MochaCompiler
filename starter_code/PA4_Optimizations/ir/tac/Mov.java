@@ -56,7 +56,7 @@ public class Mov extends TAC {
 
     @Override
     public String toString() {
-        return "mov " + dest + " " + src;
+        return dest + " = " + src;
     }
 }
 

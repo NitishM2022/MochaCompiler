@@ -56,4 +56,8 @@ public abstract class Assign extends TAC{
             this.right = operands.get(1);
         }
     }
+
+    protected String formatInfix(String operator) {
+        return getDest() + " = " + getLeft() + " " + operator + " " + getRight();
+    }
 }

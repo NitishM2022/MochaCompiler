@@ -47,7 +47,7 @@ public class Neg extends TAC {
     
     @Override
     public String toString() {
-        return "neg " + operand;
+        return dest + " = -" + operand;
     }
 }
 

@@ -13,7 +13,7 @@ public class And extends Assign {
     
     @Override
     public String toString() {
-        return "and " + getDest() + " " + getLeft() + " " + getRight();
+        return formatInfix("&&");
     }
 }
 

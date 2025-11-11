@@ -13,7 +13,7 @@ public class Sub extends Assign {
     
     @Override
     public String toString() {
-        return "sub " + getDest() + " " + getLeft() + " " + getRight();
+        return formatInfix("-");
     }
 }
 

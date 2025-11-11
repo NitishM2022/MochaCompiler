@@ -13,7 +13,7 @@ public class Pow extends Assign {
     
     @Override
     public String toString() {
-        return "pow " + getDest() + " " + getLeft() + " " + getRight();
+        return formatInfix("^");
     }
 }
 

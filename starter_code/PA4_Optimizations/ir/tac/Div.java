@@ -13,7 +13,7 @@ public class Div extends Assign {
     
     @Override
     public String toString() {
-        return "div " + getDest() + " " + getLeft() + " " + getRight();
+        return formatInfix("/");
     }
 }
 

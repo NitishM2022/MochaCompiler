@@ -13,7 +13,7 @@ public class Not extends Assign {
     
     @Override
     public String toString() {
-        return "not " + getDest() + " " + getLeft();
+        return getDest() + " = !" + getLeft();
     }
 }
 

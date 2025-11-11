@@ -13,6 +13,6 @@ public class Add extends Assign {
     
     @Override
     public String toString() {
-        return "add " + getDest() + " " + getLeft() + " " + getRight();
+        return formatInfix("+");
     }
 }

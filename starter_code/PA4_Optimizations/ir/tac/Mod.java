@@ -13,7 +13,7 @@ public class Mod extends Assign {
     
     @Override
     public String toString() {
-        return "mod " + getDest() + " " + getLeft() + " " + getRight();
+        return formatInfix("%");
     }
 }
 
