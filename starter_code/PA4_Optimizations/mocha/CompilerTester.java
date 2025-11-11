@@ -125,12 +125,23 @@ public class CompilerTester {
                             System.out.println(dotgraph_text);
                             break;
                         case "file":
-                            String filename = sourceFile.substring(0, sourceFile.lastIndexOf('.')) + "_"+ CFG_DOT_FILE_NAME;
-                            try (PrintStream out = new PrintStream(GRAPH_DIR_NAME+File.pathSeparator+filename)) {               
+                            String baseName = sourceFile;
+                            if (baseName.contains(File.separator)) {
+                                baseName = baseName.substring(baseName.lastIndexOf(File.separator) + 1);
+                            }
+                            if (baseName.lastIndexOf('.') > 0) {
+                                baseName = baseName.substring(0, baseName.lastIndexOf('.'));
+                            }
+                        
+                            String filename = baseName + "_" + CFG_DOT_FILE_NAME;
+                            
+                            String fullPath = GRAPH_DIR_NAME + File.separator + filename; 
+                            
+                            try (PrintStream out = new PrintStream(fullPath)) {               
                                 out.print(dotgraph_text);
                             } catch (IOException e) {
                                 e.printStackTrace();
-                                System.err.println("Error accessing the cfg file: " + GRAPH_DIR_NAME + File.pathSeparator + filename);
+                                System.err.println("Error accessing the cfg file: " + fullPath);
                             }
                             break;
                         default:
@@ -147,7 +158,8 @@ public class CompilerTester {
         // The next 3 lines are for Optimization - Comment/Uncomment them as needed
         String[] optArgs = cmd.getOptionValues("opt");
         List<String> optArguments = (optArgs!=null && optArgs.length != 0) ? Arrays.asList(optArgs) : new ArrayList<String>();
-        dotgraph_text = c.optimization(optArguments, options.hasOption("loop"), options.hasOption("max"));
+        // TEMPORARY FIX: Changed 'options' to 'cmd' - options.hasOption() checks if defined (always true), cmd.hasOption() checks if user provided
+        dotgraph_text = c.optimization(optArguments, cmd.hasOption("loop"), cmd.hasOption("max"));
         // Dot graph after optimization
         System.out.println("After optimization");
         System.out.println("-".repeat(100));
