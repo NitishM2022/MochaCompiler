@@ -31,26 +31,26 @@ float h;
     h = 0.0 / g;
     // Are same relations considered?
     if (a < a) then
-        c = 5
+        c = 5;
 	  fi;
     if (a > a) then
-        c = 6
+        c = 6;
 	  fi;
     if (a >= a) then
-        c = 7
+        c = 7;
 	  fi;
     if (a <= a) then
-        c = 8
+        c = 8;
 	  fi;
     if (a == a) then
-        c = 9
+        c = 9;
 	  fi;
     if (a != a) then
-        c = 10
+        c = 10;
 	  fi;
     // How about boolean logic?
     e = true;
-    f = e AND false;
+    f = e and false;
     e = false;
-    f = e OR true;
+    f = e or true;
 }.
