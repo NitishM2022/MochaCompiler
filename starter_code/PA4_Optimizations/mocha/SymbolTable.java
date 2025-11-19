@@ -11,28 +11,28 @@ public class SymbolTable {
 
     private Stack<Map<String, List<Symbol>>> scopeStack;
 
-    public SymbolTable () {
+    public SymbolTable() {
         scopeStack = new Stack<>();
         enterScope();
         initializePredefinedFunctions();
     }
-    
+
     public void enterScope() {
         scopeStack.push(new HashMap<String, List<Symbol>>());
     }
-    
+
     public void exitScope() {
         if (scopeStack.size() > 1) { // dont pop global scope
             scopeStack.pop();
         }
     }
-    
+
     private Map<String, List<Symbol>> getCurrentScope() {
         return scopeStack.peek();
     }
 
     // lookup name in SymbolTable (returns first match for variables)
-    public Symbol lookup (String name) throws SymbolNotFoundError {
+    public Symbol lookup(String name) throws SymbolNotFoundError {
         // Search from top (innermost) to bottom (global)
         for (int i = scopeStack.size() - 1; i >= 0; i--) {
             Map<String, List<Symbol>> scope = scopeStack.get(i);
@@ -44,7 +44,7 @@ public class SymbolTable {
     }
 
     // lookup function by name and parameter types (for function overloading)
-    public Symbol lookupFunction (String name, List<Type> paramTypes) throws SymbolNotFoundError {
+    public Symbol lookupFunction(String name, List<Type> paramTypes) throws SymbolNotFoundError {
         // Search from top (innermost) to bottom (global)
         for (int i = scopeStack.size() - 1; i >= 0; i--) {
             Map<String, List<Symbol>> scope = scopeStack.get(i);
@@ -73,12 +73,12 @@ public class SymbolTable {
     }
 
     // insert name in SymbolTable
-    public Symbol insert (String name) throws RedeclarationError {
+    public Symbol insert(String name) throws RedeclarationError {
         Map<String, List<Symbol>> currentScope = getCurrentScope();
         if (!currentScope.containsKey(name)) {
             currentScope.put(name, new ArrayList<Symbol>());
         }
-        
+
         List<Symbol> symbols = currentScope.get(name);
         // Check for variable redeclaration (only one variable per name per scope)
         for (Symbol symbol : symbols) {
@@ -86,19 +86,22 @@ public class SymbolTable {
                 throw new RedeclarationError(name);
             }
         }
-        
+
         Symbol symbol = new Symbol(name);
+        if (scopeStack.size() == 1) {
+            symbol.setGlobal(true);
+        }
         symbols.add(symbol);
         return symbol;
     }
-    
+
     // insert symbol with type in current scope
-    public Symbol insert (String name, Type type) throws RedeclarationError {
+    public Symbol insert(String name, Type type) throws RedeclarationError {
         Map<String, List<Symbol>> currentScope = getCurrentScope();
         if (!currentScope.containsKey(name)) {
             currentScope.put(name, new ArrayList<Symbol>());
         }
-        
+
         List<Symbol> symbols = currentScope.get(name);
         // Check for variable redeclaration (only one variable per name per scope)
         for (Symbol symbol : symbols) {
@@ -106,21 +109,24 @@ public class SymbolTable {
                 throw new RedeclarationError(name);
             }
         }
-        
+
         Symbol symbol = new Symbol(name, type);
+        if (scopeStack.size() == 1) {
+            symbol.setGlobal(true);
+        }
         symbols.add(symbol);
         return symbol;
     }
-    
+
     // insert function symbol in current scope (supports overloading)
-    public Symbol insertFunction (String name, Type type) throws RedeclarationError {
+    public Symbol insertFunction(String name, Type type) throws RedeclarationError {
         Map<String, List<Symbol>> currentScope = getCurrentScope();
         if (!currentScope.containsKey(name)) {
             currentScope.put(name, new ArrayList<Symbol>());
         }
-        
+
         List<Symbol> symbols = currentScope.get(name);
-        
+
         // Check for function signature conflicts
         if (type instanceof FuncType) {
             FuncType newFuncType = (FuncType) type;
@@ -130,7 +136,8 @@ public class SymbolTable {
                     if (existingFuncType.getParams().getList().size() == newFuncType.getParams().getList().size()) {
                         boolean sameSignature = true;
                         for (int i = 0; i < newFuncType.getParams().getList().size(); i++) {
-                            if (!existingFuncType.getParams().getList().get(i).equivalent(newFuncType.getParams().getList().get(i))) {
+                            if (!existingFuncType.getParams().getList().get(i)
+                                    .equivalent(newFuncType.getParams().getList().get(i))) {
                                 sameSignature = false;
                                 break;
                             }
@@ -142,40 +149,43 @@ public class SymbolTable {
                 }
             }
         }
-        
+
         Symbol symbol = new Symbol(name, type, true);
+        if (scopeStack.size() == 1) {
+            symbol.setGlobal(true);
+        }
         symbols.add(symbol);
         return symbol;
     }
-    
+
     private void initializePredefinedFunctions() {
         TypeList printIntParams = new TypeList();
         printIntParams.append(new IntType());
         FuncType printIntType = new FuncType(printIntParams, new VoidType());
         insertFunction("printInt", printIntType);
-        
+
         TypeList printFloatParams = new TypeList();
         printFloatParams.append(new FloatType());
         FuncType printFloatType = new FuncType(printFloatParams, new VoidType());
         insertFunction("printFloat", printFloatType);
-        
+
         TypeList printBoolParams = new TypeList();
         printBoolParams.append(new BoolType());
         FuncType printBoolType = new FuncType(printBoolParams, new VoidType());
         insertFunction("printBool", printBoolType);
-        
+
         TypeList printlnParams = new TypeList();
         FuncType printlnType = new FuncType(printlnParams, new VoidType());
         insertFunction("println", printlnType);
-        
+
         TypeList readIntParams = new TypeList();
         FuncType readIntType = new FuncType(readIntParams, new IntType());
         insertFunction("readInt", readIntType);
-        
+
         TypeList readFloatParams = new TypeList();
         FuncType readFloatType = new FuncType(readFloatParams, new FloatType());
         insertFunction("readFloat", readFloatType);
-        
+
         TypeList readBoolParams = new TypeList();
         FuncType readBoolType = new FuncType(readBoolParams, new BoolType());
         insertFunction("readBool", readBoolType);
@@ -188,12 +198,12 @@ class SymbolNotFoundError extends Error {
     private static final long serialVersionUID = 1L;
     private final String name;
 
-    public SymbolNotFoundError (String name) {
+    public SymbolNotFoundError(String name) {
         super("Symbol " + name + " not found.");
         this.name = name;
     }
 
-    public String name () {
+    public String name() {
         return name;
     }
 }
@@ -203,12 +213,12 @@ class RedeclarationError extends Error {
     private static final long serialVersionUID = 1L;
     private final String name;
 
-    public RedeclarationError (String name) {
+    public RedeclarationError(String name) {
         super("Symbol " + name + " being redeclared.");
         this.name = name;
     }
 
-    public String name () {
+    public String name() {
         return name;
     }
 }
