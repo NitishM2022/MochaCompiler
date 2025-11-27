@@ -15,6 +15,6 @@ int a, b, c, d;
   a = 3 + 4;
   b = 3 + 5 * 8;
 
-  call printInt( b );
-  call printInt( d );
+  call printInt( b ); // 43
+  call printInt( d ); // 4 + a 
 }.

@@ -6,5 +6,5 @@ bool a;
 
 {
    a = true and (false or (true and not false) or false); 
-   call printBool(a);
+   call printBool(a); // true
 }.

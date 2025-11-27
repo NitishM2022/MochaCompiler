@@ -19,5 +19,5 @@ int a, b, c, max;
             max = c;
         fi;
     fi;
-    call printInt(max);
+    call printInt(max); // 3
 }.

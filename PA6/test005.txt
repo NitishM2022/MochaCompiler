@@ -14,7 +14,7 @@ function foo(int x, int y) : int {
   a = call readInt(); 
   c = 2;
 
-  b = call foo(a, c); // return a + 5 + c - 2
+  b = call foo(a, c); // return a + 5 + c - 2 = a + 5 
   call printInt(b); 
 
   call printInt( a + c ); // Should print a + 2

@@ -19,5 +19,6 @@ function baz() : void {
 	call baz();
 	j = i;
 	call foo();
-    call printInt(i);
+    call printInt(i); // 4
+	// call printInt(j); // 4
 }.

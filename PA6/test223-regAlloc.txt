@@ -16,6 +16,6 @@ int a, b, c, d, e, f, g, h, i;
     h = g + 1;
     i = h + 1;              // R1 = R1 + 1
 
-    call printInt(i);           // print R1
+    call printInt(i);           // print R1: input + 8
     call println();
 }.

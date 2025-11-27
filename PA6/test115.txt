@@ -15,5 +15,5 @@ int q, f, af, t;
 		t = f + 5;
 	fi;
 	af = t + f + q;
-	call printInt(af);
+	call printInt(af); // 4
 }.

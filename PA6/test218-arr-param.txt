@@ -45,4 +45,5 @@ function intSumRecur (int[] vals, int elems) : int
 
     call printInt(call intSumRecur(global_vals, num_elems));
     call println();
+    // with provided input file with numbers from 5: the sum of the first 15 numbers is 180
 }.

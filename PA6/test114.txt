@@ -10,5 +10,5 @@ int a,b,c,d;
     c = 2*c+d;
     a = a+c*b+d; 
     d = 5 + 2 * 10 + 2;
-    call printInt(d);
+    call printInt(d); // 27
 }.

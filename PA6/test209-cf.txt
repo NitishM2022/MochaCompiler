@@ -15,17 +15,18 @@ bool a, b;
     x = y - y;
     x = y / y;
     x = y + 0;
-    z = (x + y) - y;
+    y += 1;
+    z = 2*(x + y) - y;
 
     b = false;
-    a = b or true;
     a = b and false;
+    a = b or true;
+    
+    call printInt(x); // 2
+    call printInt(y); // 3
+    call printInt(z); // 7
 
-    call printInt(x);
-    call printInt(y);
-    call printInt(z);
-
-    call printBool(a);
-    call printBool(b);
+    call printBool(a); // true
+    call printBool(b); // false
 
 }.

@@ -6,13 +6,13 @@ int x, y;
     x = 10;
 	y = 1;
 	if (x < y) then
-		if (x < y) then
-			x = x * y;
+		if (x < y % 2 ) then
+			x = x * y + x;
 		else
 			y = 26;
 		fi;
 	else
-		call printInt(x);
+		call printInt(x); // 10
 	fi;
 
 }.

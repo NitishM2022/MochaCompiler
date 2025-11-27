@@ -15,5 +15,5 @@ function foo (int x, int y) : void
 
 {
     a = 1;
-    call foo(2, 3);
+    call foo(2, 3); // output 2 3 1 
 }.

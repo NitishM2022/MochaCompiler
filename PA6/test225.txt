@@ -22,5 +22,7 @@ function foo (int n) : int
         x--;
     od;
 
-    call printInt(sum);
+    call printInt(sum); 
+    // input = 3 , output = 9
+    // 4 -> 33;  5 -> 153; 6 -> 873; 7 -> 5913; 8 -> 46233; 9 -> 409113; 10 -> 4037913  
 }.

@@ -12,7 +12,7 @@ int a,b,c,d,e;
   b = a + b; 
   e = c;
   while (a > 5)
-  do 
+  do // not taken
     d = a + b;
     a = a + 1;
 
@@ -22,8 +22,8 @@ int a,b,c,d,e;
   e = c;
   
   
-  call printInt(a); //live
+  call printInt(a); //live 5
   
-  call printInt(b); //live
+  call printInt(b); //live 11
 
 }.

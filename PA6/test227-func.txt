@@ -13,6 +13,6 @@ function dec(float a, int b) : float {
 };
 
 {
-    call printFloat(call dec(5.5, 4));
+    call printFloat(call dec(5.5, 4)); // 0.34375
 
 }.

@@ -14,5 +14,5 @@ function foo (int n) : int
 {
     a = 3;
     b = 5;
-    c = call foo(a * b); //function should still be called even if c is unused.
+    c = call foo(a * b); // 15 - function should still be called even if c is unused.
 }.

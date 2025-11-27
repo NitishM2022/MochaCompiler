@@ -18,12 +18,12 @@ int a, b, c, d, e;
       else
         call printInt(d);
       fi;
-    else
+    else // taken branch, b is 2; e is 8
       if (b > e)
       then 
         call printInt(b);
       else
-        call printInt(e);
+        call printInt(e); // 8
       fi;
     fi;
 }.
