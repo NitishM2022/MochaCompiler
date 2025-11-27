@@ -1,0 +1,28 @@
+// Repeated recursive function call; summation over a loop
+
+main
+
+int x, sum;
+
+function foo (int n) : int
+{
+    if (n == 0) then
+        return 1;
+    else
+        return n * call foo(n - 1);
+    fi;
+};
+
+{
+    x = call readInt();
+    sum = 0;
+
+    while (x > 0) do
+        sum += call foo(x);
+        x--;
+    od;
+
+    call printInt(sum); 
+    // input = 3 , output = 9
+    // 4 -> 33;  5 -> 153; 6 -> 873; 7 -> 5913; 8 -> 46233; 9 -> 409113; 10 -> 4037913  
+}.
