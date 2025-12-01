@@ -67,23 +67,29 @@ public class DominatorAnalysis {
     
     public void computeImmediateDominators() {
         for (BasicBlock block : cfg.getAllBlocks()) {
+            if (block == cfg.getEntryBlock()) continue; // Entry has no IDOM
+
             Set<BasicBlock> blockDominators = dominators.get(block);
             BasicBlock immediateDominator = null;
             
             for (BasicBlock candidate : blockDominators) {
                 if (candidate == block) continue;
                 
-                boolean isImmediate = true;
+                // We are looking for the 'closest' dominator.
+                // A dominator 'd' is the IDOM if it is dominated by ALL other strict dominators.
+                boolean isClosest = true;
                 for (BasicBlock other : blockDominators) {
                     if (other != block && other != candidate) {
-                        if (!dominators.get(other).contains(candidate)) {
-                            isImmediate = false;
+                        // Check if 'other' dominates 'candidate'
+                        // (i.e. 'candidate' is 'below' 'other' in the tree)
+                        if (!dominators.get(candidate).contains(other)) {
+                            isClosest = false;
                             break;
                         }
                     }
                 }
                 
-                if (isImmediate) {
+                if (isClosest) {
                     immediateDominator = candidate;
                     break;
                 }

@@ -136,12 +136,8 @@ public class Compiler {
         this.currentCFGs = cfgs;
 
         for (ir.cfg.CFG cfg : cfgs) {
-            // Should not do this for now
-            // ir.Mem2Reg mem2reg = new ir.Mem2Reg(cfg);
-            // mem2reg.run();
-
-            ir.ssa.SSAConverter converter = new ir.ssa.SSAConverter(cfg);
-            converter.convertToSSA();
+           ir.ssa.SSAConverter converter = new ir.ssa.SSAConverter(cfg);
+           converter.convertToSSA();
         }
 
         return cfgs;
