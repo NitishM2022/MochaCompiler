@@ -4,6 +4,7 @@ import ir.cfg.BasicBlock;
 import ir.cfg.CFG;
 import ir.tac.*;
 import mocha.DLX;
+import mocha.Symbol;
 
 import java.util.*;
 
@@ -23,12 +24,12 @@ public class CodeGenerator {
 
     // Label resolution
     private Map<Integer, Integer> blockPCMap; // BasicBlock ID -> PC
-    private Map<String, Integer> functionPCMap; // Function name -> PC
+    private Map<Symbol, Integer> functionPCMap; // Function Symbol -> PC
     private List<BranchFixup> branchFixups;
     private List<CallFixup> callFixups;
 
     // Track live registers per function for caller-save optimization
-    private Map<String, Set<Integer>> functionLiveRegs;
+    private Map<Symbol, Set<Integer>> functionLiveRegs;
 
     private static class BranchFixup {
         int instrPC;
@@ -46,9 +47,9 @@ public class CodeGenerator {
 
     private static class CallFixup {
         int instrPC;
-        String targetFunction;
+        Symbol targetFunction;
 
-        CallFixup(int instrPC, String targetFunction) {
+        CallFixup(int instrPC, Symbol targetFunction) {
             this.instrPC = instrPC;
             this.targetFunction = targetFunction;
         }
@@ -75,10 +76,20 @@ public class CodeGenerator {
         // Globals use negative offsets from GP, so we don't zero it out
         emit(DLX.ADDI, SP, GP, -4000); // SP = GP - 4000 (stack space below globals)
 
-        // Jump to main
+        // Jump to main - find main CFG's symbol
+        Symbol mainSymbol = null;
+        for (CFG cfg : cfgs) {
+            if (cfg.getFunctionSymbol().name().equals("main")) {
+                mainSymbol = cfg.getFunctionSymbol();
+                break;
+            }
+        }
+        if (mainSymbol == null) {
+            throw new RuntimeException("Main function not found");
+        }
         int mainJumpPC = pc;
         emit(DLX.JSR, 0); // Placeholder, will be fixed up
-        callFixups.add(new CallFixup(mainJumpPC, "main"));
+        callFixups.add(new CallFixup(mainJumpPC, mainSymbol));
 
         // Halt after main returns
         emit(DLX.RET, R0);
@@ -126,12 +137,12 @@ public class CodeGenerator {
             }
         }
 
-        functionLiveRegs.put(cfg.getFunctionName(), liveRegs);
+        functionLiveRegs.put(cfg.getFunctionSymbol(), liveRegs);
     }
 
     private void generateFunction(CFG cfg) {
-        boolean isMain = cfg.getFunctionName().equals("main");
-        functionPCMap.put(cfg.getFunctionName(), pc);
+        boolean isMain = cfg.getFunctionSymbol().name().equals("main");
+        functionPCMap.put(cfg.getFunctionSymbol(), pc);
 
         // Clear block labels for this function
         // blockPCMap.clear();
@@ -689,8 +700,9 @@ public class CodeGenerator {
     }
 
     private void generateCall(Call call) {
-        String funcName = call.getFunction().name();
-        Set<Integer> liveRegs = functionLiveRegs.getOrDefault(funcName, new HashSet<>());
+        // Use Symbol directly for call target to support overloading
+        Symbol funcSymbol = call.getFunction();
+        Set<Integer> liveRegs = functionLiveRegs.getOrDefault(funcSymbol, new HashSet<>());
 
         // 1. Save caller-saved registers
         List<Integer> savedRegs = new ArrayList<>();
@@ -724,7 +736,7 @@ public class CodeGenerator {
         emit(DLX.PSH, R0, SP, -4);
 
         // 4. Call
-        callFixups.add(new CallFixup(pc, funcName));
+        callFixups.add(new CallFixup(pc, funcSymbol));
         emit(DLX.JSR, 0);
 
         // 5. Load return value (BEFORE popping)
@@ -841,6 +853,10 @@ public class CodeGenerator {
         throw new RuntimeException("Not an integer immediate: " + v);
     }
 
+    private boolean isFloatVariable(Variable var) {
+        return var.getSymbol().type() instanceof types.FloatType;
+    }
+
     private boolean isFloatValue(Value v) {
         if (v instanceof Immediate) {
             Object val = ((Immediate) v).getValue();
@@ -892,7 +908,7 @@ public class CodeGenerator {
         // Fix function calls
         for (CallFixup fixup : callFixups) {
             if (!functionPCMap.containsKey(fixup.targetFunction)) {
-                throw new RuntimeException("Call to undefined function: " + fixup.targetFunction);
+                throw new RuntimeException("Call to undefined function: " + fixup.targetFunction.name());
             }
 
             int targetPC = functionPCMap.get(fixup.targetFunction);
@@ -921,8 +937,10 @@ public class CodeGenerator {
     }
 
     // Overload for float immediate (F1 format instructions)
+    // Overload for float immediate (F1 format instructions)
     private void emit(int op, int a, int b, float c) {
         instructions.add(DLX.assemble(op, a, b, c));
         pc++;
     }
+
 }

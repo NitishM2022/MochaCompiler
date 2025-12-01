@@ -17,6 +17,7 @@ import types.BoolType;
 import types.IntType;
 import types.FloatType;
 import types.ArrayType;
+import types.FuncType;
 
 public class IRGenerator implements NodeVisitor {
     private int instructionCounter;
@@ -769,18 +770,27 @@ public class IRGenerator implements NodeVisitor {
             default -> {
                 // User-defined function call
                 List<Value> args = new ArrayList<>();
+                List<Type> argTypes = new ArrayList<>();
+
                 if (node.arguments() != null && node.arguments().args() != null) {
                     for (Expression argExpr : node.arguments().args()) {
                         argExpr.accept(this);
-                        args.add(loadIfNeeded(valueStack.pop()));
+                        Value argVal = loadIfNeeded(valueStack.pop());
+                        args.add(argVal);
+                        argTypes.add(getType(argVal));
                     }
                 }
 
                 storeAllGlobals();
 
+                // Lookup specific function symbol based on name AND argument types
+                Symbol funcSym = symbolTable.lookupFunction(funcName, argTypes);
+
                 Variable returnTemp = getTemp();
-                addInstruction(new Call(nextInstructionId(), returnTemp,
-                        new Symbol(funcName), args));
+                if (funcSym.type() instanceof FuncType) {
+                    returnTemp.getSymbol().setType(((FuncType) funcSym.type()).getReturnType());
+                }
+                addInstruction(new Call(nextInstructionId(), returnTemp, funcSym, args));
 
                 loadAllGlobals();
 
@@ -792,6 +802,29 @@ public class IRGenerator implements NodeVisitor {
                 valueStack.push(returnTemp);
             }
         }
+    }
+
+    private Type getType(Value v) {
+        if (v instanceof Variable) {
+            return ((Variable) v).getSymbol().type();
+        } else if (v instanceof Immediate) {
+            Object val = ((Immediate) v).getValue();
+            if (val instanceof Integer)
+                return new IntType();
+            if (val instanceof Float)
+                return new FloatType();
+            if (val instanceof Boolean)
+                return new BoolType();
+        } else if (v instanceof Literal) {
+            ast.Expression expr = ((Literal) v).getValue();
+            if (expr instanceof ast.IntegerLiteral)
+                return new IntType();
+            if (expr instanceof ast.FloatLiteral)
+                return new FloatType();
+            if (expr instanceof ast.BoolLiteral)
+                return new BoolType();
+        }
+        throw new RuntimeException("Unknown type for value: " + v);
     }
 
     @Override
@@ -977,7 +1010,8 @@ public class IRGenerator implements NodeVisitor {
         node.functions().declarations().forEach(func -> func.accept(this));
 
         blockCounter = 0;
-        currentCFG = new CFG("main");
+        Symbol mainSymbol = new Symbol("main");
+        currentCFG = new CFG(mainSymbol);
         BasicBlock entry = new BasicBlock(++blockCounter);
         currentCFG.setEntryBlock(entry);
         currentCFG.addBlock(entry);
@@ -1178,7 +1212,20 @@ public class IRGenerator implements NodeVisitor {
             }
         }
 
-        currentCFG = new CFG(node.name().lexeme());
+        // Lookup function symbol for CFG (handles overloading)
+        List<Type> paramTypes = new ArrayList<>();
+        for (Symbol param : node.formals()) {
+            paramTypes.add(param.type());
+        }
+
+        Symbol currentFunctionSymbol;
+        try {
+            currentFunctionSymbol = symbolTable.lookupFunction(node.name().lexeme(), paramTypes);
+        } catch (Error e) {
+            throw new RuntimeException("Function symbol not found during IR generation: " + node.name().lexeme());
+        }
+
+        currentCFG = new CFG(currentFunctionSymbol);
         BasicBlock entry = new BasicBlock(++blockCounter);
         currentCFG.setEntryBlock(entry);
         currentCFG.addBlock(entry);
