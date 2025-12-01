@@ -1196,12 +1196,8 @@ public class IRGenerator implements NodeVisitor {
             storeAllGlobals();
             addInstruction(new Return(nextInstructionId(), null));
         }
-
-        // Create unreachable block for any code after return
-        BasicBlock unreachable = new BasicBlock(++blockCounter);
-        currentCFG.addBlock(unreachable);
-        currentBlock = unreachable;
     }
+
 
     @Override
     public void visit(VariableDeclaration node) {
