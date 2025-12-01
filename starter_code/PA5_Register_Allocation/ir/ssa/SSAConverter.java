@@ -49,7 +49,7 @@ public class SSAConverter {
             for (TAC instruction : block.getInstructions()) {
                 // Collect variable names from destination
                 Value dest = instruction.getDest();
-                if (dest instanceof Variable && !((Variable)dest).isTemp()) {
+                if (dest instanceof Variable && !((Variable)dest).isTemp() && !((Variable)dest).getSymbol().isGlobal()) {
                     String varName = ((Variable) dest).getSymbol().name();
                     allNames.add(varName);
                     
@@ -62,7 +62,7 @@ public class SSAConverter {
                 List<Value> operands = instruction.getOperands();
                 if (operands != null) {
                     for (Value op : operands) {
-                        if (op instanceof Variable && !((Variable)op).isTemp()) {
+                        if (op instanceof Variable && !((Variable)op).isTemp() && !((Variable)op).getSymbol().isGlobal()) {
                             allNames.add(((Variable) op).getSymbol().name());
                         }
                     }
@@ -169,7 +169,7 @@ public class SSAConverter {
 
             // Rename definition (destination) - only for instructions that support it
             Value dest = instruction.getDest();
-            if (dest instanceof Variable && !((Variable)dest).isTemp()) {
+            if (dest instanceof Variable && !((Variable)dest).isTemp() && !((Variable)dest).getSymbol().isGlobal()) {
                 Variable destVar = (Variable) dest;
                 String varName = destVar.getSymbol().name();
 
@@ -233,7 +233,7 @@ public class SSAConverter {
         boolean changed = false;
 
         for (Value operand : operands) {
-            if (operand instanceof Variable && !((Variable)operand).isTemp()) {
+            if (operand instanceof Variable && !((Variable)operand).isTemp() && !((Variable)operand).getSymbol().isGlobal()) {
                 Variable var = (Variable) operand;
                 String varName = var.getSymbol().name();
                 

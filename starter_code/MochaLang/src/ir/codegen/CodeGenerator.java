@@ -1,0 +1,928 @@
+package ir.codegen;
+
+import ir.cfg.BasicBlock;
+import ir.cfg.CFG;
+import ir.tac.*;
+import mocha.DLX;
+
+import java.util.*;
+
+public class CodeGenerator {
+    // Special registers
+    private static final int R0 = 0; // Always zero
+    private static final int FP = 28; // Frame pointer
+    private static final int SP = 29; // Stack pointer
+    private static final int GP = 30; // Global pointer
+    private static final int RA = 31; // Return address
+
+    // R26, R27 are reserved for register allocator spilling - DO NOT USE
+    // Return values are passed via stack slot at FP+8 (above RA and saved FP)
+
+    private List<Integer> instructions;
+    private int pc;
+
+    // Label resolution
+    private Map<Integer, Integer> blockPCMap; // BasicBlock ID -> PC
+    private Map<String, Integer> functionPCMap; // Function name -> PC
+    private List<BranchFixup> branchFixups;
+    private List<CallFixup> callFixups;
+
+    // Track live registers per function for caller-save optimization
+    private Map<String, Set<Integer>> functionLiveRegs;
+
+    private static class BranchFixup {
+        int instrPC;
+        int targetBlockID;
+        int branchOp;
+        int condReg;
+
+        BranchFixup(int instrPC, int targetBlockID, int branchOp, int condReg) {
+            this.instrPC = instrPC;
+            this.targetBlockID = targetBlockID;
+            this.branchOp = branchOp;
+            this.condReg = condReg;
+        }
+    }
+
+    private static class CallFixup {
+        int instrPC;
+        String targetFunction;
+
+        CallFixup(int instrPC, String targetFunction) {
+            this.instrPC = instrPC;
+            this.targetFunction = targetFunction;
+        }
+    }
+
+    public CodeGenerator() {
+        this.instructions = new ArrayList<>();
+        this.pc = 0;
+        this.blockPCMap = new HashMap<>();
+        this.functionPCMap = new HashMap<>();
+        this.branchFixups = new ArrayList<>();
+        this.callFixups = new ArrayList<>();
+        this.functionLiveRegs = new HashMap<>();
+    }
+
+    public int[] generate(List<CFG> cfgs) {
+        // First pass: analyze which registers are used by each function
+        for (CFG cfg : cfgs) {
+            analyzeLiveRegisters(cfg);
+        }
+
+        // Entry point: Initialize SP relative to GP (already set by DLX emulator)
+        // GP is initialized by DLX.execute to MEM_SIZE - 1 (top of memory)
+        // Globals use negative offsets from GP, so we don't zero it out
+        emit(DLX.ADDI, SP, GP, -4000); // SP = GP - 4000 (stack space below globals)
+
+        // Jump to main
+        int mainJumpPC = pc;
+        emit(DLX.JSR, 0); // Placeholder, will be fixed up
+        callFixups.add(new CallFixup(mainJumpPC, "main"));
+
+        // Halt after main returns
+        emit(DLX.RET, R0);
+
+        // Generate all functions
+        for (CFG cfg : cfgs) {
+            generateFunction(cfg);
+        }
+
+        // Apply all fixups
+        applyFixups();
+
+        return instructions.stream().mapToInt(i -> i).toArray();
+    }
+
+    private void analyzeLiveRegisters(CFG cfg) {
+        Set<Integer> liveRegs = new HashSet<>();
+
+        for (BasicBlock bb : cfg.getAllBlocks()) {
+            for (TAC tac : bb.getInstructions()) {
+                // Collect all register uses
+                if (tac.getDest() instanceof Variable) {
+                    int reg = getRegisterNumber((Variable) tac.getDest());
+                    if (reg > 0 && reg < 26)
+                        liveRegs.add(reg);
+                }
+
+                for (Value op : tac.getOperands()) {
+                    if (op instanceof Variable) {
+                        int reg = getRegisterNumber((Variable) op);
+                        if (reg > 0 && reg < 26)
+                            liveRegs.add(reg);
+                    }
+                }
+
+                // Check special cases
+                if (tac instanceof StoreGP) {
+                    Value src = ((StoreGP) tac).getSrc();
+                    if (src instanceof Variable) {
+                        int reg = getRegisterNumber((Variable) src);
+                        if (reg > 0 && reg < 26)
+                            liveRegs.add(reg);
+                    }
+                }
+            }
+        }
+
+        functionLiveRegs.put(cfg.getFunctionName(), liveRegs);
+    }
+
+    private void generateFunction(CFG cfg) {
+        boolean isMain = cfg.getFunctionName().equals("main");
+        functionPCMap.put(cfg.getFunctionName(), pc);
+
+        // Clear block labels for this function
+        // blockPCMap.clear();
+
+        // Prologue
+        if (!isMain) {
+            // Save return address and old frame pointer
+            emit(DLX.PSH, RA, SP, -4);
+            emit(DLX.PSH, FP, SP, -4);
+
+            // Set new frame pointer
+            emit(DLX.ADD, FP, R0, SP);
+
+            // Allocate stack frame for locals and temps
+            int frameSize = cfg.getFrameSize();
+            if (frameSize > 0) {
+                emit(DLX.SUBI, SP, SP, frameSize);
+            }
+        }
+
+        // Generate all basic blocks
+        for (BasicBlock bb : cfg.getAllBlocks()) {
+            blockPCMap.put(bb.getNum(), pc);
+
+            for (TAC tac : bb.getInstructions()) {
+                generateInstruction(tac, isMain);
+            }
+        }
+    }
+
+    private void generateInstruction(TAC tac, boolean isMain) {
+        // Arithmetic Operations
+        if (tac instanceof Add) {
+            generateBinaryOp((Add) tac, DLX.ADD, DLX.ADDI);
+        } else if (tac instanceof Sub) {
+            generateBinaryOp((Sub) tac, DLX.SUB, DLX.SUBI);
+        } else if (tac instanceof Mul) {
+            generateBinaryOp((Mul) tac, DLX.MUL, DLX.MULI);
+        } else if (tac instanceof Div) {
+            generateBinaryOp((Div) tac, DLX.DIV, DLX.DIVI);
+        } else if (tac instanceof Mod) {
+            generateBinaryOp((Mod) tac, DLX.MOD, DLX.MODI);
+        } else if (tac instanceof Pow) {
+            generateBinaryOp((Pow) tac, DLX.POW, DLX.POWI);
+        }
+
+        // Logical Operations
+        else if (tac instanceof And) {
+            generateBinaryOp((And) tac, DLX.AND, DLX.ANDI);
+        } else if (tac instanceof Or) {
+            generateBinaryOp((Or) tac, DLX.OR, DLX.ORI);
+        }
+
+        // Logical Not (Simplified)
+        else if (tac instanceof Not) {
+            Not not = (Not) tac;
+            int dest = getReg((Variable) not.getDest());
+
+            // IRGenerator guarantees operand is a register now!
+            int src = getReg((Variable) not.getOperands().get(0));
+
+            // dest = src XOR 1
+            emit(DLX.XORI, dest, src, 1);
+        }
+
+        // Memory Operations
+        else if (tac instanceof Mov) {
+            generateMov((Mov) tac);
+        } else if (tac instanceof Load) {
+            Load load = (Load) tac;
+            int dest = getReg((Variable) load.getDest());
+            Value addrVal = load.getOperands().get(0);
+            int addr = (addrVal instanceof Variable) ? getReg((Variable) addrVal) : R0;
+
+            if (!(addrVal instanceof Variable)) {
+                // Immediate address - load into R1
+                addr = 1;
+                int val = getImmediateValue(addrVal);
+                emit(DLX.ADDI, addr, R0, val);
+            }
+
+            emit(DLX.LDW, dest, addr, 0);
+        } else if (tac instanceof Store) {
+            Store store = (Store) tac;
+            Value srcVal = store.getOperands().get(0);
+            Value addrVal = store.getOperands().get(1);
+
+            int src;
+            int addr;
+
+            // 1. Handle Address (Must be a register)
+            // Since RegisterAllocator never uses R26, 'addr' will be R1-R25.
+            if (addrVal instanceof Variable) {
+                addr = getReg((Variable) addrVal);
+            } else {
+                // If address is immediate (rare in your IR, but possible), use R27
+                addr = 27;
+                emit(DLX.ADDI, addr, R0, getImmediateValue(addrVal));
+            }
+
+            // 2. Handle Source (Value to store)
+            if (srcVal instanceof Variable) {
+                src = getReg((Variable) srcVal);
+            } else {
+                // FIX: Use R26 (Scratch) instead of R1!
+                // R26 is safe because 'addr' cannot be R26.
+                src = 26;
+                if (isFloatValue(srcVal)) {
+                    emit(DLX.fADDI, src, R0, getFloatImmediateValue(srcVal));
+                } else {
+                    emit(DLX.ADDI, src, R0, getImmediateValue(srcVal));
+                }
+            }
+
+            emit(DLX.STW, src, addr, 0);
+        } else if (tac instanceof LoadGP) {
+            LoadGP loadGP = (LoadGP) tac;
+            int dest = getReg(loadGP.getDest());
+            int offset = loadGP.getGpOffset();
+            emit(DLX.LDW, dest, GP, offset);
+        } else if (tac instanceof StoreGP) {
+            StoreGP storeGP = (StoreGP) tac;
+            Value srcVal = storeGP.getSrc();
+            int src;
+
+            if (srcVal instanceof Variable) {
+                src = getReg((Variable) srcVal);
+            } else {
+                // FIX: Use R26 (Scratch) instead of R1
+                src = 26;
+                if (isFloatValue(srcVal)) {
+                    emit(DLX.fADDI, src, R0, getFloatImmediateValue(srcVal));
+                } else {
+                    emit(DLX.ADDI, src, R0, getImmediateValue(srcVal));
+                }
+            }
+
+            int offset = storeGP.getGpOffset();
+            // Store R26 into [GP + offset]
+            emit(DLX.STW, src, GP, offset);
+        } else if (tac instanceof LoadFP) {
+            LoadFP loadFP = (LoadFP) tac;
+            int dest = getReg((Variable) loadFP.getDest());
+            int offset = loadFP.getFpOffset();
+            emit(DLX.LDW, dest, FP, offset);
+        }
+
+        // Address Calculation
+        else if (tac instanceof Adda) {
+            Adda adda = (Adda) tac;
+            int dest = getReg((Variable) adda.getDest());
+            Value base = adda.getOperands().get(0);
+            Value offset = adda.getOperands().get(1);
+
+            if (isImmediate(offset)) {
+                int baseReg;
+                if (base instanceof Variable) {
+                    baseReg = getReg((Variable) base);
+                } else {
+                    baseReg = 26; // Use R26
+                    int val = getImmediateValue(base);
+                    emit(DLX.ADDI, baseReg, R0, val);
+                }
+                emit(DLX.ADDI, dest, baseReg, getImmediateValue(offset));
+            } else {
+                int baseReg, offsetReg;
+
+                if (base instanceof Variable) {
+                    baseReg = getReg((Variable) base);
+                } else {
+                    baseReg = 26; // Use R26
+                    int val = getImmediateValue(base);
+                    emit(DLX.ADDI, baseReg, R0, val);
+                }
+
+                if (offset instanceof Variable) {
+                    offsetReg = getReg((Variable) offset);
+                } else {
+                    offsetReg = 27; // Use R27
+                    int val = getImmediateValue(offset);
+                    emit(DLX.ADDI, offsetReg, R0, val);
+                }
+
+                emit(DLX.ADD, dest, baseReg, offsetReg);
+            }
+        } else if (tac instanceof AddaGP) {
+            AddaGP addaGP = (AddaGP) tac;
+            int dest = getReg(addaGP.getDest());
+            int gpOffset = addaGP.getGpOffset();
+            Value indexOffset = addaGP.getOperands().get(0);
+
+            // dest = GP + gpOffset
+            emit(DLX.ADDI, dest, GP, gpOffset);
+
+            if (!isZero(indexOffset)) {
+                int indexReg;
+                if (indexOffset instanceof Variable) {
+                    indexReg = getReg((Variable) indexOffset);
+                } else {
+                    indexReg = 26; // FIX: Use R26, NOT R1!
+                    int val = getImmediateValue(indexOffset);
+                    emit(DLX.ADDI, indexReg, R0, val);
+                }
+                emit(DLX.ADD, dest, dest, indexReg);
+            }
+        } else if (tac instanceof AddaFP) {
+            AddaFP addaFP = (AddaFP) tac;
+            int dest = getReg(addaFP.getDest());
+            int fpOffset = addaFP.getFpOffset();
+            Value indexOffset = addaFP.getOperands().get(0);
+
+            // dest = FP + fpOffset
+            emit(DLX.ADDI, dest, FP, fpOffset);
+
+            if (!isZero(indexOffset)) {
+                int indexReg;
+                if (indexOffset instanceof Variable) {
+                    indexReg = getReg((Variable) indexOffset);
+                } else {
+                    indexReg = 26; // FIX: Use R26, NOT R1!
+                    int val = getImmediateValue(indexOffset);
+                    emit(DLX.ADDI, indexReg, R0, val);
+                }
+                emit(DLX.ADD, dest, dest, indexReg);
+            }
+        }
+
+        // Comparison
+        else if (tac instanceof Cmp) {
+            generateCmp((Cmp) tac);
+        }
+
+        // Control Flow
+        else if (tac instanceof Bra) {
+            Bra bra = (Bra) tac;
+            int targetID = bra.getTarget().getNum();
+            branchFixups.add(new BranchFixup(pc, targetID, DLX.BEQ, R0));
+            emit(DLX.BEQ, R0, 0); // Unconditional branch (R0 is always 0)
+        } else if (tac instanceof Beq) {
+            Beq beq = (Beq) tac;
+            Value condVal = beq.getOperands().get(0);
+            int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
+
+            if (!(condVal instanceof Variable)) {
+                cond = 1;
+                int val = getImmediateValue(condVal);
+                emit(DLX.ADDI, cond, R0, val);
+            }
+
+            int targetID = beq.getTarget().getNum();
+            branchFixups.add(new BranchFixup(pc, targetID, DLX.BEQ, cond));
+            emit(DLX.BEQ, cond, 0);
+        } else if (tac instanceof Bne) {
+            Bne bne = (Bne) tac;
+            Value condVal = bne.getOperands().get(0);
+            int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
+
+            if (!(condVal instanceof Variable)) {
+                cond = 1;
+                int val = getImmediateValue(condVal);
+                emit(DLX.ADDI, cond, R0, val);
+            }
+
+            int targetID = bne.getTarget().getNum();
+            branchFixups.add(new BranchFixup(pc, targetID, DLX.BNE, cond));
+            emit(DLX.BNE, cond, 0);
+        } else if (tac instanceof Blt) {
+            Blt blt = (Blt) tac;
+            Value condVal = blt.getOperands().get(0);
+            int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
+
+            if (!(condVal instanceof Variable)) {
+                cond = 1;
+                int val = getImmediateValue(condVal);
+                emit(DLX.ADDI, cond, R0, val);
+            }
+
+            int targetID = blt.getTarget().getNum();
+            branchFixups.add(new BranchFixup(pc, targetID, DLX.BLT, cond));
+            emit(DLX.BLT, cond, 0);
+        } else if (tac instanceof Ble) {
+            Ble ble = (Ble) tac;
+            Value condVal = ble.getOperands().get(0);
+            int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
+
+            if (!(condVal instanceof Variable)) {
+                cond = 1;
+                int val = getImmediateValue(condVal);
+                emit(DLX.ADDI, cond, R0, val);
+            }
+
+            int targetID = ble.getTarget().getNum();
+            branchFixups.add(new BranchFixup(pc, targetID, DLX.BLE, cond));
+            emit(DLX.BLE, cond, 0);
+        } else if (tac instanceof Bgt) {
+            Bgt bgt = (Bgt) tac;
+            Value condVal = bgt.getOperands().get(0);
+            int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
+
+            if (!(condVal instanceof Variable)) {
+                cond = 1;
+                int val = getImmediateValue(condVal);
+                emit(DLX.ADDI, cond, R0, val);
+            }
+
+            int targetID = bgt.getTarget().getNum();
+            branchFixups.add(new BranchFixup(pc, targetID, DLX.BGT, cond));
+            emit(DLX.BGT, cond, 0);
+        } else if (tac instanceof Bge) {
+            Bge bge = (Bge) tac;
+            Value condVal = bge.getOperands().get(0);
+            int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
+
+            if (!(condVal instanceof Variable)) {
+                cond = 1;
+                int val = getImmediateValue(condVal);
+                emit(DLX.ADDI, cond, R0, val);
+            }
+
+            int targetID = bge.getTarget().getNum();
+            branchFixups.add(new BranchFixup(pc, targetID, DLX.BGE, cond));
+            emit(DLX.BGE, cond, 0);
+        }
+
+        // Function Calls
+        else if (tac instanceof Call) {
+            generateCall((Call) tac);
+        }
+
+        // Return
+        else if (tac instanceof Return) {
+            generateReturn((Return) tac, isMain);
+        }
+
+        // End (equivalent to return with no value)
+        else if (tac instanceof End) {
+            generateReturn(null, isMain);
+        }
+
+        // I/O Operations
+        else if (tac instanceof Read) {
+            Read read = (Read) tac;
+            int dest = getReg(read.getDest());
+
+            // Use the Read TAC's isFloat flag to determine instruction
+            if (read.isFloat()) {
+                emit(DLX.RDF, dest);
+            } else {
+                emit(DLX.RDI, dest);
+            }
+        } else if (tac instanceof ReadB) {
+            ReadB readB = (ReadB) tac;
+            int dest = getReg(readB.getDest());
+            emit(DLX.RDB, dest);
+        } else if (tac instanceof Write) {
+            Write write = (Write) tac;
+            Value srcVal = write.getOperands().get(0);
+            int src;
+
+            if (srcVal instanceof Variable) {
+                src = getReg((Variable) srcVal);
+            } else {
+                // Use R26 as scratch (safe - RegisterAllocator never assigns it)
+                src = 26;
+                if (write.isFloat()) {
+                    emit(DLX.fADDI, src, R0, getFloatImmediateValue(srcVal));
+                } else {
+                    emit(DLX.ADDI, src, R0, getImmediateValue(srcVal));
+                }
+            }
+
+            // Use the Write TAC's isFloat flag to determine instruction
+            if (write.isFloat()) {
+                emit(DLX.WRF, src);
+            } else {
+                emit(DLX.WRI, src);
+            }
+        } else if (tac instanceof WriteB) {
+            WriteB writeB = (WriteB) tac;
+            Value srcVal = writeB.getOperands().get(0);
+            int src;
+
+            if (srcVal instanceof Variable) {
+                src = getReg((Variable) srcVal);
+            } else {
+                // Use R26 as scratch (safe - RegisterAllocator never assigns it)
+                src = 26;
+                int val = getImmediateValue(srcVal);
+                emit(DLX.ADDI, src, R0, val);
+            }
+
+            emit(DLX.WRB, src);
+        } else if (tac instanceof WriteNL) {
+            emit(DLX.WRL);
+        }
+
+        else {
+            throw new RuntimeException("Unsupported TAC instruction: " + tac.getClass().getSimpleName());
+        }
+    }
+
+    private void generateBinaryOp(TAC tac, int regOp, int immOp) {
+        int dest = getReg((Variable) tac.getDest());
+        // Safe because IRGenerator legalized it
+        int left = getReg((Variable) tac.getOperands().get(0));
+        Value right = tac.getOperands().get(1);
+
+        boolean isFloat = false;
+        if (tac instanceof Add)
+            isFloat = ((Add) tac).isFloat();
+        else if (tac instanceof Sub)
+            isFloat = ((Sub) tac).isFloat();
+        else if (tac instanceof Mul)
+            isFloat = ((Mul) tac).isFloat();
+        else if (tac instanceof Div)
+            isFloat = ((Div) tac).isFloat();
+        else if (tac instanceof Mod)
+            isFloat = ((Mod) tac).isFloat();
+
+        if (isImmediate(right)) {
+            if (isFloat) {
+                // Use float instruction (e.g., fADDI, fMULI)
+                int floatImmOp = getFloatOpcode(immOp);
+                emit(floatImmOp, dest, left, getFloatImmediateValue(right));
+            } else {
+                // Use integer instruction (e.g., ADDI, MULI)
+                emit(immOp, dest, left, getImmediateValue(right));
+            }
+        } else {
+            if (isFloat) {
+                int floatRegOp = getFloatOpcode(regOp);
+                emit(floatRegOp, dest, left, getReg((Variable) right));
+            } else {
+                emit(regOp, dest, left, getReg((Variable) right));
+            }
+        }
+    }
+
+    /**
+     * Map integer immediate opcode to float immediate opcode.
+     * e.g., ADDI -> fADDI, MULI -> fMULI
+     */
+    /**
+     * Map integer opcode to float opcode.
+     * e.g., ADDI -> fADDI, ADD -> fADD
+     */
+    private int getFloatOpcode(int intOp) {
+        switch (intOp) {
+            // Immediate Ops
+            case DLX.ADDI:
+                return DLX.fADDI;
+            case DLX.SUBI:
+                return DLX.fSUBI;
+            case DLX.MULI:
+                return DLX.fMULI;
+            case DLX.DIVI:
+                return DLX.fDIVI;
+            case DLX.MODI:
+                return DLX.fMODI;
+            case DLX.CMPI:
+                return DLX.fCMPI;
+
+            // Register Ops
+            case DLX.ADD:
+                return DLX.fADD;
+            case DLX.SUB:
+                return DLX.fSUB;
+            case DLX.MUL:
+                return DLX.fMUL;
+            case DLX.DIV:
+                return DLX.fDIV;
+            case DLX.MOD:
+                return DLX.fMOD;
+            case DLX.CMP:
+                return DLX.fCMP;
+
+            // Logical ops don't have float versions
+            case DLX.ANDI:
+            case DLX.ORI:
+            case DLX.AND:
+            case DLX.OR:
+            case DLX.POWI: // POW might not have float version
+            case DLX.POW:
+                throw new RuntimeException("No float version of opcode: " + intOp);
+            default:
+                throw new RuntimeException("Unknown opcode for float mapping: " + intOp);
+        }
+    }
+
+    private void generateMov(Mov mov) {
+        int dest = getReg((Variable) mov.getDest());
+        Value src = mov.getOperands().get(0);
+
+        if (isImmediate(src)) {
+            if (isFloatValue(src)) {
+                // MOV R1, 1.0 -> fADDI R1, R0, 1.0
+                emit(DLX.fADDI, dest, R0, getFloatImmediateValue(src));
+            } else {
+                // MOV R1, 10 -> ADDI R1, R0, 10
+                emit(DLX.ADDI, dest, R0, getImmediateValue(src));
+            }
+        } else {
+            // MOV R1, R2 -> ADD R1, R2, R0 (works for both int and float)
+            emit(DLX.ADD, dest, getReg((Variable) src), R0);
+        }
+    }
+
+    private void generateCmp(Cmp cmp) {
+        int dest = getReg(cmp.getDest());
+
+        // IRGenerator guarantees Left is a Register
+        int leftReg = getReg((Variable) cmp.getOperands().get(0));
+        Value right = cmp.getOperands().get(1);
+
+        // Only need to check Right side
+        if (isImmediate(right)) {
+            if (cmp.isFloat()) {
+                emit(DLX.fCMPI, dest, leftReg, getFloatImmediateValue(right));
+            } else {
+                emit(DLX.CMPI, dest, leftReg, getImmediateValue(right));
+            }
+        } else {
+            if (cmp.isFloat()) {
+                emit(DLX.fCMP, dest, leftReg, getReg((Variable) right));
+            } else {
+                emit(DLX.CMP, dest, leftReg, getReg((Variable) right));
+            }
+        }
+
+        // Convert CMP result (-1, 0, 1) to boolean (0 or 1) based on operator
+        switch (cmp.getOp()) {
+            case "eq": // 0 -> 1, non-zero -> 0
+                emit(DLX.ANDI, dest, dest, 1);
+                emit(DLX.XORI, dest, dest, 1);
+                break;
+            case "ne": // non-zero -> 1, 0 -> 0
+                emit(DLX.ANDI, dest, dest, 1);
+                break;
+            case "lt": // -1 -> 1, else -> 0
+                emit(DLX.LSHI, dest, dest, -31);
+                break;
+            case "le": // -1 or 0 -> 1, 1 -> 0
+                emit(DLX.SUBI, dest, dest, 1);
+                emit(DLX.LSHI, dest, dest, -31);
+                break;
+            case "gt": // 1 -> 1, else -> 0
+                emit(DLX.ADDI, dest, dest, 1);
+                emit(DLX.LSHI, dest, dest, -1);
+                break;
+            case "ge": // 0 or 1 -> 1, -1 -> 0
+                emit(DLX.ADDI, dest, dest, 2);
+                emit(DLX.LSHI, dest, dest, -1);
+                break;
+        }
+    }
+
+    private void generateCall(Call call) {
+        String funcName = call.getFunction().name();
+        Set<Integer> liveRegs = functionLiveRegs.getOrDefault(funcName, new HashSet<>());
+
+        // 1. Save caller-saved registers
+        List<Integer> savedRegs = new ArrayList<>();
+        for (int r = 1; r <= 25; r++) {
+            if (liveRegs.contains(r)) {
+                emit(DLX.PSH, r, SP, -4);
+                savedRegs.add(r);
+            }
+        }
+
+        // 2. Push arguments (Reverse Order)
+        List<Value> args = call.getArguments();
+        for (int i = args.size() - 1; i >= 0; i--) {
+            Value arg = args.get(i);
+            int argReg;
+            if (arg instanceof Variable) {
+                argReg = getReg((Variable) arg);
+            } else {
+                // Use R26 as scratch (safe - RegisterAllocator never assigns it)
+                argReg = 26;
+                if (isFloatValue(arg)) {
+                    emit(DLX.fADDI, argReg, R0, getFloatImmediateValue(arg));
+                } else {
+                    emit(DLX.ADDI, argReg, R0, getImmediateValue(arg));
+                }
+            }
+            emit(DLX.PSH, argReg, SP, -4);
+        }
+
+        // 3. Push Return Value Slot
+        emit(DLX.PSH, R0, SP, -4);
+
+        // 4. Call
+        callFixups.add(new CallFixup(pc, funcName));
+        emit(DLX.JSR, 0);
+
+        // 5. Load return value (BEFORE popping)
+        int destReg = -1;
+        if (call.getDest() != null) {
+            destReg = getReg((Variable) call.getDest());
+            emit(DLX.LDW, destReg, SP, 0);
+        }
+
+        // 6. Pop Everything (Return Slot + Arguments)
+        // Correct size: 4 bytes (Ret) + N * 4 bytes (Args)
+        int popSize = 4 + (args.size() * 4);
+        emit(DLX.ADDI, SP, SP, popSize);
+
+        // REMOVED: The extra emit(DLX.ADDI, SP, SP, 4) line is gone!
+
+        // 7. Restore caller-saved registers
+        for (int i = savedRegs.size() - 1; i >= 0; i--) {
+            int reg = savedRegs.get(i);
+
+            // FIX: If this register is holding our Return Value,
+            // do NOT overwrite it with the old saved value.
+            if (reg == destReg) {
+                // Just pop the stack (increment SP) to discard the saved value
+                emit(DLX.ADDI, SP, SP, 4);
+            } else {
+                // Restore normally
+                emit(DLX.POP, reg, SP, 4);
+            }
+        }
+    }
+
+    private void generateReturn(Return ret, boolean isMain) {
+        if (isMain) {
+            // Main just halts
+            emit(DLX.RET, R0);
+            return;
+        }
+
+        // Store return value in stack slot at FP+8 (above saved FP and RA)
+        if (ret != null && !ret.getOperands().isEmpty()) {
+            Value retVal = ret.getOperands().get(0);
+            int srcReg;
+
+            if (retVal instanceof Variable) {
+                srcReg = getReg((Variable) retVal);
+            } else {
+                // Use R26 as scratch (safe - RegisterAllocator never assigns it)
+                srcReg = 26;
+                if (isFloatValue(retVal)) {
+                    emit(DLX.fADDI, srcReg, R0, getFloatImmediateValue(retVal));
+                } else {
+                    emit(DLX.ADDI, srcReg, R0, getImmediateValue(retVal));
+                }
+            }
+
+            // Store at FP+8 (where caller expects it)
+            emit(DLX.STW, srcReg, FP, 8);
+        }
+
+        // Epilogue: restore SP, FP, and return
+        emit(DLX.ADD, SP, FP, R0); // SP = FP
+        emit(DLX.POP, FP, SP, 4); // Restore old FP
+        emit(DLX.POP, RA, SP, 4); // Restore return address
+        emit(DLX.RET, RA); // Return to caller
+    }
+
+    // ========== Helper Methods ==========
+    private int getReg(Variable var) {
+        return getRegisterNumber(var);
+    }
+
+    private int getRegisterNumber(Variable var) {
+        String name = var.getSymbol().name();
+        if (name.startsWith("R")) {
+            try {
+                return Integer.parseInt(name.substring(1));
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Invalid register name: " + name);
+            }
+        }
+        throw new RuntimeException("Variable not mapped to register: " + var);
+    }
+
+    private boolean isImmediate(Value v) {
+        if (v instanceof Immediate)
+            return true;
+        if (v instanceof Literal) {
+            Object val = ((Literal) v).getValue();
+            return val instanceof ast.IntegerLiteral
+                    || val instanceof ast.BoolLiteral
+                    || val instanceof ast.FloatLiteral; // FIX: Handle floats!
+        }
+        return false;
+    }
+
+    private int getImmediateValue(Value v) {
+        if (v instanceof Immediate) {
+            Object val = ((Immediate) v).getValue();
+            if (val instanceof Integer)
+                return (Integer) val;
+            if (val instanceof Boolean)
+                return (Boolean) val ? 1 : 0;
+        }
+        if (v instanceof Literal) {
+            Object val = ((Literal) v).getValue();
+            if (val instanceof ast.IntegerLiteral) {
+                return ((ast.IntegerLiteral) val).getValue();
+            }
+            if (val instanceof ast.BoolLiteral) {
+                return ((ast.BoolLiteral) val).getValue() ? 1 : 0;
+            }
+        }
+        throw new RuntimeException("Not an integer immediate: " + v);
+    }
+
+    private boolean isFloatValue(Value v) {
+        if (v instanceof Immediate) {
+            Object val = ((Immediate) v).getValue();
+            return val instanceof Float;
+        }
+        if (v instanceof Literal) {
+            Object val = ((Literal) v).getValue();
+            return val instanceof ast.FloatLiteral;
+        }
+        return false;
+    }
+
+    private float getFloatImmediateValue(Value v) {
+        if (v instanceof Immediate) {
+            Object val = ((Immediate) v).getValue();
+            if (val instanceof Float)
+                return (Float) val;
+        }
+        if (v instanceof Literal) {
+            Object val = ((Literal) v).getValue();
+            if (val instanceof ast.FloatLiteral) {
+                return ((ast.FloatLiteral) val).getValue();
+            }
+        }
+        throw new RuntimeException("Not a float immediate: " + v);
+    }
+
+    private boolean isZero(Value v) {
+        if (v instanceof Immediate) {
+            Object val = ((Immediate) v).getValue();
+            return val.equals(0);
+        }
+        return false;
+    }
+
+    private void applyFixups() {
+        // Fix branch instructions
+        for (BranchFixup fixup : branchFixups) {
+            if (!blockPCMap.containsKey(fixup.targetBlockID)) {
+                throw new RuntimeException("Branch to unknown block: " + fixup.targetBlockID);
+            }
+
+            int targetPC = blockPCMap.get(fixup.targetBlockID);
+            int offset = targetPC - fixup.instrPC;
+
+            instructions.set(fixup.instrPC, DLX.assemble(fixup.branchOp, fixup.condReg, offset));
+        }
+
+        // Fix function calls
+        for (CallFixup fixup : callFixups) {
+            if (!functionPCMap.containsKey(fixup.targetFunction)) {
+                throw new RuntimeException("Call to undefined function: " + fixup.targetFunction);
+            }
+
+            int targetPC = functionPCMap.get(fixup.targetFunction);
+            instructions.set(fixup.instrPC, DLX.assemble(DLX.JSR, targetPC * 4));
+        }
+    }
+
+    private void emit(int op) {
+        instructions.add(DLX.assemble(op));
+        pc++;
+    }
+
+    private void emit(int op, int a) {
+        instructions.add(DLX.assemble(op, a));
+        pc++;
+    }
+
+    private void emit(int op, int a, int b) {
+        instructions.add(DLX.assemble(op, a, b));
+        pc++;
+    }
+
+    private void emit(int op, int a, int b, int c) {
+        instructions.add(DLX.assemble(op, a, b, c));
+        pc++;
+    }
+
+    // Overload for float immediate (F1 format instructions)
+    private void emit(int op, int a, int b, float c) {
+        instructions.add(DLX.assemble(op, a, b, c));
+        pc++;
+    }
+}

@@ -14,6 +14,7 @@ public interface TACVisitor {
     void visit(Cmp cmp);
     void visit(Load load);
     void visit(Store store);
+    void visit(StoreGP storeGP);
     void visit(Adda adda);
     void visit(Bra bra);
     void visit(Bne bne);
@@ -32,5 +33,7 @@ public interface TACVisitor {
     void visit(Call call);
     void visit(Return returnStmt);
     void visit(Mov mov);
+    void visit(LoadFP loadFP);
+    void visit(LoadGP loadGP);
 }
 

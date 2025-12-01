@@ -24,16 +24,26 @@
 hs_err_pid*
 replay_pid*
 
-.DS_Store
-
 # vscode
 .vscode
 *-workspace
 
-# private, personal tests
+# tests
 personal_tests/
 *.out_tmp
+*_asm.txt
 target/
-# reports and test results
+
+# reports 
 reports/
-PA4_test_results/
+CSCE_434_605_F25_Project_Report/
+
+#nb files
+/starter_code/MochaLang/nbproject
+/starter_code/MochaLang/build
+/starter_code/MochaLang/test
+/starter_code/MochaLang/build.xml
+/starter_code/MochaLang/manifest.mf
+
+#misc
+.DS_Store
