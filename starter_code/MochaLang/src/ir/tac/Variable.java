@@ -73,23 +73,23 @@ public class Variable implements Value {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof Variable)) return false;
+        if (this == obj)
+            return true;
+        if (!(obj instanceof Variable))
+            return false;
 
         Variable other = (Variable) obj;
 
         // Temps compare only by tempIndex
         if (this.isTemp || other.isTemp) {
             return this.isTemp == other.isTemp &&
-                   this.tempIndex == other.tempIndex;
+                    this.tempIndex == other.tempIndex;
         }
 
-        // Non-temp variables: compare name + version
-        String name1 = this.sym != null ? this.sym.name() : null;
-        String name2 = other.sym != null ? other.sym.name() : null;
-
-        return Objects.equals(name1, name2) &&
-               this.version == other.version;
+        // Non-temp variables: compare symbol IDENTITY + version
+        // We must use reference equality for symbols to handle shadowing correctly
+        return this.sym == other.sym &&
+                this.version == other.version;
     }
 
     @Override
@@ -98,8 +98,8 @@ public class Variable implements Value {
             return Objects.hash(true, tempIndex);
         }
 
-        String name = sym != null ? sym.name() : null;
-        return Objects.hash(false, name, version);
+        // Use symbol identity hash
+        return Objects.hash(false, System.identityHashCode(sym), version);
     }
 
 }

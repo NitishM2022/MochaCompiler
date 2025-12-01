@@ -9,9 +9,9 @@ import mocha.Symbol;
 public class SSAConverter {
     private CFG cfg;
     private DominatorAnalysis domAnalysis;
-    private Map<String, Set<BasicBlock>> variableDefs;
-    private Map<String, Stack<Variable>> variableStacks;
-    private Map<String, Integer> variableVersionCounters;
+    private Map<Symbol, Set<BasicBlock>> variableDefs;
+    private Map<Symbol, Stack<Variable>> variableStacks;
+    private Map<Symbol, Integer> variableVersionCounters;
     private int nextInstructionId = 1;
 
     public SSAConverter(CFG cfg) {
@@ -37,33 +37,33 @@ public class SSAConverter {
         domAnalysis.analyze();
         cfg.setDominatorAnalysis(domAnalysis);
 
-        Set<String> allVarNames = findVariableDefinitionsAndCollectNames();
-        insertPhiNodes(allVarNames);
-        renameVariables(allVarNames);
+        Set<Symbol> allVars = findVariableDefinitionsAndCollectSymbols();
+        insertPhiNodes(allVars);
+        renameVariables(allVars);
     }
 
-    private Set<String> findVariableDefinitionsAndCollectNames() {
-        Set<String> allNames = new HashSet<>();
+    private Set<Symbol> findVariableDefinitionsAndCollectSymbols() {
+        Set<Symbol> allVars = new HashSet<>();
 
         for (BasicBlock block : cfg.getAllBlocks()) {
             for (TAC instruction : block.getInstructions()) {
-                // Collect variable names from destination
+                // Collect variable symbols from destination
                 Value dest = instruction.getDest();
                 if (dest instanceof Variable && !((Variable) dest).isTemp()) {
-                    String varName = ((Variable) dest).getSymbol().name();
-                    allNames.add(varName);
+                    Symbol sym = ((Variable) dest).getSymbol();
+                    allVars.add(sym);
 
                     // Track definition site
-                    variableDefs.putIfAbsent(varName, new HashSet<>());
-                    variableDefs.get(varName).add(block);
+                    variableDefs.putIfAbsent(sym, new HashSet<>());
+                    variableDefs.get(sym).add(block);
                 }
 
-                // Collect variable names from operands
+                // Collect variable symbols from operands
                 List<Value> operands = instruction.getOperands();
                 if (operands != null) {
                     for (Value op : operands) {
                         if (op instanceof Variable && !((Variable) op).isTemp()) {
-                            allNames.add(((Variable) op).getSymbol().name());
+                            allVars.add(((Variable) op).getSymbol());
                         }
                     }
                 }
@@ -71,21 +71,21 @@ public class SSAConverter {
         }
 
         // Add virtual definitions for parameters/globals at entry block
-        for (String varName : allNames) {
-            if (!variableDefs.containsKey(varName)) {
-                variableDefs.put(varName, new HashSet<>());
-                variableDefs.get(varName).add(cfg.getEntryBlock());
+        for (Symbol sym : allVars) {
+            if (!variableDefs.containsKey(sym)) {
+                variableDefs.put(sym, new HashSet<>());
+                variableDefs.get(sym).add(cfg.getEntryBlock());
             }
         }
 
-        return allNames;
+        return allVars;
     }
 
-    private void insertPhiNodes(Set<String> allVarNames) {
-        Map<BasicBlock, Set<String>> phiPlacedMap = new HashMap<>();
+    private void insertPhiNodes(Set<Symbol> allVars) {
+        Map<BasicBlock, Set<Symbol>> phiPlacedMap = new HashMap<>();
 
-        for (String varName : allVarNames) {
-            if (!variableDefs.containsKey(varName)) {
+        for (Symbol sym : allVars) {
+            if (!variableDefs.containsKey(sym)) {
                 continue;
             }
 
@@ -93,7 +93,7 @@ public class SSAConverter {
             Set<BasicBlock> inWorklist = new HashSet<>();
 
             // Initialize worklist with all blocks that define this variable
-            for (BasicBlock defBlock : variableDefs.get(varName)) {
+            for (BasicBlock defBlock : variableDefs.get(sym)) {
                 worklist.add(defBlock);
                 inWorklist.add(defBlock);
             }
@@ -110,12 +110,11 @@ public class SSAConverter {
                 for (BasicBlock frontierBlock : dominanceFrontier) {
                     phiPlacedMap.putIfAbsent(frontierBlock, new HashSet<>());
 
-                    if (!phiPlacedMap.get(frontierBlock).contains(varName)) {
-                        phiPlacedMap.get(frontierBlock).add(varName);
+                    if (!phiPlacedMap.get(frontierBlock).contains(sym)) {
+                        phiPlacedMap.get(frontierBlock).add(sym);
 
                         // Create and insert phi node
-                        Symbol varSymbol = new Symbol(varName);
-                        Variable dest = new Variable(varSymbol, -1);
+                        Variable dest = new Variable(sym, -1);
                         Phi phi = new Phi(getNextInstructionId(), dest);
                         frontierBlock.addPhi(phi);
 
@@ -130,13 +129,13 @@ public class SSAConverter {
         }
     }
 
-    private void renameVariables(Set<String> allVarNames) {
+    private void renameVariables(Set<Symbol> allVars) {
         // Initialize stacks and counters for all variables
-        for (String varName : allVarNames) {
-            variableStacks.put(varName, new Stack<>());
-            variableVersionCounters.put(varName, 0);
+        for (Symbol sym : allVars) {
+            variableStacks.put(sym, new Stack<>());
+            variableVersionCounters.put(sym, 0);
             // Push v_0 for all variables (represents parameters/initial values)
-            variableStacks.get(varName).push(new Variable(new Symbol(varName), 0));
+            variableStacks.get(sym).push(new Variable(sym, 0));
         }
 
         // Start recursive renaming from entry block
@@ -149,17 +148,17 @@ public class SSAConverter {
         // 1. Process PHI nodes - assign new versions to phi destinations
         for (Phi phi : block.getPhis()) {
             Variable phiDest = (Variable) phi.getDest();
-            String baseName = phiDest.getSymbol().name();
+            Symbol sym = phiDest.getSymbol();
 
             // Create new version
-            int newVersion = variableVersionCounters.get(baseName) + 1;
-            variableVersionCounters.put(baseName, newVersion);
+            int newVersion = variableVersionCounters.get(sym) + 1;
+            variableVersionCounters.put(sym, newVersion);
 
-            Variable newSsaVar = new Variable(phiDest.getSymbol(), newVersion);
+            Variable newSsaVar = new Variable(sym, newVersion);
             phi.setDest(newSsaVar);
 
             // Push onto stack
-            variableStacks.get(baseName).push(newSsaVar);
+            variableStacks.get(sym).push(newSsaVar);
             defsPushedThisBlock.add(newSsaVar);
         }
 
@@ -172,13 +171,13 @@ public class SSAConverter {
             Value dest = instruction.getDest();
             if (dest instanceof Variable && !((Variable) dest).isTemp()) {
                 Variable destVar = (Variable) dest;
-                String varName = destVar.getSymbol().name();
+                Symbol sym = destVar.getSymbol();
 
                 // Create new version
-                int newVersion = variableVersionCounters.get(varName) + 1;
-                variableVersionCounters.put(varName, newVersion);
+                int newVersion = variableVersionCounters.get(sym) + 1;
+                variableVersionCounters.put(sym, newVersion);
 
-                Variable newSsaVar = new Variable(destVar.getSymbol(), newVersion);
+                Variable newSsaVar = new Variable(sym, newVersion);
 
                 // Set destination based on instruction type
                 if (instruction instanceof Mov) {
@@ -228,7 +227,7 @@ public class SSAConverter {
                 }
 
                 // Push onto stack
-                variableStacks.get(varName).push(newSsaVar);
+                variableStacks.get(sym).push(newSsaVar);
                 defsPushedThisBlock.add(newSsaVar);
             }
         }
@@ -237,10 +236,10 @@ public class SSAConverter {
         for (BasicBlock succ : block.getSuccessors()) {
             for (Phi phi : succ.getPhis()) {
                 Variable phiDest = (Variable) phi.getDest();
-                String baseName = phiDest.getSymbol().name();
+                Symbol sym = phiDest.getSymbol();
 
                 // Get current version from stack
-                Variable currentVersion = variableStacks.get(baseName).peek();
+                Variable currentVersion = variableStacks.get(sym).peek();
                 phi.addArgument(block, currentVersion);
             }
         }
@@ -252,8 +251,8 @@ public class SSAConverter {
 
         // 5. Backtrack: pop all versions pushed in this block
         for (Variable def : defsPushedThisBlock) {
-            String varName = def.getSymbol().name();
-            Stack<Variable> stack = variableStacks.get(varName);
+            Symbol sym = def.getSymbol();
+            Stack<Variable> stack = variableStacks.get(sym);
             if (!stack.isEmpty() && stack.peek().getVersion() == def.getVersion()) {
                 stack.pop();
             }
@@ -271,10 +270,10 @@ public class SSAConverter {
         for (Value operand : operands) {
             if (operand instanceof Variable && !((Variable) operand).isTemp()) {
                 Variable var = (Variable) operand;
-                String varName = var.getSymbol().name();
+                Symbol sym = var.getSymbol();
 
                 // Replace with current version from stack
-                Variable currentVersion = variableStacks.get(varName).peek();
+                Variable currentVersion = variableStacks.get(sym).peek();
                 newOperands.add(currentVersion);
                 changed = true;
             } else {
