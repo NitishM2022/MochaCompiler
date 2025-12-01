@@ -507,74 +507,113 @@ public class IRGenerator implements NodeVisitor {
         node.getLeft().accept(this);
         Value leftVal = loadIfNeeded(valueStack.pop());
 
-        // Create blocks
         BasicBlock evalRightBlock = new BasicBlock(++blockCounter);
         BasicBlock endBlock = new BasicBlock(++blockCounter);
         BasicBlock current = currentBlock;
 
-        // Result temp initialized to 0 (False)
+        // STRATEGY: Initialize Result to FALSE (0)
         Variable result = getTemp();
         addInstruction(new Mov(nextInstructionId(), result, new Immediate(0)));
 
-        // If Left is False (0), skip to End (Result remains 0)
-        // If Left is True (1), fall through to EvalRight
         currentCFG.addBlock(evalRightBlock);
         currentCFG.addBlock(endBlock);
 
-        // Branch if Zero (False) -> End
-        addInstruction(new Beq(nextInstructionId(), leftVal, endBlock));
+        // --- THE FIX FOR "ONLY BEQ" ---
+        // Logic: IF (Left == True) THEN CheckRight ELSE Done.
+        
+        // 1. Branch if True -> Go to evalRightBlock
+        addInstruction(new Beq(nextInstructionId(), leftVal, evalRightBlock));
         freeTemp(leftVal);
 
+        // 2. Fallthrough means Left was False.
+        // We are done (result is already 0). Jump to End.
+        addInstruction(new Bra(nextInstructionId(), endBlock));
+
         // Link CFG
-        current.addSuccessor(evalRightBlock); // Fallthrough
-        current.addSuccessor(endBlock); // Branch
+        current.addSuccessor(evalRightBlock); // Branch taken (Left was true)
+        current.addSuccessor(endBlock);       // Fallthrough (Left was false)
         evalRightBlock.addPredecessor(current);
         endBlock.addPredecessor(current);
 
-        // 2. Evaluate Right
+        // 3. Evaluate Right (Only reachable if Left was True)
         currentBlock = evalRightBlock;
         node.getRight().accept(this);
+        
+        // Use currentBlock (NOT evalRightBlock) because the right child might have added blocks
         Value rightVal = loadIfNeeded(valueStack.pop());
 
-        // Move Right result into Result
+        // If we are here, Left was True, so Result = RightVal
         addInstruction(new Mov(nextInstructionId(), result, rightVal));
         freeTemp(rightVal);
 
         // Jump to End
         addInstruction(new Bra(nextInstructionId(), endBlock));
-        evalRightBlock.addSuccessor(endBlock);
-        endBlock.addPredecessor(evalRightBlock);
+        
+        // Link CFG (Dynamic wiring)
+        currentBlock.addSuccessor(endBlock);
+        endBlock.addPredecessor(currentBlock);
 
-        // 3. Continue
+        // 4. Continue
         currentBlock = endBlock;
         valueStack.push(result);
     }
 
     @Override
     public void visit(LogicalOr node) {
+        // 1. Evaluate Left
         node.getLeft().accept(this);
-        node.getRight().accept(this);
-        Value rightVal = loadIfNeeded(valueStack.pop());
         Value leftVal = loadIfNeeded(valueStack.pop());
-        boolean isFloat = isFloat(leftVal) || isFloat(rightVal); // Logical operations are typically integer/boolean
-        Variable temp = getTemp(); // Or instruction is for integers
 
-        if (isImmediate(leftVal) && !isImmediate(rightVal)) {
-            addInstruction(new Or(nextInstructionId(), temp, rightVal, leftVal));
-        } else if (isImmediate(leftVal)) {
-            Variable immTemp = getTemp();
-            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal));
-            addInstruction(new Or(nextInstructionId(), temp, immTemp, rightVal));
-            freeTemp(immTemp);
-        } else {
-            addInstruction(new Or(nextInstructionId(), temp, leftVal, rightVal));
-        }
+        BasicBlock evalRightBlock = new BasicBlock(++blockCounter);
+        BasicBlock endBlock = new BasicBlock(++blockCounter);
+        BasicBlock current = currentBlock;
 
+        // STRATEGY: Initialize Result to TRUE (1)
+        Variable result = getTemp();
+        addInstruction(new Mov(nextInstructionId(), result, new Immediate(1)));
+
+        currentCFG.addBlock(evalRightBlock);
+        currentCFG.addBlock(endBlock);
+
+        // --- LOGIC FOR OR ---
+        // Logic: IF (Left == True) THEN Done ELSE CheckRight.
+        
+        // 1. Branch if True -> Go to End (Short Circuit)
+        addInstruction(new Beq(nextInstructionId(), leftVal, endBlock));
         freeTemp(leftVal);
-        freeTemp(rightVal);
-        valueStack.push(temp);
-    }
 
+        // 2. Fallthrough means Left was False.
+        // We must evaluate the Right side.
+        
+        // Link CFG
+        current.addSuccessor(endBlock);       // Branch taken (Left was true)
+        current.addSuccessor(evalRightBlock); // Fallthrough (Left was false)
+        endBlock.addPredecessor(current);
+        evalRightBlock.addPredecessor(current);
+
+        // 3. Evaluate Right
+        currentBlock = evalRightBlock;
+        node.getRight().accept(this);
+
+        // Use currentBlock (NOT evalRightBlock)
+        Value rightVal = loadIfNeeded(valueStack.pop());
+
+        // If we are here, Left was False, so Result = RightVal
+        addInstruction(new Mov(nextInstructionId(), result, rightVal));
+        freeTemp(rightVal);
+
+        // Jump to End
+        addInstruction(new Bra(nextInstructionId(), endBlock));
+        
+        // Link CFG
+        currentBlock.addSuccessor(endBlock);
+        endBlock.addPredecessor(currentBlock);
+
+        // 4. Continue
+        currentBlock = endBlock;
+        valueStack.push(result);
+    }
+    
     // ==========================================
     // Non-Commutative Operations (Sub, Div, Mod, Pow, Cmp)
     // Strategy: MUST Materialize Temp if Left is Immediate

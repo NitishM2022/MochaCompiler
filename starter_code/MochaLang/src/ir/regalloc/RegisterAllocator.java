@@ -55,11 +55,11 @@ public class RegisterAllocator {
         // Pass 1 is gone; offsets are handled by IRGenerator now.
         System.out.println("Reg Alloc");
         for (CFG cfg : cfgs) {
-            allocate(cfg);
-
             System.out.println("CFG: " + cfg.getFunctionName());
             System.out.println(cfg.asDotGraph());
             System.out.println();
+            
+            allocate(cfg);
         }
     }
 
