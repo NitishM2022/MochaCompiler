@@ -109,6 +109,7 @@ public abstract class BaseOptimization {
                 instruction instanceof Call ||
                 instruction instanceof Return ||
                 instruction instanceof Store ||
+                instruction instanceof StoreGP ||
                 instruction instanceof Bra ||
                 instruction instanceof Beq ||
                 instruction instanceof Bne ||
@@ -125,7 +126,13 @@ public abstract class BaseOptimization {
                 instruction instanceof Mul ||
                 instruction instanceof Div ||
                 instruction instanceof Cmp ||
-                instruction instanceof Mov;
+                instruction instanceof Mov ||
+                instruction instanceof Load ||
+                instruction instanceof LoadFP ||
+                instruction instanceof LoadGP ||
+                instruction instanceof Adda ||
+                instruction instanceof AddaFP ||
+                instruction instanceof AddaGP;
     }
 
     protected static boolean isBinaryArithmetic(TAC instruction) {
@@ -136,7 +143,8 @@ public abstract class BaseOptimization {
                 instruction instanceof Mod ||
                 instruction instanceof Pow ||
                 instruction instanceof And ||
-                instruction instanceof Or;
+                instruction instanceof Or ||
+                instruction instanceof Adda;
     }
 
     protected static String getExpressionSignature(TAC instruction) {
