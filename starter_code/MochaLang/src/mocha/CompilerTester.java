@@ -145,11 +145,7 @@ public class CompilerTester {
         // The next 3 lines are for Optimization - Comment/Uncomment them as needed
         String[] optArgs = cmd.getOptionValues("opt");
         List<String> optArguments = (optArgs!=null && optArgs.length != 0) ? Arrays.asList(optArgs) : new ArrayList<String>();
-        
-        // Skip optimizations for now - just generate SSA without any optimization passes
-        // c.optimization(optArguments, options.hasOption("loop"), options.hasOption("max"));
-        c.genSSA(ast);  // Just convert to SSA, no optimizations
-        
+        c.optimization(optArguments, options.hasOption("loop"), options.hasOption("max"));
         // we expect after this, there is file recording all transformations your compiler did
         // e.g., if we run -s test000.txt -o cp -o cf -o dce -loop
         // the file will have the name "record_test000_cp_cf_dce_loop.txt"
@@ -190,4 +186,3 @@ public class CompilerTester {
 
     }
 }
-
