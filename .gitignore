@@ -33,6 +33,7 @@ personal_tests/
 *.out_tmp
 *_asm.txt
 target/
+record*
 
 # reports 
 reports/

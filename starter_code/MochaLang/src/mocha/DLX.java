@@ -518,89 +518,89 @@ public class DLX {
     };
 
     // arithmetic with F2 format
-    public static final int ADD = 0;
-    public static final int SUB = 1;
-    public static final int MUL = 2;
-    public static final int DIV = 3;
-    public static final int MOD = 4;
-    public static final int POW = 5;
-    public static final int CMP = 6;
+    static final int ADD = 0;
+    static final int SUB = 1;
+    static final int MUL = 2;
+    static final int DIV = 3;
+    static final int MOD = 4;
+    static final int POW = 5;
+    static final int CMP = 6;
 
-    public static final int fADD = 7;
-    public static final int fSUB = 8;
-    public static final int fMUL = 9;
-    public static final int fDIV = 10;
-    public static final int fMOD = 11;
-    public static final int fCMP = 12;
+    static final int fADD = 7;
+    static final int fSUB = 8;
+    static final int fMUL = 9;
+    static final int fDIV = 10;
+    static final int fMOD = 11;
+    static final int fCMP = 12;
 
-    public static final int OR  = 13;
-    public static final int AND = 14;
-    public static final int BIC = 15;
-    public static final int XOR = 16;
-    public static final int LSH = 17;
-    public static final int ASH = 18;
+    static final int OR  = 13;
+    static final int AND = 14;
+    static final int BIC = 15;
+    static final int XOR = 16;
+    static final int LSH = 17;
+    static final int ASH = 18;
 
-    public static final int CHK = 19;
+    static final int CHK = 19;
 
     // arithmetic with F1 format
-    public static final int ADDI = 20;
-    public static final int SUBI = 21;
-    public static final int MULI = 22;
-    public static final int DIVI = 23;
-    public static final int MODI = 24;
-    public static final int POWI = 25;
-    public static final int CMPI = 26;
+    static final int ADDI = 20;
+    static final int SUBI = 21;
+    static final int MULI = 22;
+    static final int DIVI = 23;
+    static final int MODI = 24;
+    static final int POWI = 25;
+    static final int CMPI = 26;
 
-    public static final int fADDI = 27;
-    public static final int fSUBI = 28;
-    public static final int fMULI = 29;
-    public static final int fDIVI = 30;
-    public static final int fMODI = 31;
-    public static final int fCMPI = 32;
+    static final int fADDI = 27;
+    static final int fSUBI = 28;
+    static final int fMULI = 29;
+    static final int fDIVI = 30;
+    static final int fMODI = 31;
+    static final int fCMPI = 32;
 
-    public static final int ORI  = 33;
-    public static final int ANDI = 34;
-    public static final int BICI = 35;
-    public static final int XORI = 36;
-    public static final int LSHI = 37;
-    public static final int ASHI = 38;
+    static final int ORI  = 33;
+    static final int ANDI = 34;
+    static final int BICI = 35;
+    static final int XORI = 36;
+    static final int LSHI = 37;
+    static final int ASHI = 38;
 
-    public static final int CHKI = 39;
+    static final int CHKI = 39;
 
     // load/store
-    public static final int LDW = 40;
-    public static final int LDX = 41;
-    public static final int POP = 42;
+    static final int LDW = 40;
+    static final int LDX = 41;
+    static final int POP = 42;
 
-    public static final int STW = 43;
-    public static final int STX = 44;
-    public static final int PSH = 45;
+    static final int STW = 43;
+    static final int STX = 44;
+    static final int PSH = 45;
 
-    public static final int ARRCPY = 46;
+    static final int ARRCPY = 46;
 
     // control
-    public static final int BEQ = 47;
-    public static final int BNE = 48;
-    public static final int BLT = 49;
-    public static final int BGE = 50;
-    public static final int BLE = 51;
-    public static final int BGT = 52;
+    static final int BEQ = 47;
+    static final int BNE = 48;
+    static final int BLT = 49;
+    static final int BGE = 50;
+    static final int BLE = 51;
+    static final int BGT = 52;
 
-    public static final int BSR = 53;
-    public static final int JSR = 54;
-    public static final int RET = 55;
+    static final int BSR = 53;
+    static final int JSR = 54;
+    static final int RET = 55;
 
     // input/output
-    public static final int RDI = 56;
-    public static final int RDF = 57;
-    public static final int RDB = 58;
-    public static final int WRI = 59;
-    public static final int WRF = 60;
-    public static final int WRB = 61;
-    public static final int WRL = 62;
+    static final int RDI = 56;
+    static final int RDF = 57;
+    static final int RDB = 58;
+    static final int WRI = 59;
+    static final int WRF = 60;
+    static final int WRB = 61;
+    static final int WRL = 62;
 
     // error
-    public static final int ERR = 63;
+    static final int ERR = 63;
 
     private static void disassemble (int instrWord) {
         op = instrWord >>> 26;

@@ -65,6 +65,92 @@ public class CodeGenerator {
         this.functionLiveRegs = new HashMap<>();
     }
 
+    // DLX Codes
+    // arithmetic with F2 format
+    static final int ADD = 0;
+    static final int SUB = 1;
+    static final int MUL = 2;
+    static final int DIV = 3;
+    static final int MOD = 4;
+    static final int POW = 5;
+    static final int CMP = 6;
+
+    static final int fADD = 7;
+    static final int fSUB = 8;
+    static final int fMUL = 9;
+    static final int fDIV = 10;
+    static final int fMOD = 11;
+    static final int fCMP = 12;
+
+    static final int OR = 13;
+    static final int AND = 14;
+    static final int BIC = 15;
+    static final int XOR = 16;
+    static final int LSH = 17;
+    static final int ASH = 18;
+
+    static final int CHK = 19;
+
+    // arithmetic with F1 format
+    static final int ADDI = 20;
+    static final int SUBI = 21;
+    static final int MULI = 22;
+    static final int DIVI = 23;
+    static final int MODI = 24;
+    static final int POWI = 25;
+    static final int CMPI = 26;
+
+    static final int fADDI = 27;
+    static final int fSUBI = 28;
+    static final int fMULI = 29;
+    static final int fDIVI = 30;
+    static final int fMODI = 31;
+    static final int fCMPI = 32;
+
+    static final int ORI = 33;
+    static final int ANDI = 34;
+    static final int BICI = 35;
+    static final int XORI = 36;
+    static final int LSHI = 37;
+    static final int ASHI = 38;
+
+    static final int CHKI = 39;
+
+    // load/store
+    static final int LDW = 40;
+    static final int LDX = 41;
+    static final int POP = 42;
+
+    static final int STW = 43;
+    static final int STX = 44;
+    static final int PSH = 45;
+
+    static final int ARRCPY = 46;
+
+    // control
+    static final int BEQ = 47;
+    static final int BNE = 48;
+    static final int BLT = 49;
+    static final int BGE = 50;
+    static final int BLE = 51;
+    static final int BGT = 52;
+
+    static final int BSR = 53;
+    static final int JSR = 54;
+    static final int RET = 55;
+
+    // input/output
+    static final int RDI = 56;
+    static final int RDF = 57;
+    static final int RDB = 58;
+    static final int WRI = 59;
+    static final int WRF = 60;
+    static final int WRB = 61;
+    static final int WRL = 62;
+
+    // error
+    static final int ERR = 63;
+
     public int[] generate(List<CFG> cfgs) {
         // First pass: analyze which registers are used by each function
         for (CFG cfg : cfgs) {
@@ -74,7 +160,7 @@ public class CodeGenerator {
         // Entry point: Initialize SP relative to GP (already set by DLX emulator)
         // GP is initialized by DLX.execute to MEM_SIZE - 1 (top of memory)
         // Globals use negative offsets from GP, so we don't zero it out
-        emit(DLX.ADDI, SP, GP, -4000); // SP = GP - 4000 (stack space below globals)
+        emit(ADDI, SP, GP, -4000); // SP = GP - 4000 (stack space below globals)
 
         // Jump to main - find main CFG's symbol
         Symbol mainSymbol = null;
@@ -88,11 +174,11 @@ public class CodeGenerator {
             throw new RuntimeException("Main function not found");
         }
         int mainJumpPC = pc;
-        emit(DLX.JSR, 0); // Placeholder, will be fixed up
+        emit(JSR, 0); // Placeholder, will be fixed up
         callFixups.add(new CallFixup(mainJumpPC, mainSymbol));
 
         // Halt after main returns
-        emit(DLX.RET, R0);
+        emit(RET, R0);
 
         // Generate all functions
         for (CFG cfg : cfgs) {
@@ -150,16 +236,16 @@ public class CodeGenerator {
         // Prologue
         if (!isMain) {
             // Save return address and old frame pointer
-            emit(DLX.PSH, RA, SP, -4);
-            emit(DLX.PSH, FP, SP, -4);
+            emit(PSH, RA, SP, -4);
+            emit(PSH, FP, SP, -4);
 
             // Set new frame pointer
-            emit(DLX.ADD, FP, R0, SP);
+            emit(ADD, FP, R0, SP);
 
             // Allocate stack frame for locals and temps
             int frameSize = cfg.getFrameSize();
             if (frameSize > 0) {
-                emit(DLX.SUBI, SP, SP, frameSize);
+                emit(SUBI, SP, SP, frameSize);
             }
         }
 
@@ -176,24 +262,24 @@ public class CodeGenerator {
     private void generateInstruction(TAC tac, boolean isMain) {
         // Arithmetic Operations
         if (tac instanceof Add) {
-            generateBinaryOp((Add) tac, DLX.ADD, DLX.ADDI);
+            generateBinaryOp((Add) tac, ADD, ADDI);
         } else if (tac instanceof Sub) {
-            generateBinaryOp((Sub) tac, DLX.SUB, DLX.SUBI);
+            generateBinaryOp((Sub) tac, SUB, SUBI);
         } else if (tac instanceof Mul) {
-            generateBinaryOp((Mul) tac, DLX.MUL, DLX.MULI);
+            generateBinaryOp((Mul) tac, MUL, MULI);
         } else if (tac instanceof Div) {
-            generateBinaryOp((Div) tac, DLX.DIV, DLX.DIVI);
+            generateBinaryOp((Div) tac, DIV, DIVI);
         } else if (tac instanceof Mod) {
-            generateBinaryOp((Mod) tac, DLX.MOD, DLX.MODI);
+            generateBinaryOp((Mod) tac, MOD, MODI);
         } else if (tac instanceof Pow) {
-            generateBinaryOp((Pow) tac, DLX.POW, DLX.POWI);
+            generateBinaryOp((Pow) tac, POW, POWI);
         }
 
         // Logical Operations
         else if (tac instanceof And) {
-            generateBinaryOp((And) tac, DLX.AND, DLX.ANDI);
+            generateBinaryOp((And) tac, AND, ANDI);
         } else if (tac instanceof Or) {
-            generateBinaryOp((Or) tac, DLX.OR, DLX.ORI);
+            generateBinaryOp((Or) tac, OR, ORI);
         }
 
         // Logical Not (Simplified)
@@ -205,7 +291,7 @@ public class CodeGenerator {
             int src = getReg((Variable) not.getOperands().get(0));
 
             // dest = src XOR 1
-            emit(DLX.XORI, dest, src, 1);
+            emit(XORI, dest, src, 1);
         }
 
         // Memory Operations
@@ -221,10 +307,10 @@ public class CodeGenerator {
                 // Immediate address - load into R1
                 addr = 1;
                 int val = getImmediateValue(addrVal);
-                emit(DLX.ADDI, addr, R0, val);
+                emit(ADDI, addr, R0, val);
             }
 
-            emit(DLX.LDW, dest, addr, 0);
+            emit(LDW, dest, addr, 0);
         } else if (tac instanceof Store) {
             Store store = (Store) tac;
             Value srcVal = store.getOperands().get(0);
@@ -240,7 +326,7 @@ public class CodeGenerator {
             } else {
                 // If address is immediate (rare in your IR, but possible), use R27
                 addr = 27;
-                emit(DLX.ADDI, addr, R0, getImmediateValue(addrVal));
+                emit(ADDI, addr, R0, getImmediateValue(addrVal));
             }
 
             // 2. Handle Source (Value to store)
@@ -251,18 +337,18 @@ public class CodeGenerator {
                 // R26 is safe because 'addr' cannot be R26.
                 src = 26;
                 if (isFloatValue(srcVal)) {
-                    emit(DLX.fADDI, src, R0, getFloatImmediateValue(srcVal));
+                    emit(fADDI, src, R0, getFloatImmediateValue(srcVal));
                 } else {
-                    emit(DLX.ADDI, src, R0, getImmediateValue(srcVal));
+                    emit(ADDI, src, R0, getImmediateValue(srcVal));
                 }
             }
 
-            emit(DLX.STW, src, addr, 0);
+            emit(STW, src, addr, 0);
         } else if (tac instanceof LoadGP) {
             LoadGP loadGP = (LoadGP) tac;
             int dest = getReg(loadGP.getDest());
             int offset = loadGP.getGpOffset();
-            emit(DLX.LDW, dest, GP, offset);
+            emit(LDW, dest, GP, offset);
         } else if (tac instanceof StoreGP) {
             StoreGP storeGP = (StoreGP) tac;
             Value srcVal = storeGP.getSrc();
@@ -274,20 +360,20 @@ public class CodeGenerator {
                 // FIX: Use R26 (Scratch) instead of R1
                 src = 26;
                 if (isFloatValue(srcVal)) {
-                    emit(DLX.fADDI, src, R0, getFloatImmediateValue(srcVal));
+                    emit(fADDI, src, R0, getFloatImmediateValue(srcVal));
                 } else {
-                    emit(DLX.ADDI, src, R0, getImmediateValue(srcVal));
+                    emit(ADDI, src, R0, getImmediateValue(srcVal));
                 }
             }
 
             int offset = storeGP.getGpOffset();
             // Store R26 into [GP + offset]
-            emit(DLX.STW, src, GP, offset);
+            emit(STW, src, GP, offset);
         } else if (tac instanceof LoadFP) {
             LoadFP loadFP = (LoadFP) tac;
             int dest = getReg((Variable) loadFP.getDest());
             int offset = loadFP.getFpOffset();
-            emit(DLX.LDW, dest, FP, offset);
+            emit(LDW, dest, FP, offset);
         }
 
         // Address Calculation
@@ -304,9 +390,9 @@ public class CodeGenerator {
                 } else {
                     baseReg = 26; // Use R26
                     int val = getImmediateValue(base);
-                    emit(DLX.ADDI, baseReg, R0, val);
+                    emit(ADDI, baseReg, R0, val);
                 }
-                emit(DLX.ADDI, dest, baseReg, getImmediateValue(offset));
+                emit(ADDI, dest, baseReg, getImmediateValue(offset));
             } else {
                 int baseReg, offsetReg;
 
@@ -315,7 +401,7 @@ public class CodeGenerator {
                 } else {
                     baseReg = 26; // Use R26
                     int val = getImmediateValue(base);
-                    emit(DLX.ADDI, baseReg, R0, val);
+                    emit(ADDI, baseReg, R0, val);
                 }
 
                 if (offset instanceof Variable) {
@@ -323,10 +409,10 @@ public class CodeGenerator {
                 } else {
                     offsetReg = 27; // Use R27
                     int val = getImmediateValue(offset);
-                    emit(DLX.ADDI, offsetReg, R0, val);
+                    emit(ADDI, offsetReg, R0, val);
                 }
 
-                emit(DLX.ADD, dest, baseReg, offsetReg);
+                emit(ADD, dest, baseReg, offsetReg);
             }
         } else if (tac instanceof AddaGP) {
             AddaGP addaGP = (AddaGP) tac;
@@ -335,7 +421,7 @@ public class CodeGenerator {
             Value indexOffset = addaGP.getOperands().get(0);
 
             // dest = GP + gpOffset
-            emit(DLX.ADDI, dest, GP, gpOffset);
+            emit(ADDI, dest, GP, gpOffset);
 
             if (!isZero(indexOffset)) {
                 int indexReg;
@@ -344,9 +430,9 @@ public class CodeGenerator {
                 } else {
                     indexReg = 26; // FIX: Use R26, NOT R1!
                     int val = getImmediateValue(indexOffset);
-                    emit(DLX.ADDI, indexReg, R0, val);
+                    emit(ADDI, indexReg, R0, val);
                 }
-                emit(DLX.ADD, dest, dest, indexReg);
+                emit(ADD, dest, dest, indexReg);
             }
         } else if (tac instanceof AddaFP) {
             AddaFP addaFP = (AddaFP) tac;
@@ -355,7 +441,7 @@ public class CodeGenerator {
             Value indexOffset = addaFP.getOperands().get(0);
 
             // dest = FP + fpOffset
-            emit(DLX.ADDI, dest, FP, fpOffset);
+            emit(ADDI, dest, FP, fpOffset);
 
             if (!isZero(indexOffset)) {
                 int indexReg;
@@ -364,9 +450,9 @@ public class CodeGenerator {
                 } else {
                     indexReg = 26; // FIX: Use R26, NOT R1!
                     int val = getImmediateValue(indexOffset);
-                    emit(DLX.ADDI, indexReg, R0, val);
+                    emit(ADDI, indexReg, R0, val);
                 }
-                emit(DLX.ADD, dest, dest, indexReg);
+                emit(ADD, dest, dest, indexReg);
             }
         }
 
@@ -379,8 +465,8 @@ public class CodeGenerator {
         else if (tac instanceof Bra) {
             Bra bra = (Bra) tac;
             int targetID = bra.getTarget().getNum();
-            branchFixups.add(new BranchFixup(pc, targetID, DLX.BEQ, R0));
-            emit(DLX.BEQ, R0, 0); // Unconditional branch (R0 is always 0)
+            branchFixups.add(new BranchFixup(pc, targetID, BEQ, R0));
+            emit(BEQ, R0, 0); // Unconditional branch (R0 is always 0)
         } else if (tac instanceof Beq) {
             Beq beq = (Beq) tac;
             Value condVal = beq.getOperands().get(0);
@@ -389,12 +475,12 @@ public class CodeGenerator {
             if (!(condVal instanceof Variable)) {
                 cond = 1;
                 int val = getImmediateValue(condVal);
-                emit(DLX.ADDI, cond, R0, val);
+                emit(ADDI, cond, R0, val);
             }
 
             int targetID = beq.getTarget().getNum();
-            branchFixups.add(new BranchFixup(pc, targetID, DLX.BEQ, cond));
-            emit(DLX.BEQ, cond, 0);
+            branchFixups.add(new BranchFixup(pc, targetID, BEQ, cond));
+            emit(BEQ, cond, 0);
         } else if (tac instanceof Bne) {
             Bne bne = (Bne) tac;
             Value condVal = bne.getOperands().get(0);
@@ -403,12 +489,12 @@ public class CodeGenerator {
             if (!(condVal instanceof Variable)) {
                 cond = 1;
                 int val = getImmediateValue(condVal);
-                emit(DLX.ADDI, cond, R0, val);
+                emit(ADDI, cond, R0, val);
             }
 
             int targetID = bne.getTarget().getNum();
-            branchFixups.add(new BranchFixup(pc, targetID, DLX.BNE, cond));
-            emit(DLX.BNE, cond, 0);
+            branchFixups.add(new BranchFixup(pc, targetID, BNE, cond));
+            emit(BNE, cond, 0);
         } else if (tac instanceof Blt) {
             Blt blt = (Blt) tac;
             Value condVal = blt.getOperands().get(0);
@@ -417,12 +503,12 @@ public class CodeGenerator {
             if (!(condVal instanceof Variable)) {
                 cond = 1;
                 int val = getImmediateValue(condVal);
-                emit(DLX.ADDI, cond, R0, val);
+                emit(ADDI, cond, R0, val);
             }
 
             int targetID = blt.getTarget().getNum();
-            branchFixups.add(new BranchFixup(pc, targetID, DLX.BLT, cond));
-            emit(DLX.BLT, cond, 0);
+            branchFixups.add(new BranchFixup(pc, targetID, BLT, cond));
+            emit(BLT, cond, 0);
         } else if (tac instanceof Ble) {
             Ble ble = (Ble) tac;
             Value condVal = ble.getOperands().get(0);
@@ -431,12 +517,12 @@ public class CodeGenerator {
             if (!(condVal instanceof Variable)) {
                 cond = 1;
                 int val = getImmediateValue(condVal);
-                emit(DLX.ADDI, cond, R0, val);
+                emit(ADDI, cond, R0, val);
             }
 
             int targetID = ble.getTarget().getNum();
-            branchFixups.add(new BranchFixup(pc, targetID, DLX.BLE, cond));
-            emit(DLX.BLE, cond, 0);
+            branchFixups.add(new BranchFixup(pc, targetID, BLE, cond));
+            emit(BLE, cond, 0);
         } else if (tac instanceof Bgt) {
             Bgt bgt = (Bgt) tac;
             Value condVal = bgt.getOperands().get(0);
@@ -445,12 +531,12 @@ public class CodeGenerator {
             if (!(condVal instanceof Variable)) {
                 cond = 1;
                 int val = getImmediateValue(condVal);
-                emit(DLX.ADDI, cond, R0, val);
+                emit(ADDI, cond, R0, val);
             }
 
             int targetID = bgt.getTarget().getNum();
-            branchFixups.add(new BranchFixup(pc, targetID, DLX.BGT, cond));
-            emit(DLX.BGT, cond, 0);
+            branchFixups.add(new BranchFixup(pc, targetID, BGT, cond));
+            emit(BGT, cond, 0);
         } else if (tac instanceof Bge) {
             Bge bge = (Bge) tac;
             Value condVal = bge.getOperands().get(0);
@@ -459,12 +545,12 @@ public class CodeGenerator {
             if (!(condVal instanceof Variable)) {
                 cond = 1;
                 int val = getImmediateValue(condVal);
-                emit(DLX.ADDI, cond, R0, val);
+                emit(ADDI, cond, R0, val);
             }
 
             int targetID = bge.getTarget().getNum();
-            branchFixups.add(new BranchFixup(pc, targetID, DLX.BGE, cond));
-            emit(DLX.BGE, cond, 0);
+            branchFixups.add(new BranchFixup(pc, targetID, BGE, cond));
+            emit(BGE, cond, 0);
         }
 
         // Function Calls
@@ -489,14 +575,14 @@ public class CodeGenerator {
 
             // Use the Read TAC's isFloat flag to determine instruction
             if (read.isFloat()) {
-                emit(DLX.RDF, dest);
+                emit(RDF, dest);
             } else {
-                emit(DLX.RDI, dest);
+                emit(RDI, dest);
             }
         } else if (tac instanceof ReadB) {
             ReadB readB = (ReadB) tac;
             int dest = getReg(readB.getDest());
-            emit(DLX.RDB, dest);
+            emit(RDB, dest);
         } else if (tac instanceof Write) {
             Write write = (Write) tac;
             Value srcVal = write.getOperands().get(0);
@@ -508,17 +594,17 @@ public class CodeGenerator {
                 // Use R26 as scratch (safe - RegisterAllocator never assigns it)
                 src = 26;
                 if (write.isFloat()) {
-                    emit(DLX.fADDI, src, R0, getFloatImmediateValue(srcVal));
+                    emit(fADDI, src, R0, getFloatImmediateValue(srcVal));
                 } else {
-                    emit(DLX.ADDI, src, R0, getImmediateValue(srcVal));
+                    emit(ADDI, src, R0, getImmediateValue(srcVal));
                 }
             }
 
             // Use the Write TAC's isFloat flag to determine instruction
             if (write.isFloat()) {
-                emit(DLX.WRF, src);
+                emit(WRF, src);
             } else {
-                emit(DLX.WRI, src);
+                emit(WRI, src);
             }
         } else if (tac instanceof WriteB) {
             WriteB writeB = (WriteB) tac;
@@ -531,12 +617,12 @@ public class CodeGenerator {
                 // Use R26 as scratch (safe - RegisterAllocator never assigns it)
                 src = 26;
                 int val = getImmediateValue(srcVal);
-                emit(DLX.ADDI, src, R0, val);
+                emit(ADDI, src, R0, val);
             }
 
-            emit(DLX.WRB, src);
+            emit(WRB, src);
         } else if (tac instanceof WriteNL) {
-            emit(DLX.WRL);
+            emit(WRL);
         }
 
         else {
@@ -546,9 +632,23 @@ public class CodeGenerator {
 
     private void generateBinaryOp(TAC tac, int regOp, int immOp) {
         int dest = getReg((Variable) tac.getDest());
-        // Safe because IRGenerator legalized it
-        int left = getReg((Variable) tac.getOperands().get(0));
+        
+        Value left = tac.getOperands().get(0);
         Value right = tac.getOperands().get(1);
+
+        // Handle left operand (could be Variable, Literal, or Immediate)
+        int leftReg;
+        if (left instanceof Variable) {
+            leftReg = getReg((Variable) left);
+        } else {
+            // Left is Literal or Immediate - load into R26 (scratch)
+            leftReg = 26;
+            if (isFloatValue(left)) {
+                emit(fADDI, leftReg, R0, getFloatImmediateValue(left));
+            } else {
+                emit(ADDI, leftReg, R0, getImmediateValue(left));
+            }
+        }
 
         boolean isFloat = false;
         if (tac instanceof Add)
@@ -566,17 +666,18 @@ public class CodeGenerator {
             if (isFloat) {
                 // Use float instruction (e.g., fADDI, fMULI)
                 int floatImmOp = getFloatOpcode(immOp);
-                emit(floatImmOp, dest, left, getFloatImmediateValue(right));
+                emit(floatImmOp, dest, leftReg, getFloatImmediateValue(right));
             } else {
                 // Use integer instruction (e.g., ADDI, MULI)
-                emit(immOp, dest, left, getImmediateValue(right));
+                emit(immOp, dest, leftReg, getImmediateValue(right));
             }
         } else {
+            // Right is a register
             if (isFloat) {
                 int floatRegOp = getFloatOpcode(regOp);
-                emit(floatRegOp, dest, left, getReg((Variable) right));
+                emit(floatRegOp, dest, leftReg, getReg((Variable) right));
             } else {
-                emit(regOp, dest, left, getReg((Variable) right));
+                emit(regOp, dest, leftReg, getReg((Variable) right));
             }
         }
     }
@@ -592,40 +693,40 @@ public class CodeGenerator {
     private int getFloatOpcode(int intOp) {
         switch (intOp) {
             // Immediate Ops
-            case DLX.ADDI:
-                return DLX.fADDI;
-            case DLX.SUBI:
-                return DLX.fSUBI;
-            case DLX.MULI:
-                return DLX.fMULI;
-            case DLX.DIVI:
-                return DLX.fDIVI;
-            case DLX.MODI:
-                return DLX.fMODI;
-            case DLX.CMPI:
-                return DLX.fCMPI;
+            case ADDI:
+                return fADDI;
+            case SUBI:
+                return fSUBI;
+            case MULI:
+                return fMULI;
+            case DIVI:
+                return fDIVI;
+            case MODI:
+                return fMODI;
+            case CMPI:
+                return fCMPI;
 
             // Register Ops
-            case DLX.ADD:
-                return DLX.fADD;
-            case DLX.SUB:
-                return DLX.fSUB;
-            case DLX.MUL:
-                return DLX.fMUL;
-            case DLX.DIV:
-                return DLX.fDIV;
-            case DLX.MOD:
-                return DLX.fMOD;
-            case DLX.CMP:
-                return DLX.fCMP;
+            case ADD:
+                return fADD;
+            case SUB:
+                return fSUB;
+            case MUL:
+                return fMUL;
+            case DIV:
+                return fDIV;
+            case MOD:
+                return fMOD;
+            case CMP:
+                return fCMP;
 
             // Logical ops don't have float versions
-            case DLX.ANDI:
-            case DLX.ORI:
-            case DLX.AND:
-            case DLX.OR:
-            case DLX.POWI: // POW might not have float version
-            case DLX.POW:
+            case ANDI:
+            case ORI:
+            case AND:
+            case OR:
+            case POWI: // POW might not have float version
+            case POW:
                 throw new RuntimeException("No float version of opcode: " + intOp);
             default:
                 throw new RuntimeException("Unknown opcode for float mapping: " + intOp);
@@ -639,62 +740,75 @@ public class CodeGenerator {
         if (isImmediate(src)) {
             if (isFloatValue(src)) {
                 // MOV R1, 1.0 -> fADDI R1, R0, 1.0
-                emit(DLX.fADDI, dest, R0, getFloatImmediateValue(src));
+                emit(fADDI, dest, R0, getFloatImmediateValue(src));
             } else {
                 // MOV R1, 10 -> ADDI R1, R0, 10
-                emit(DLX.ADDI, dest, R0, getImmediateValue(src));
+                emit(ADDI, dest, R0, getImmediateValue(src));
             }
         } else {
             // MOV R1, R2 -> ADD R1, R2, R0 (works for both int and float)
-            emit(DLX.ADD, dest, getReg((Variable) src), R0);
+            emit(ADD, dest, getReg((Variable) src), R0);
         }
     }
 
     private void generateCmp(Cmp cmp) {
         int dest = getReg(cmp.getDest());
 
-        // IRGenerator guarantees Left is a Register
-        int leftReg = getReg((Variable) cmp.getOperands().get(0));
+        Value left = cmp.getOperands().get(0);
         Value right = cmp.getOperands().get(1);
 
-        // Only need to check Right side
+        // Handle left operand (could be Variable or Immediate)
+        int leftReg;
+        if (left instanceof Variable) {
+            leftReg = getReg((Variable) left);
+        } else {
+            // Left is Immediate - load into R26 (scratch)
+            leftReg = 26;
+            if (isFloatValue(left)) {
+                emit(fADDI, leftReg, R0, getFloatImmediateValue(left));
+            } else {
+                emit(ADDI, leftReg, R0, getImmediateValue(left));
+            }
+        }
+
+        // Handle right operand
         if (isImmediate(right)) {
             if (cmp.isFloat()) {
-                emit(DLX.fCMPI, dest, leftReg, getFloatImmediateValue(right));
+                emit(fCMPI, dest, leftReg, getFloatImmediateValue(right));
             } else {
-                emit(DLX.CMPI, dest, leftReg, getImmediateValue(right));
+                emit(CMPI, dest, leftReg, getImmediateValue(right));
             }
         } else {
             if (cmp.isFloat()) {
-                emit(DLX.fCMP, dest, leftReg, getReg((Variable) right));
+                emit(fCMP, dest, leftReg, getReg((Variable) right));
             } else {
-                emit(DLX.CMP, dest, leftReg, getReg((Variable) right));
+                emit(CMP, dest, leftReg, getReg((Variable) right));
             }
         }
 
         // Convert CMP result (-1, 0, 1) to boolean (0 or 1) based on operator
         switch (cmp.getOp()) {
             case "eq": // 0 -> 1, non-zero -> 0
-                emit(DLX.ANDI, dest, dest, 1);
-                emit(DLX.XORI, dest, dest, 1);
+                emit(ANDI, dest, dest, 1);
+                emit(XORI, dest, dest, 1);
                 break;
             case "ne": // non-zero -> 1, 0 -> 0
-                emit(DLX.ANDI, dest, dest, 1);
+                emit(ANDI, dest, dest, 1);
                 break;
             case "lt": // -1 -> 1, else -> 0
-                emit(DLX.LSHI, dest, dest, -31);
+                emit(LSHI, dest, dest, -31);
                 break;
             case "le": // -1 or 0 -> 1, 1 -> 0
-                emit(DLX.SUBI, dest, dest, 1);
-                emit(DLX.LSHI, dest, dest, -31);
+                emit(SUBI, dest, dest, 1);
+                emit(LSHI, dest, dest, -31);
                 break;
             case "gt": // 1 -> 1, else -> 0
-                emit(DLX.ADDI, dest, dest, 1);
-                emit(DLX.LSHI, dest, dest, -1);
+                emit(ADDI, dest, dest, 1);
+                emit(LSHI, dest, dest, -1);
                 break;
             case "ge": // 0 or 1 -> 1, -1 -> 0
-                emit(DLX.ADDI, dest, dest, 2);
-                emit(DLX.LSHI, dest, dest, -1);
+                emit(ADDI, dest, dest, 2);
+                emit(LSHI, dest, dest, -1);
                 break;
         }
     }
@@ -708,7 +822,7 @@ public class CodeGenerator {
         List<Integer> savedRegs = new ArrayList<>();
         for (int r = 1; r <= 25; r++) {
             if (liveRegs.contains(r)) {
-                emit(DLX.PSH, r, SP, -4);
+                emit(PSH, r, SP, -4);
                 savedRegs.add(r);
             }
         }
@@ -724,32 +838,32 @@ public class CodeGenerator {
                 // Use R26 as scratch (safe - RegisterAllocator never assigns it)
                 argReg = 26;
                 if (isFloatValue(arg)) {
-                    emit(DLX.fADDI, argReg, R0, getFloatImmediateValue(arg));
+                    emit(fADDI, argReg, R0, getFloatImmediateValue(arg));
                 } else {
-                    emit(DLX.ADDI, argReg, R0, getImmediateValue(arg));
+                    emit(ADDI, argReg, R0, getImmediateValue(arg));
                 }
             }
-            emit(DLX.PSH, argReg, SP, -4);
+            emit(PSH, argReg, SP, -4);
         }
 
         // 3. Push Return Value Slot
-        emit(DLX.PSH, R0, SP, -4);
+        emit(PSH, R0, SP, -4);
 
         // 4. Call
         callFixups.add(new CallFixup(pc, funcSymbol));
-        emit(DLX.JSR, 0);
+        emit(JSR, 0);
 
         // 5. Load return value (BEFORE popping)
         int destReg = -1;
         if (call.getDest() != null) {
             destReg = getReg((Variable) call.getDest());
-            emit(DLX.LDW, destReg, SP, 0);
+            emit(LDW, destReg, SP, 0);
         }
 
         // 6. Pop Everything (Return Slot + Arguments)
         // Correct size: 4 bytes (Ret) + N * 4 bytes (Args)
         int popSize = 4 + (args.size() * 4);
-        emit(DLX.ADDI, SP, SP, popSize);
+        emit(ADDI, SP, SP, popSize);
 
         // REMOVED: The extra emit(DLX.ADDI, SP, SP, 4) line is gone!
 
@@ -761,10 +875,10 @@ public class CodeGenerator {
             // do NOT overwrite it with the old saved value.
             if (reg == destReg) {
                 // Just pop the stack (increment SP) to discard the saved value
-                emit(DLX.ADDI, SP, SP, 4);
+                emit(ADDI, SP, SP, 4);
             } else {
                 // Restore normally
-                emit(DLX.POP, reg, SP, 4);
+                emit(POP, reg, SP, 4);
             }
         }
     }
@@ -772,7 +886,7 @@ public class CodeGenerator {
     private void generateReturn(Return ret, boolean isMain) {
         if (isMain) {
             // Main just halts
-            emit(DLX.RET, R0);
+            emit(RET, R0);
             return;
         }
 
@@ -787,21 +901,21 @@ public class CodeGenerator {
                 // Use R26 as scratch (safe - RegisterAllocator never assigns it)
                 srcReg = 26;
                 if (isFloatValue(retVal)) {
-                    emit(DLX.fADDI, srcReg, R0, getFloatImmediateValue(retVal));
+                    emit(fADDI, srcReg, R0, getFloatImmediateValue(retVal));
                 } else {
-                    emit(DLX.ADDI, srcReg, R0, getImmediateValue(retVal));
+                    emit(ADDI, srcReg, R0, getImmediateValue(retVal));
                 }
             }
 
             // Store at FP+8 (where caller expects it)
-            emit(DLX.STW, srcReg, FP, 8);
+            emit(STW, srcReg, FP, 8);
         }
 
         // Epilogue: restore SP, FP, and return
-        emit(DLX.ADD, SP, FP, R0); // SP = FP
-        emit(DLX.POP, FP, SP, 4); // Restore old FP
-        emit(DLX.POP, RA, SP, 4); // Restore return address
-        emit(DLX.RET, RA); // Return to caller
+        emit(ADD, SP, FP, R0); // SP = FP
+        emit(POP, FP, SP, 4); // Restore old FP
+        emit(POP, RA, SP, 4); // Restore return address
+        emit(RET, RA); // Return to caller
     }
 
     // ========== Helper Methods ==========
@@ -874,6 +988,8 @@ public class CodeGenerator {
             Object val = ((Immediate) v).getValue();
             if (val instanceof Float)
                 return (Float) val;
+            if (val instanceof Integer)
+                return ((Integer) val).floatValue();
         }
         if (v instanceof Literal) {
             Object val = ((Literal) v).getValue();
@@ -912,7 +1028,7 @@ public class CodeGenerator {
             }
 
             int targetPC = functionPCMap.get(fixup.targetFunction);
-            instructions.set(fixup.instrPC, DLX.assemble(DLX.JSR, targetPC * 4));
+            instructions.set(fixup.instrPC, DLX.assemble(JSR, targetPC * 4));
         }
     }
 
