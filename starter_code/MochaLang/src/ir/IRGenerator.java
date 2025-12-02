@@ -349,6 +349,7 @@ public class IRGenerator implements NodeVisitor {
             // We must push the BASE ADDRESS of the array onto the stack.
 
             Variable baseAddr = getTemp();
+            baseAddr.getSymbol().setType(sym.type());
 
             if (sym.isParameter()) {
                 // Array Parameters are pointers passed by reference.
