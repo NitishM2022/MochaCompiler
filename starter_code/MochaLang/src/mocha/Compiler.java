@@ -136,8 +136,8 @@ public class Compiler {
         this.currentCFGs = cfgs;
 
         for (ir.cfg.CFG cfg : cfgs) {
-           ir.ssa.SSAConverter converter = new ir.ssa.SSAConverter(cfg);
-           converter.convertToSSA();
+                ir.ssa.SSAConverter converter = new ir.ssa.SSAConverter(cfg);
+                converter.convertToSSA();
         }
 
         return cfgs;
