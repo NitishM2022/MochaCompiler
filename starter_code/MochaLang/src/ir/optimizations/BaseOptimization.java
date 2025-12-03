@@ -126,13 +126,7 @@ public abstract class BaseOptimization {
                 instruction instanceof Mul ||
                 instruction instanceof Div ||
                 instruction instanceof Cmp ||
-                instruction instanceof Mov ||
-                instruction instanceof Load ||
-                instruction instanceof LoadFP ||
-                instruction instanceof LoadGP ||
-                instruction instanceof Adda ||
-                instruction instanceof AddaFP ||
-                instruction instanceof AddaGP;
+                instruction instanceof Mov;
     }
 
     protected static boolean isBinaryArithmetic(TAC instruction) {

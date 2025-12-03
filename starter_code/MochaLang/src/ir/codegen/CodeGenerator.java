@@ -470,10 +470,13 @@ public class CodeGenerator {
         } else if (tac instanceof Beq) {
             Beq beq = (Beq) tac;
             Value condVal = beq.getOperands().get(0);
-            int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
-
-            if (!(condVal instanceof Variable)) {
-                cond = 1;
+            int cond;
+            
+            if (condVal instanceof Variable) {
+                cond = getReg((Variable) condVal);
+            } else {
+                // Handle Literal or Immediate - convert to register
+                cond = 1; // Use R1 as scratch for condition
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -561,6 +564,19 @@ public class CodeGenerator {
         // Return
         else if (tac instanceof Return) {
             generateReturn((Return) tac, isMain);
+        }
+
+        // Swap (for parallel copy resolution)
+        else if (tac instanceof Swap) {
+            Swap swap = (Swap) tac;
+            Variable var1 = (Variable) swap.getOperands().get(0);
+            Variable var2 = (Variable) swap.getOperands().get(1);
+            int reg1 = getReg(var1);
+            int reg2 = getReg(var2);
+            // XOR swap trick: x = x ^ y; y = x ^ y; x = x ^ y
+            emit(XOR, reg1, reg1, reg2);  // reg1 = reg1 ^ reg2
+            emit(XOR, reg2, reg1, reg2);  // reg2 = reg1 ^ reg2 (now reg2 has original reg1)
+            emit(XOR, reg1, reg1, reg2);  // reg1 = reg1 ^ reg2 (now reg1 has original reg2)
         }
 
         // End (equivalent to return with no value)
@@ -974,7 +990,8 @@ public class CodeGenerator {
     private boolean isFloatValue(Value v) {
         if (v instanceof Immediate) {
             Object val = ((Immediate) v).getValue();
-            return val instanceof Float;
+            // Check for both Float and Double (0.0 creates a Double)
+            return val instanceof Float || val instanceof Double;
         }
         if (v instanceof Literal) {
             Object val = ((Literal) v).getValue();
@@ -988,6 +1005,8 @@ public class CodeGenerator {
             Object val = ((Immediate) v).getValue();
             if (val instanceof Float)
                 return (Float) val;
+            if (val instanceof Double)
+                return ((Double) val).floatValue();
             if (val instanceof Integer)
                 return ((Integer) val).floatValue();
         }
@@ -1003,6 +1022,10 @@ public class CodeGenerator {
     private boolean isZero(Value v) {
         if (v instanceof Immediate) {
             Object val = ((Immediate) v).getValue();
+            // FIX: Properly compare Integer object with 0
+            if (val instanceof Integer) {
+                return ((Integer) val).intValue() == 0;
+            }
             return val.equals(0);
         }
         return false;

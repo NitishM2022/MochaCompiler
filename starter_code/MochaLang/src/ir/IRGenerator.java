@@ -226,6 +226,7 @@ public class IRGenerator implements NodeVisitor {
             defaultValue = new Immediate(0);
         }
 
+        // System.err.println("DEBUG: Initializing " + sym.name() + " to 0 in block " + (currentBlock != null ? currentBlock.getNum() : "NULL"));
         addInstruction(new Mov(nextInstructionId(), var, defaultValue));
     }
 
@@ -1046,9 +1047,10 @@ public class IRGenerator implements NodeVisitor {
 
     @Override
     public void visit(Computation node) {
-        node.variables().declarations().forEach(decl -> decl.accept(this));
+        // Process function declarations first (they don't need currentBlock)
         node.functions().declarations().forEach(func -> func.accept(this));
 
+        // Set up main CFG
         blockCounter = 0;
         Symbol mainSymbol = new Symbol("main");
         currentCFG = new CFG(mainSymbol);
@@ -1056,6 +1058,9 @@ public class IRGenerator implements NodeVisitor {
         currentCFG.setEntryBlock(entry);
         currentCFG.addBlock(entry);
         currentBlock = entry;
+
+        // NOW process variable declarations so they can add initialization instructions
+        node.variables().declarations().forEach(decl -> decl.accept(this));
 
         node.mainStatementSequence().accept(this);
         addInstruction(new End(nextInstructionId()));
@@ -1091,6 +1096,7 @@ public class IRGenerator implements NodeVisitor {
 
         // Add the beq instruction (branches on FALSE/zero)
         addInstruction(new Beq(nextInstructionId(), conditionValue, falseTarget));
+        addInstruction(new Bra(nextInstructionId(), thenBlock)); // Explicit jump to THEN to handle block reordering
         freeTemp(conditionValue);
 
         // Set up CFG edges in the RIGHT ORDER:
@@ -1144,6 +1150,7 @@ public class IRGenerator implements NodeVisitor {
 
         // Branch to exit if condition is FALSE (beq means "branch if zero")
         addInstruction(new Beq(nextInstructionId(), conditionValue, loopExit));
+        addInstruction(new Bra(nextInstructionId(), loopBody)); // Explicit jump to BODY
         freeTemp(conditionValue);
         loopHeader.addSuccessor(loopExit);
         loopHeader.addSuccessor(loopBody);
@@ -1176,7 +1183,33 @@ public class IRGenerator implements NodeVisitor {
         node.condition().accept(this);
         Value conditionValue = loadIfNeeded(valueStack.pop());
 
-        addInstruction(new Beq(nextInstructionId(), conditionValue, bodyBlock));
+        // repeat ... until (condition) means: loop while condition is FALSE, exit when TRUE
+        // Bne branches when value != 0 (TRUE), so we branch to body when condition is FALSE
+        // Actually: Beq branches when value == 0 (FALSE), so Beq to body means "loop while FALSE"
+        // But we want to EXIT when condition is TRUE, so we should Beq to exitBlock (branch when FALSE to exit? No...)
+        // Let me think: "until (b == 0)" means keep looping while b != 0
+        // When b == 0, the condition (b == 0) is TRUE, so we should EXIT
+        // Beq branches when value == 0 (FALSE), so if condition is FALSE, branch to body (continue loop)
+        // If condition is TRUE (non-zero), fall through to exit
+        // So: Beq conditionValue bodyBlock means "if condition is FALSE, go back to body"
+        // But that's backwards! We want "if condition is TRUE, exit"
+        // So we need: Bne conditionValue exitBlock (if condition is TRUE/non-zero, go to exit)
+        // Or: Beq conditionValue bodyBlock (if condition is FALSE/zero, go back to body)
+        // The current code has Beq to bodyBlock, which loops when condition is FALSE
+        // For "until (b == 0)", when b == 0, condition is TRUE, we should exit
+        // So Beq to bodyBlock is WRONG - it loops when condition is FALSE, but we want to loop until TRUE
+        // FIX: Use Bne to bodyBlock - loop while condition is TRUE? No...
+        // Actually: Beq to exitBlock - exit when condition is FALSE? No...
+        // Let me re-read: repeat ... until (condition) = loop until condition becomes TRUE
+        // So: if condition is FALSE, continue looping (branch to body)
+        // if condition is TRUE, exit (fall through to exit or branch to exit)
+        // Beq branches when value == 0 (FALSE)
+        // So: Beq conditionValue bodyBlock = if FALSE, go to body (correct!)
+        // But the explicit Bra to exitBlock means we ALWAYS go to exit after Beq
+        // The issue is the Beq should be: if TRUE, go to exit; if FALSE, go to body
+        // So: Bne conditionValue exitBlock (if TRUE, exit)
+        addInstruction(new Bne(nextInstructionId(), conditionValue, exitBlock)); // Exit when condition is TRUE
+        addInstruction(new Bra(nextInstructionId(), bodyBlock)); // Otherwise loop back
         freeTemp(conditionValue);
         bodyBlock.addSuccessor(bodyBlock);
         bodyBlock.addPredecessor(bodyBlock);
@@ -1202,22 +1235,40 @@ public class IRGenerator implements NodeVisitor {
 
     @Override
     public void visit(VariableDeclaration node) {
+        // System.err.println("DEBUG: Visiting VariableDeclaration for " + node.names().size() + " variables");
         for (Token name : node.names()) {
+            // System.err.println("DEBUG: Processing variable: " + name.lexeme());
             try {
-                Symbol sym = symbolTable.insert(name.lexeme(), node.type());
+                // Try to insert, but if it fails (already exists), lookup instead
+                Symbol sym;
+                try {
+                    sym = symbolTable.insert(name.lexeme(), node.type());
+                } catch (Error insertError) {
+                    // Already inserted by assignGlobalOffsets, just lookup
+                    sym = symbolTable.lookup(name.lexeme());
+                }
+                
+                // System.err.println("DEBUG: " + name.lexeme() + " isGlobal() = " + sym.isGlobal());
 
                 // Assign offset for local variable
                 // Globals are already handled in assignGlobalOffsets
                 if (!sym.isGlobal()) {
+                    // System.err.println("DEBUG: " + name.lexeme() + " is LOCAL, initializing...");
                     int size = calculateSize(node.type());
                     fpOffset -= size;
                     sym.setFpOffset(fpOffset);
 
-                    // Add to locals tracking
-                    // initializedLocals.add(sym); // Locals are NOT initialized by default
+                    // Initialize locals to 0
+                    initializeVariableToDefault(new Variable(sym));
+                    initializedLocals.add(sym);
+                } else {
+                    // System.err.println("DEBUG: " + name.lexeme() + " is GLOBAL, initializing to 0...");
+                    // FIX: Initialize globals to 0 as well!
+                    initializeVariableToDefault(new Variable(sym));
+                    initializedGlobals.add(sym);
                 }
             } catch (Error e) {
-                // Ignore re-declaration errors in IR gen (already caught in semantic analysis)
+                // System.err.println("DEBUG: Error processing " + name.lexeme() + ": " + e.getMessage());
             }
         }
     }

@@ -53,11 +53,11 @@ public class RegisterAllocator {
 
     public void allocate(List<CFG> cfgs) {
         // Pass 1 is gone; offsets are handled by IRGenerator now.
-        System.out.println("Reg Alloc");
+//        System.out.println("Optimized");
         for (CFG cfg : cfgs) {
-            System.out.println("CFG: " + cfg.getFunctionName());
-            System.out.println(cfg.asDotGraph());
-            System.out.println();
+//            System.out.println("CFG: " + cfg.getFunctionName());
+//            System.out.println(cfg.asDotGraph());
+//            System.out.println();
             
             allocate(cfg);
         }
@@ -281,6 +281,7 @@ public class RegisterAllocator {
                 }
             }
             coloring.put(node, color);
+//            System.err.println("  Allocated R" + color + " to " + node);
         }
         return coloring;
     }
@@ -295,6 +296,7 @@ public class RegisterAllocator {
                 candidate = node;
             }
         }
+//        System.err.println("  Spilling variable: " + candidate + " (degree=" + maxDegree + ")");
         return candidate;
     }
 

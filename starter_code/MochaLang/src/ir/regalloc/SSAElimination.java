@@ -32,8 +32,8 @@ public class SSAElimination {
                     // Only insert move if source and dest are different
                     if (src instanceof Variable && !src.equals(dest)) {
                         moves.add(new Mov(-1, dest, (Variable) src));
-                    } else if (src instanceof Immediate) {
-                        // Move immediate to dest
+                    } else if (src instanceof Immediate || src instanceof Literal) {
+                        // Move immediate/literal to dest
                         moves.add(new Mov(-1, dest, src));
                     }
                 }
@@ -49,6 +49,12 @@ public class SSAElimination {
         for (BasicBlock bb : cfg.getAllBlocks()) {
             bb.getPhis().clear();
         }
+        
+        // Debug: Print CFG after SSA elimination
+//        System.err.println("After SSA Elimination");
+//        System.err.println("CFG: " + cfg.getFunctionName());
+//        System.err.println(cfg.asDotGraph());
+//        System.err.println();
     }
 
     /**
@@ -59,16 +65,20 @@ public class SSAElimination {
         // Resolve parallel copies (handle cycles with Swap)
         List<TAC> resolvedMoves = resolveParallelCopies(moves);
 
-        // Find insertion point (before branch)
+        // Find insertion point (before FIRST branch, not last!)
+        // This is critical: if there's a conditional branch followed by unconditional branch,
+        // we need to insert moves BEFORE the conditional branch so they execute on both paths
         List<TAC> insts = block.getInstructions();
         int insertPos = insts.size();
 
-        if (!insts.isEmpty()) {
-            TAC last = insts.get(insts.size() - 1);
-            if (last instanceof Bra || last instanceof Beq || last instanceof Bne ||
-                    last instanceof Blt || last instanceof Ble || last instanceof Bgt ||
-                    last instanceof Bge || last instanceof Return) {
-                insertPos = insts.size() - 1;
+        // Scan from the beginning to find the FIRST branch instruction
+        for (int i = 0; i < insts.size(); i++) {
+            TAC inst = insts.get(i);
+            if (inst instanceof Bra || inst instanceof Beq || inst instanceof Bne ||
+                    inst instanceof Blt || inst instanceof Ble || inst instanceof Bgt ||
+                    inst instanceof Bge || inst instanceof Return) {
+                insertPos = i;
+                break;  // Insert before the FIRST branch
             }
         }
 

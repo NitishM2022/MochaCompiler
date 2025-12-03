@@ -37,6 +37,11 @@ public class SSAConverter {
         domAnalysis.analyze();
         cfg.setDominatorAnalysis(domAnalysis);
 
+//        System.out.println("Pre SSA");
+//        System.out.println("CFG: " + cfg.getFunctionName());
+//        System.out.println(cfg.asDotGraph());
+//        System.out.println();
+
         Set<Symbol> allVars = findVariableDefinitionsAndCollectSymbols();
         insertPhiNodes(allVars);
         renameVariables(allVars);
@@ -49,7 +54,7 @@ public class SSAConverter {
             for (TAC instruction : block.getInstructions()) {
                 // Collect variable symbols from destination
                 Value dest = instruction.getDest();
-                if (dest instanceof Variable && !((Variable) dest).isTemp()) {
+                if (dest instanceof Variable) {
                     Symbol sym = ((Variable) dest).getSymbol();
                     allVars.add(sym);
 
@@ -62,7 +67,7 @@ public class SSAConverter {
                 List<Value> operands = instruction.getOperands();
                 if (operands != null) {
                     for (Value op : operands) {
-                        if (op instanceof Variable && !((Variable) op).isTemp()) {
+                        if (op instanceof Variable) {
                             allVars.add(((Variable) op).getSymbol());
                         }
                     }
@@ -169,7 +174,7 @@ public class SSAConverter {
 
             // Rename definition (destination) - only for instructions that support it
             Value dest = instruction.getDest();
-            if (dest instanceof Variable && !((Variable) dest).isTemp()) {
+            if (dest instanceof Variable) {
                 Variable destVar = (Variable) dest;
                 Symbol sym = destVar.getSymbol();
 
@@ -268,7 +273,7 @@ public class SSAConverter {
         boolean changed = false;
 
         for (Value operand : operands) {
-            if (operand instanceof Variable && !((Variable) operand).isTemp()) {
+            if (operand instanceof Variable) {
                 Variable var = (Variable) operand;
                 Symbol sym = var.getSymbol();
 
