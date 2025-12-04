@@ -420,6 +420,9 @@ public class IRGenerator implements NodeVisitor {
         } else {
             // Final dimension or 1D array - LOAD the value
             Variable loadedValue = getTemp();
+            // FIX: Set type of loaded value so isFloat() works correctly!
+            loadedValue.getSymbol().setType(getExpressionType(node));
+            
             addInstruction(new Load(nextInstructionId(), loadedValue, elementAddr));
             valueStack.push(loadedValue);
 
