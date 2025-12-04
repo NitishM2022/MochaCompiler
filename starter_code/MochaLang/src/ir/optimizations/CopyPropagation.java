@@ -54,7 +54,7 @@ public class CopyPropagation extends BaseOptimization {
 
     @Override
     protected String getName() {
-        return "cpp";
+        return "CPP";
     }
 
     @Override

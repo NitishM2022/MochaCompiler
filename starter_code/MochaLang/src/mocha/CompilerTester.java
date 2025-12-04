@@ -109,10 +109,13 @@ public class CompilerTester {
         //     System.out.println("Success type-checking file.");
         // }
 
-        // For IR Visualizer
+        // For IR Visualizer - use SSA-converted IR
         String dotgraph_text = null;
         try {
-            dotgraph_text = c.genIR(ast).asDotGraph();
+            // Generate SSA-converted IR for better visualization
+            java.util.List<ir.cfg.CFG> ssaCfgs = c.genSSA(ast);
+            ir.IROutput ssaOutput = new ir.IROutput(ssaCfgs);
+            dotgraph_text = ssaOutput.asDotGraph();
             
             if (cmd.hasOption("cfg")) {
                 String[] cfg_output_options = cmd.getOptionValues("cfg");
@@ -124,11 +127,11 @@ public class CompilerTester {
                             break;
                         case "file":
                             String filename = sourceFile.substring(0, sourceFile.lastIndexOf('.')) + "_"+ CFG_DOT_FILE_NAME;
-                            try (PrintStream out = new PrintStream(GRAPH_DIR_NAME+File.pathSeparator+filename)) {               
+                            try (PrintStream out = new PrintStream(GRAPH_DIR_NAME+File.separator+filename)) {               
                                 out.print(dotgraph_text);
                             } catch (IOException e) {
                                 e.printStackTrace();
-                                System.err.println("Error accessing the cfg file: " + GRAPH_DIR_NAME + File.pathSeparator + filename);
+                                System.err.println("Error accessing the cfg file: " + GRAPH_DIR_NAME + File.separator + filename);
                             }
                             break;
                         default:
@@ -142,11 +145,10 @@ public class CompilerTester {
             System.exit(-5);
         }
 
-        // The next 3 lines are for Optimization - Comment/Uncomment them as needed
+        // The next 3 lines are for Optimization - reuses already-generated SSA CFGs
         String[] optArgs = cmd.getOptionValues("opt");
         List<String> optArguments = (optArgs!=null && optArgs.length != 0) ? Arrays.asList(optArgs) : new ArrayList<String>();
-//        c.genSSA(ast);
-        c.optimization(optArguments, cmd.hasOption("loop"), cmd.hasOption("max"));
+        c.optimization(optArguments, cmd.hasOption("loop"), cmd.hasOption("max"));  // Uses currentCFGs set by genSSA above
         // we expect after this, there is file recording all transformations your compiler did
         // e.g., if we run -s test000.txt -o cp -o cf -o dce -loop
         // the file will have the name "record_test000_cp_cf_dce_loop.txt"

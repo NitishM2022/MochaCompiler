@@ -33,8 +33,10 @@ public class IRGenerator implements NodeVisitor {
     private Stack<Variable> freeTemps;
 
     // Uninitialized tracking
-    private Set<Symbol> initializedGlobals;
-    private Set<Symbol> initializedLocals;
+    private Set<Symbol> initializedGlobals;  // User-assigned globals
+    private Set<Symbol> initializedLocals;   // User-assigned locals
+    private Set<Symbol> needsDefaultInitGlobals;  // Globals needing default init
+    private Set<Symbol> needsDefaultInitLocals;   // Locals needing default init
 
     // Global tracking
     private List<Symbol> globalVariables;
@@ -55,6 +57,8 @@ public class IRGenerator implements NodeVisitor {
         this.valueStack = new Stack<>();
         this.freeTemps = new Stack<>();
         this.initializedGlobals = new HashSet<>();
+        this.needsDefaultInitGlobals = new HashSet<>();
+        this.needsDefaultInitLocals = new HashSet<>();
         this.globalVariables = new ArrayList<>();
         this.globalNonArrayVars = new ArrayList<>();
     }
@@ -97,7 +101,7 @@ public class IRGenerator implements NodeVisitor {
         for (Symbol global : globalNonArrayVars) {
             Variable var = new Variable(global);
             addInstruction(new LoadGP(nextInstructionId(), var, global.getGlobalOffset()));
-            initializedGlobals.add(global);
+            // Don't mark as initialized - let loadIfNeeded warn if used before assignment
         }
     }
 
@@ -185,16 +189,24 @@ public class IRGenerator implements NodeVisitor {
             Variable var = (Variable) val;
             Symbol sym = var.getSymbol();
 
-            // Check if initialized
-            boolean isInit = sym.isGlobal()
+            // Check if user explicitly initialized this variable
+            boolean isUserInit = sym.isGlobal()
                     ? initializedGlobals.contains(sym)
                     : initializedLocals.contains(sym);
 
-            if (!isInit) {
+            if (!isUserInit) {
+                // Warn on first use
                 System.err.println("WARNING: Variable '" + sym.name() + "' may be used before initialization");
-                initializeVariableToDefault(var);
-
-                // Mark as initialized
+                
+                // Mark this variable as needing default initialization
+                // (will be initialized at entry block)
+                if (sym.isGlobal()) {
+                    needsDefaultInitGlobals.add(sym);
+                } else {
+                    needsDefaultInitLocals.add(sym);
+                }
+                
+                // Mark as "seen" so we don't warn multiple times
                 if (sym.isGlobal()) {
                     initializedGlobals.add(sym);
                 } else {
@@ -1080,10 +1092,34 @@ public class IRGenerator implements NodeVisitor {
         currentCFG.addBlock(entry);
         currentBlock = entry;
 
+        // Reset global tracking for main's CFG (each CFG tracks independently)
+        initializedGlobals = new HashSet<>();
+        needsDefaultInitGlobals = new HashSet<>();
+
         // Load/initialize globals at start of main
         loadAllGlobals();
+        
+        // Remember the entry block and insertion point for default initializations
+        BasicBlock entryBlock = currentBlock;
+        int insertionPoint = entryBlock.getInstructions().size();
 
         node.mainStatementSequence().accept(this);
+        
+        // Now we know which variables need default initialization
+        // Insert them at the beginning of the ENTRY block (after loadAllGlobals)
+        List<TAC> defaultInits = new ArrayList<>();
+        for (Symbol global : needsDefaultInitGlobals) {
+            Variable var = new Variable(global);
+            initializeVariableToDefault(var);
+            // Remove the instruction we just added and save it
+            defaultInits.add(currentBlock.getInstructions().remove(currentBlock.getInstructions().size() - 1));
+        }
+        
+        // Insert default initializations at the insertion point in the ENTRY block
+        for (int i = defaultInits.size() - 1; i >= 0; i--) {
+            entryBlock.getInstructions().add(insertionPoint, defaultInits.get(i));
+        }
+        
         addInstruction(new End(nextInstructionId()));
         cfgs.add(currentCFG);
     }
@@ -1204,29 +1240,6 @@ public class IRGenerator implements NodeVisitor {
         node.condition().accept(this);
         Value conditionValue = loadIfNeeded(valueStack.pop());
 
-        // repeat ... until (condition) means: loop while condition is FALSE, exit when TRUE
-        // Bne branches when value != 0 (TRUE), so we branch to body when condition is FALSE
-        // Actually: Beq branches when value == 0 (FALSE), so Beq to body means "loop while FALSE"
-        // But we want to EXIT when condition is TRUE, so we should Beq to exitBlock (branch when FALSE to exit? No...)
-        // Let me think: "until (b == 0)" means keep looping while b != 0
-        // When b == 0, the condition (b == 0) is TRUE, so we should EXIT
-        // Beq branches when value == 0 (FALSE), so if condition is FALSE, branch to body (continue loop)
-        // If condition is TRUE (non-zero), fall through to exit
-        // So: Beq conditionValue bodyBlock means "if condition is FALSE, go back to body"
-        // But that's backwards! We want "if condition is TRUE, exit"
-        // So we need: Bne conditionValue exitBlock (if condition is TRUE/non-zero, go to exit)
-        // Or: Beq conditionValue bodyBlock (if condition is FALSE/zero, go back to body)
-        // The current code has Beq to bodyBlock, which loops when condition is FALSE
-        // For "until (b == 0)", when b == 0, condition is TRUE, we should exit
-        // So Beq to bodyBlock is WRONG - it loops when condition is FALSE, but we want to loop until TRUE
-        // FIX: Use Bne to bodyBlock - loop while condition is TRUE? No...
-        // Actually: Beq to exitBlock - exit when condition is FALSE? No...
-        // Let me re-read: repeat ... until (condition) = loop until condition becomes TRUE
-        // So: if condition is FALSE, continue looping (branch to body)
-        // if condition is TRUE, exit (fall through to exit or branch to exit)
-        // Beq branches when value == 0 (FALSE)
-        // So: Beq conditionValue bodyBlock = if FALSE, go to body (correct!)
-        // But the explicit Bra to exitBlock means we ALWAYS go to exit after Beq
         // The issue is the Beq should be: if TRUE, go to exit; if FALSE, go to body
         // So: Bne conditionValue exitBlock (if TRUE, exit)
         addInstruction(new Bne(nextInstructionId(), conditionValue, exitBlock)); // Exit when condition is TRUE
@@ -1269,11 +1282,8 @@ public class IRGenerator implements NodeVisitor {
                     fpOffset -= size;
                     sym.setFpOffset(fpOffset);
 
-                    // Add to locals tracking
-                    // FIX: Initialize locals to 0 immediately at declaration
-                    // This prevents uninitialized phi node inputs in SSA form
-                    initializeVariableToDefault(new Variable(sym));
-                    initializedLocals.add(sym);
+                    // Don't initialize here - will be initialized at entry block
+                    // if used before explicit assignment
                 }
             } catch (Error e) {
                 // Ignore re-declaration errors in IR gen (already caught in semantic analysis)
@@ -1287,6 +1297,12 @@ public class IRGenerator implements NodeVisitor {
         fpOffset = 0;
         paramOffset = 12; // Skip FP, RA, and return value slot at FP+8
         initializedLocals = new HashSet<>();
+        needsDefaultInitLocals = new HashSet<>();  // Reset for new function
+        
+        // Reset global tracking for this function's CFG (each CFG tracks independently)
+        initializedGlobals = new HashSet<>();
+        needsDefaultInitGlobals = new HashSet<>();
+        
         freeTemps = new Stack<>();
 
         symbolTable.enterScope();
@@ -1329,9 +1345,28 @@ public class IRGenerator implements NodeVisitor {
         // Load globals and params at entry
         loadAllGlobals();
         loadAllParams(params);
+        
+        // Remember the entry block and insertion point for default initializations
+        BasicBlock entryBlock = currentBlock;
+        int insertionPoint = entryBlock.getInstructions().size();
 
         if (node.body() != null) {
             node.body().accept(this);
+        }
+        
+        // Now we know which locals need default initialization
+        // Insert them at the beginning of the ENTRY block (after loadAllGlobals and loadAllParams)
+        List<TAC> defaultInits = new ArrayList<>();
+        for (Symbol local : needsDefaultInitLocals) {
+            Variable var = new Variable(local);
+            initializeVariableToDefault(var);
+            // Remove the instruction we just added and save it
+            defaultInits.add(currentBlock.getInstructions().remove(currentBlock.getInstructions().size() - 1));
+        }
+        
+        // Insert default initializations at the insertion point in the ENTRY block
+        for (int i = defaultInits.size() - 1; i >= 0; i--) {
+            entryBlock.getInstructions().add(insertionPoint, defaultInits.get(i));
         }
 
         // Ensure globals are stored before implicit return/end

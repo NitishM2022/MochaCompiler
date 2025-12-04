@@ -45,7 +45,15 @@ public class OrphanFunctionElimination extends BaseOptimization {
         
         if (changed) {
             cfgs.removeAll(orphans);
-            log("Eliminated " + orphans.size() + " orphan function(s)");
+            StringBuilder sb = new StringBuilder();
+            sb.append("Eliminated ").append(orphans.size()).append(" orphan function(s): ");
+            for (int i = 0; i < orphans.size(); i++) {
+                sb.append(orphans.get(i).getFunctionName());
+                if (i < orphans.size() - 1) {
+                    sb.append(", ");
+                }
+            }
+            log(sb.toString());
         }
         
         return changed;

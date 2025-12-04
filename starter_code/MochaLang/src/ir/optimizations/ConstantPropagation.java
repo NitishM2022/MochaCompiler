@@ -54,7 +54,7 @@ public class ConstantPropagation extends BaseOptimization {
 
     @Override
     protected String getName() {
-        return "cp";
+        return "CP";
     }
 
     @Override

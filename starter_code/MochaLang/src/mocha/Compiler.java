@@ -144,8 +144,11 @@ public class Compiler {
     }
 
     public String optimization(java.util.List<String> opts, boolean loop, boolean max) {
-        java.util.List<ir.cfg.CFG> cfgs = genSSA(parsedAST);
-        return optimization(opts, cfgs, loop, max);
+        // Reuse already-generated CFGs instead of regenerating
+        if (this.currentCFGs == null) {
+            genSSA(parsedAST);
+        }
+        return optimization(opts, this.currentCFGs, loop, max);
     }
 
     public String optimization(java.util.List<String> opts, java.util.List<ir.cfg.CFG> cfgs, boolean loop,
