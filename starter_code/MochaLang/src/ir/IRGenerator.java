@@ -112,14 +112,9 @@ public class IRGenerator implements NodeVisitor {
 
     private void loadAllParams(List<Symbol> params) {
         for (Symbol param : params) {
-            if (param.type() instanceof ArrayType) {
-                // Array parameter is just an address - already loaded
-                continue;
-            } else {
-                // Load non-array parameter from stack
-                Variable paramVar = new Variable(param);
-                addInstruction(new LoadFP(nextInstructionId(), paramVar, param.getFpOffset()));
-            }
+            // ALL parameters (including array addresses) must be loaded from stack
+            Variable paramVar = new Variable(param);
+            addInstruction(new LoadFP(nextInstructionId(), paramVar, param.getFpOffset()));
         }
     }
 
@@ -349,27 +344,27 @@ public class IRGenerator implements NodeVisitor {
             // === HANDLING ARRAYS ===
             // We must push the BASE ADDRESS of the array onto the stack.
 
-            Variable baseAddr = getTemp();
-            baseAddr.getSymbol().setType(sym.type());
-
             if (sym.isParameter()) {
-                // Array Parameters are pointers passed by reference.
-                // The stack slot at FP+offset ALREADY contains the address.
-                // Just load it.
-                addInstruction(new LoadFP(nextInstructionId(), baseAddr, sym.getFpOffset()));
-            } else if (sym.isGlobal()) {
-                // Global Array: The array address slot is at GP + GlobalOffset.
-                // The array data starts at GlobalOffset + 4.
-                // We use AddaGP to calculate the array data address into a register.
-                addInstruction(new AddaGP(nextInstructionId(), baseAddr, sym.getGlobalOffset(), new Immediate(4)));
+                // Array Parameters: address was loaded in loadAllParams()
+                // The Variable already holds the address - just use it!
+                valueStack.push(new Variable(sym));
             } else {
-                // Local Array: The array address slot is at FP + FpOffset.
-                // The array data starts at FpOffset + 4.
-                // We use AddaFP to calculate the array data address into a register.
-                addInstruction(new AddaFP(nextInstructionId(), baseAddr, sym.getFpOffset(), new Immediate(4)));
+                // For local/global arrays, compute the data address
+                Variable baseAddr = getTemp();
+                baseAddr.getSymbol().setType(sym.type());
+                
+                if (sym.isGlobal()) {
+                    // Global Array: The array address slot is at GP + GlobalOffset.
+                    // The array data starts at GlobalOffset + 4.
+                    addInstruction(new AddaGP(nextInstructionId(), baseAddr, sym.getGlobalOffset(), new Immediate(4)));
+                } else {
+                    // Local Array: The array address slot is at FP + FpOffset.
+                    // The array data starts at FpOffset + 4.
+                    addInstruction(new AddaFP(nextInstructionId(), baseAddr, sym.getFpOffset(), new Immediate(4)));
+                }
+                
+                valueStack.push(baseAddr);
             }
-
-            valueStack.push(baseAddr);
         } else {
             // === HANDLING SCALARS ===
             // Standard variable usage
@@ -830,9 +825,18 @@ public class IRGenerator implements NodeVisitor {
                 if (node.arguments() != null && node.arguments().args() != null) {
                     for (Expression argExpr : node.arguments().args()) {
                         argExpr.accept(this);
-                        Value argVal = loadIfNeeded(valueStack.pop());
-                        args.add(argVal);
-                        argTypes.add(getType(argVal));
+                        Value argVal = valueStack.pop();
+                        
+                        // CRITICAL FIX: Don't load arrays - we want the ADDRESS!
+                        Type argType = getType(argVal);
+                        if (argType instanceof ArrayType) {
+                            // For arrays, pass the address as-is
+                            args.add(argVal);
+                        } else {
+                            // For scalars, load the value
+                            args.add(loadIfNeeded(argVal));
+                        }
+                        argTypes.add(argType);
                     }
                 }
 
@@ -1065,7 +1069,7 @@ public class IRGenerator implements NodeVisitor {
         node.variables().declarations().forEach(decl -> decl.accept(this));
         node.functions().declarations().forEach(func -> func.accept(this));
 
-        blockCounter = 0;
+        // blockCounter = 0; // CRITICAL FIX: Do NOT reset blockCounter! IDs must be globally unique.
         Symbol mainSymbol = new Symbol("main");
         currentCFG = new CFG(mainSymbol);
         BasicBlock entry = new BasicBlock(++blockCounter);

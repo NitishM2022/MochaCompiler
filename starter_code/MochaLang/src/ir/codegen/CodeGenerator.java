@@ -413,8 +413,8 @@ public class CodeGenerator {
             int addr = (addrVal instanceof Variable) ? getReg((Variable) addrVal) : R0;
 
             if (!(addrVal instanceof Variable)) {
-                // Immediate address - load into R26 (scratch)
-                addr = 26;
+                // Immediate address - load into R25 (scratch)
+                addr = 25;
                 int val = getImmediateValue(addrVal);
                 emit(ADDI, addr, R0, val);
             }
@@ -442,9 +442,9 @@ public class CodeGenerator {
             if (srcVal instanceof Variable) {
                 src = getReg((Variable) srcVal);
             } else {
-                // FIX: Use R26 (Scratch) instead of R1!
+                // FIX: Use R25 (Scratch) instead of R1!
                 // R26 is safe because 'addr' cannot be R26.
-                src = 26;
+                src = 25;
                 if (isFloatValue(srcVal)) {
                     emit(fADDI, src, R0, getFloatImmediateValue(srcVal));
                 } else {
@@ -466,8 +466,8 @@ public class CodeGenerator {
             if (srcVal instanceof Variable) {
                 src = getReg((Variable) srcVal);
             } else {
-                // FIX: Use R26 (Scratch) instead of R1
-                src = 26;
+                // FIX: Use R25 (Scratch) instead of R1
+                src = 25;
                 if (isFloatValue(srcVal)) {
                     emit(fADDI, src, R0, getFloatImmediateValue(srcVal));
                 } else {
@@ -497,7 +497,7 @@ public class CodeGenerator {
                 if (base instanceof Variable) {
                     baseReg = getReg((Variable) base);
                 } else {
-                    baseReg = 26; // Use R26
+                    baseReg = 25; // Use R25
                     int val = getImmediateValue(base);
                     emit(ADDI, baseReg, R0, val);
                 }
@@ -508,7 +508,7 @@ public class CodeGenerator {
                 if (base instanceof Variable) {
                     baseReg = getReg((Variable) base);
                 } else {
-                    baseReg = 26; // Use R26
+                    baseReg = 25; // Use R25
                     int val = getImmediateValue(base);
                     emit(ADDI, baseReg, R0, val);
                 }
@@ -527,7 +527,7 @@ public class CodeGenerator {
             AddaGP addaGP = (AddaGP) tac;
             int dest = getReg(addaGP.getDest());
             int gpOffset = addaGP.getGpOffset();
-            Value indexOffset = addaGP.getOperands().get(0);
+            Value indexOffset = addaGP.getIndex(); // FIX: Use getIndex() instead of getOperands().get(0)
 
             // dest = GP + gpOffset
             emit(ADDI, dest, GP, gpOffset);
@@ -537,7 +537,7 @@ public class CodeGenerator {
                 if (indexOffset instanceof Variable) {
                     indexReg = getReg((Variable) indexOffset);
                 } else {
-                    indexReg = 26; // FIX: Use R26, NOT R1!
+                    indexReg = 25; // Use R25, NOT R1!
                     int val = getImmediateValue(indexOffset);
                     emit(ADDI, indexReg, R0, val);
                 }
@@ -547,7 +547,7 @@ public class CodeGenerator {
             AddaFP addaFP = (AddaFP) tac;
             int dest = getReg(addaFP.getDest());
             int fpOffset = addaFP.getFpOffset();
-            Value indexOffset = addaFP.getOperands().get(0);
+            Value indexOffset = addaFP.getIndex(); // FIX: Use getIndex() instead of getOperands().get(0)
 
             // dest = FP + fpOffset
             emit(ADDI, dest, FP, fpOffset);
@@ -557,7 +557,7 @@ public class CodeGenerator {
                 if (indexOffset instanceof Variable) {
                     indexReg = getReg((Variable) indexOffset);
                 } else {
-                    indexReg = 26; // FIX: Use R26, NOT R1!
+                    indexReg = 25; // Use R25, NOT R1!
                     int val = getImmediateValue(indexOffset);
                     emit(ADDI, indexReg, R0, val);
                 }
@@ -585,7 +585,7 @@ public class CodeGenerator {
                 cond = getReg((Variable) condVal);
             } else {
                 // Handle Literal or Immediate - convert to register
-                cond = 26; // Use R26 as scratch (never allocated by RegisterAllocator)
+                cond = 25; // Use R25 as scratch (never allocated by RegisterAllocator)
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -599,7 +599,7 @@ public class CodeGenerator {
             int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
 
             if (!(condVal instanceof Variable)) {
-                cond = 26; // Use R26 as scratch (never allocated by RegisterAllocator)
+                cond = 25; // Use R25 as scratch (never allocated by RegisterAllocator)
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -613,7 +613,7 @@ public class CodeGenerator {
             int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
 
             if (!(condVal instanceof Variable)) {
-                cond = 26; // Use R26 as scratch (never allocated by RegisterAllocator)
+                cond = 25; // Use R25 as scratch (never allocated by RegisterAllocator)
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -627,7 +627,7 @@ public class CodeGenerator {
             int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
 
             if (!(condVal instanceof Variable)) {
-                cond = 26; // Use R26 as scratch (never allocated by RegisterAllocator)
+                cond = 25; // Use R25 as scratch (never allocated by RegisterAllocator)
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -641,7 +641,7 @@ public class CodeGenerator {
             int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
 
             if (!(condVal instanceof Variable)) {
-                cond = 26; // Use R26 as scratch (never allocated by RegisterAllocator)
+                cond = 25; // Use R25 as scratch (never allocated by RegisterAllocator)
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -655,7 +655,7 @@ public class CodeGenerator {
             int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
 
             if (!(condVal instanceof Variable)) {
-                cond = 26; // Use R26 as scratch (never allocated by RegisterAllocator)
+                cond = 25; // Use R25 as scratch (never allocated by RegisterAllocator)
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -716,8 +716,8 @@ public class CodeGenerator {
             if (srcVal instanceof Variable) {
                 src = getReg((Variable) srcVal);
             } else {
-                // Use R26 as scratch (safe - RegisterAllocator never assigns it)
-                src = 26;
+                // Use R25 as scratch (safe - RegisterAllocator never assigns it)
+                src = 25;
                 if (write.isFloat()) {
                     emit(fADDI, src, R0, getFloatImmediateValue(srcVal));
                 } else {
@@ -739,8 +739,8 @@ public class CodeGenerator {
             if (srcVal instanceof Variable) {
                 src = getReg((Variable) srcVal);
             } else {
-                // Use R26 as scratch (safe - RegisterAllocator never assigns it)
-                src = 26;
+                // Use R25 as scratch (safe - RegisterAllocator never assigns it)
+                src = 25;
                 int val = getImmediateValue(srcVal);
                 emit(ADDI, src, R0, val);
             }
@@ -766,8 +766,8 @@ public class CodeGenerator {
         if (left instanceof Variable) {
             leftReg = getReg((Variable) left);
         } else {
-            // Left is Literal or Immediate - load into R26 (scratch)
-            leftReg = 26;
+            // Left is Literal or Immediate - load into R25 (scratch)
+            leftReg = 25;
             if (isFloatValue(left)) {
                 emit(fADDI, leftReg, R0, getFloatImmediateValue(left));
             } else {
@@ -903,8 +903,8 @@ public class CodeGenerator {
         if (left instanceof Variable) {
             leftReg = getReg((Variable) left);
         } else {
-            // Left is Immediate - load into R26 (scratch)
-            leftReg = 26;
+            // Left is Immediate - load into R25 (scratch)
+            leftReg = 25;
             if (isFloatValue(left)) {
                 emit(fADDI, leftReg, R0, getFloatImmediateValue(left));
             } else {
@@ -976,8 +976,8 @@ public class CodeGenerator {
             if (arg instanceof Variable) {
                 argReg = getReg((Variable) arg);
             } else {
-                // Use R26 as scratch (safe - RegisterAllocator never assigns it)
-                argReg = 26;
+                // Use R25 as scratch (safe - RegisterAllocator never assigns it)
+                argReg = 25;
                 if (isFloatValue(arg)) {
                     emit(fADDI, argReg, R0, getFloatImmediateValue(arg));
                 } else {
@@ -1039,8 +1039,8 @@ public class CodeGenerator {
             if (retVal instanceof Variable) {
                 srcReg = getReg((Variable) retVal);
             } else {
-                // Use R26 as scratch (safe - RegisterAllocator never assigns it)
-                srcReg = 26;
+                // Use R25 as scratch (safe - RegisterAllocator never assigns it)
+                srcReg = 25;
                 if (isFloatValue(retVal)) {
                     emit(fADDI, srcReg, R0, getFloatImmediateValue(retVal));
                 } else {

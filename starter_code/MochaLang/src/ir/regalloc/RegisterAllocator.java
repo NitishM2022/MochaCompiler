@@ -37,7 +37,7 @@ public class RegisterAllocator {
     }
 
     public RegisterAllocator(int numDataRegisters) {
-        this.numDataRegisters = Math.min(numDataRegisters, 25); // Cap to leave room for scratch regs (26-31)
+        this.numDataRegisters = Math.min(numDataRegisters, 24); // Cap to R1-R24 to leave R25-R31 for scratch/system
         this.physicalRegisters = new HashMap<>();
         this.reservedRegisters = new HashSet<>();
 
@@ -45,7 +45,7 @@ public class RegisterAllocator {
             Variable reg = new Variable(new Symbol("R" + i), -1);
             physicalRegisters.put(i, reg);
 
-            if (i == 0 || i >= 26) {
+            if (i == 0 || i >= 25) {
                 reservedRegisters.add(reg);
             }
         }
@@ -444,8 +444,8 @@ public class RegisterAllocator {
 
     // Helper Methods
     private boolean isPhysicalRegister(Variable v) {
-        // Physical registers: R0, R26-R31 (R26/R27=scratch, R28=FP, R29=SP, R30=GP,
-        // R31=RA)
+        // Physical registers: R0, R25-R31 (R25=scratch for CodeGen, R26/R27=scratch for spilling,
+        // R28=FP, R29=SP, R30=GP, R31=RA)
         // These should never be in the interference graph
         if (v.getSymbol() == null)
             return false;
@@ -454,7 +454,7 @@ public class RegisterAllocator {
             return false;
         try {
             int regNum = Integer.parseInt(name.substring(1));
-            return regNum == 0 || (regNum >= 26 && regNum <= 31);
+            return regNum == 0 || (regNum >= 25 && regNum <= 31);
         } catch (NumberFormatException e) {
             return false;
         }
