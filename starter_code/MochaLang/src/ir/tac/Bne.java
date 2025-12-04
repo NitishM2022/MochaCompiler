@@ -26,6 +26,10 @@ public class Bne extends TAC {
         return target;
     }
     
+    public void setTarget(BasicBlock target) {
+        this.target = target;
+    }
+    
     @Override
     public List<Value> getOperands() {
         List<Value> operands = new ArrayList<>();

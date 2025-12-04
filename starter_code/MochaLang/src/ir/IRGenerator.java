@@ -87,7 +87,8 @@ public class IRGenerator implements NodeVisitor {
 
     private int calculateSize(Type type) {
         if (type instanceof ArrayType) {
-            return ((ArrayType) type).getAllocationSize();
+            // Arrays need: 4 bytes for address slot + array data size
+            return 4 + ((ArrayType) type).getAllocationSize();
         }
         return 4; // Default size for scalar types
     }
@@ -226,7 +227,6 @@ public class IRGenerator implements NodeVisitor {
             defaultValue = new Immediate(0);
         }
 
-        // System.err.println("DEBUG: Initializing " + sym.name() + " to 0 in block " + (currentBlock != null ? currentBlock.getNum() : "NULL"));
         addInstruction(new Mov(nextInstructionId(), var, defaultValue));
     }
 
@@ -358,14 +358,15 @@ public class IRGenerator implements NodeVisitor {
                 // Just load it.
                 addInstruction(new LoadFP(nextInstructionId(), baseAddr, sym.getFpOffset()));
             } else if (sym.isGlobal()) {
-                // Global Array: The array lives at GP + GlobalOffset.
-                // We use AddaGP to calculate this address into a register.
-                // (Index is 0 because we just want the start of the array)
-                addInstruction(new AddaGP(nextInstructionId(), baseAddr, sym.getGlobalOffset(), new Immediate(0)));
+                // Global Array: The array address slot is at GP + GlobalOffset.
+                // The array data starts at GlobalOffset + 4.
+                // We use AddaGP to calculate the array data address into a register.
+                addInstruction(new AddaGP(nextInstructionId(), baseAddr, sym.getGlobalOffset(), new Immediate(4)));
             } else {
-                // Local Array: The array lives at FP + FpOffset.
-                // We use AddaFP to calculate this address.
-                addInstruction(new AddaFP(nextInstructionId(), baseAddr, sym.getFpOffset(), new Immediate(0)));
+                // Local Array: The array address slot is at FP + FpOffset.
+                // The array data starts at FpOffset + 4.
+                // We use AddaFP to calculate the array data address into a register.
+                addInstruction(new AddaFP(nextInstructionId(), baseAddr, sym.getFpOffset(), new Immediate(4)));
             }
 
             valueStack.push(baseAddr);
@@ -463,7 +464,7 @@ public class IRGenerator implements NodeVisitor {
         } else if (isImmediate(leftVal)) {
             // Case: 12 + 13 (Should be folded, but if not: t0=12, t0+13)
             Variable immTemp = getTemp(isFloat);
-            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal));
+            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal, isFloat));
             addInstruction(new Add(nextInstructionId(), temp, immTemp, rightVal, isFloat));
             freeTemp(immTemp);
         } else {
@@ -491,7 +492,7 @@ public class IRGenerator implements NodeVisitor {
         } else if (isImmediate(leftVal)) {
             // Materialize: 5 * 5
             Variable immTemp = getTemp(isFloat);
-            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal));
+            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal, isFloat));
             addInstruction(new Mul(nextInstructionId(), temp, immTemp, rightVal, isFloat));
             freeTemp(immTemp);
         } else {
@@ -508,6 +509,13 @@ public class IRGenerator implements NodeVisitor {
         // 1. Evaluate Left
         node.getLeft().accept(this);
         Value leftVal = loadIfNeeded(valueStack.pop());
+        
+        // If leftVal is a Literal, move it to a temp to avoid register conflicts
+        if (leftVal instanceof Literal) {
+            Variable leftTemp = getTemp();
+            addInstruction(new Mov(nextInstructionId(), leftTemp, leftVal));
+            leftVal = leftTemp;
+        }
 
         BasicBlock evalRightBlock = new BasicBlock(++blockCounter);
         BasicBlock endBlock = new BasicBlock(++blockCounter);
@@ -520,20 +528,18 @@ public class IRGenerator implements NodeVisitor {
         currentCFG.addBlock(evalRightBlock);
         currentCFG.addBlock(endBlock);
 
-        // --- THE FIX FOR "ONLY BEQ" ---
-        // Logic: IF (Left == True) THEN CheckRight ELSE Done.
+        // --- LOGIC FOR AND ---
+        // Logic: IF (Left == False) THEN Done ELSE CheckRight.
         
-        // 1. Branch if True -> Go to evalRightBlock
-        addInstruction(new Beq(nextInstructionId(), leftVal, evalRightBlock));
+        // 1. Branch if False -> Skip to End (result already 0)
+        addInstruction(new Beq(nextInstructionId(), leftVal, endBlock));
         freeTemp(leftVal);
 
-        // 2. Fallthrough means Left was False.
-        // We are done (result is already 0). Jump to End.
-        addInstruction(new Bra(nextInstructionId(), endBlock));
+        // 2. Fallthrough means Left was True, evaluate Right.
 
         // Link CFG
-        current.addSuccessor(evalRightBlock); // Branch taken (Left was true)
-        current.addSuccessor(endBlock);       // Fallthrough (Left was false)
+        current.addSuccessor(endBlock);       // Branch taken (Left was FALSE)
+        current.addSuccessor(evalRightBlock); // Fallthrough (Left was TRUE)
         evalRightBlock.addPredecessor(current);
         endBlock.addPredecessor(current);
 
@@ -565,6 +571,13 @@ public class IRGenerator implements NodeVisitor {
         // 1. Evaluate Left
         node.getLeft().accept(this);
         Value leftVal = loadIfNeeded(valueStack.pop());
+        
+        // If leftVal is a Literal, move it to a temp to avoid register conflicts
+        if (leftVal instanceof Literal) {
+            Variable leftTemp = getTemp();
+            addInstruction(new Mov(nextInstructionId(), leftTemp, leftVal));
+            leftVal = leftTemp;
+        }
 
         BasicBlock evalRightBlock = new BasicBlock(++blockCounter);
         BasicBlock endBlock = new BasicBlock(++blockCounter);
@@ -581,7 +594,8 @@ public class IRGenerator implements NodeVisitor {
         // Logic: IF (Left == True) THEN Done ELSE CheckRight.
         
         // 1. Branch if True -> Go to End (Short Circuit)
-        addInstruction(new Beq(nextInstructionId(), leftVal, endBlock));
+        // Bne branches when value != 0 (TRUE), Beq branches when value == 0 (FALSE)
+        addInstruction(new Bne(nextInstructionId(), leftVal, endBlock));
         freeTemp(leftVal);
 
         // 2. Fallthrough means Left was False.
@@ -634,7 +648,7 @@ public class IRGenerator implements NodeVisitor {
             // Case: 12 - a. Cannot swap. Must Load 12 into Reg.
             // Generates: t0 = 12; t1 = t0 - a;
             Variable immTemp = getTemp(isFloat);
-            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal));
+            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal, isFloat));
             addInstruction(new Sub(nextInstructionId(), temp, immTemp, rightVal, isFloat));
             freeTemp(immTemp);
         } else {
@@ -659,7 +673,7 @@ public class IRGenerator implements NodeVisitor {
         if (isImmediate(leftVal)) {
             // Case: 12 / a
             Variable immTemp = getTemp(isFloat);
-            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal));
+            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal, isFloat));
             addInstruction(new Div(nextInstructionId(), temp, immTemp, rightVal, isFloat));
             freeTemp(immTemp);
         } else {
@@ -683,7 +697,7 @@ public class IRGenerator implements NodeVisitor {
         if (isImmediate(leftVal)) {
             // Case: 12 % a
             Variable immTemp = getTemp(isFloat);
-            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal));
+            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal, isFloat));
             addInstruction(new Mod(nextInstructionId(), temp, immTemp, rightVal, isFloat));
             freeTemp(immTemp);
         } else {
@@ -706,7 +720,7 @@ public class IRGenerator implements NodeVisitor {
 
         if (isImmediate(leftVal)) {
             Variable immTemp = getTemp(isFloat);
-            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal));
+            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal, isFloat));
             addInstruction(new Pow(nextInstructionId(), temp, immTemp, rightVal));
             freeTemp(immTemp);
         } else {
@@ -733,7 +747,7 @@ public class IRGenerator implements NodeVisitor {
             // We could flip to a > 5, but we'd have to flip the string 'cmpOp'.
             // Safer to just materialize 5 into a register.
             Variable immTemp = getTemp(isFloat);
-            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal));
+            addInstruction(new Mov(nextInstructionId(), immTemp, leftVal, isFloat));
             addInstruction(new Cmp(nextInstructionId(), temp, immTemp, rightVal, cmpOp, isFloat));
             freeTemp(immTemp);
         } else {
@@ -920,7 +934,8 @@ public class IRGenerator implements NodeVisitor {
 
         if (op.kind() == Token.Kind.ASSIGN) {
             // Case: a = 5
-            addInstruction(new Mov(nextInstructionId(), targetVar, rhs));
+            boolean isFloat = isFloat(targetVar) || isFloat(rhs);
+            addInstruction(new Mov(nextInstructionId(), targetVar, rhs, isFloat));
         } else {
             // Case: a += 5, a++, etc.
             boolean isFloat = isFloat(targetVar) || isFloat(rhs);
@@ -952,7 +967,7 @@ public class IRGenerator implements NodeVisitor {
             }
 
             // Store result back: targetVar = result
-            addInstruction(new Mov(nextInstructionId(), targetVar, resultTemp));
+            addInstruction(new Mov(nextInstructionId(), targetVar, resultTemp, isFloat));
             freeTemp(resultTemp);
         }
 
@@ -1047,10 +1062,9 @@ public class IRGenerator implements NodeVisitor {
 
     @Override
     public void visit(Computation node) {
-        // Process function declarations first (they don't need currentBlock)
+        node.variables().declarations().forEach(decl -> decl.accept(this));
         node.functions().declarations().forEach(func -> func.accept(this));
 
-        // Set up main CFG
         blockCounter = 0;
         Symbol mainSymbol = new Symbol("main");
         currentCFG = new CFG(mainSymbol);
@@ -1059,8 +1073,8 @@ public class IRGenerator implements NodeVisitor {
         currentCFG.addBlock(entry);
         currentBlock = entry;
 
-        // NOW process variable declarations so they can add initialization instructions
-        node.variables().declarations().forEach(decl -> decl.accept(this));
+        // Load/initialize globals at start of main
+        loadAllGlobals();
 
         node.mainStatementSequence().accept(this);
         addInstruction(new End(nextInstructionId()));
@@ -1211,10 +1225,12 @@ public class IRGenerator implements NodeVisitor {
         addInstruction(new Bne(nextInstructionId(), conditionValue, exitBlock)); // Exit when condition is TRUE
         addInstruction(new Bra(nextInstructionId(), bodyBlock)); // Otherwise loop back
         freeTemp(conditionValue);
-        bodyBlock.addSuccessor(bodyBlock);
-        bodyBlock.addPredecessor(bodyBlock);
-        bodyBlock.addSuccessor(exitBlock);
-        exitBlock.addPredecessor(bodyBlock);
+        // CRITICAL FIX: Add edges from currentBlock (where the branch actually is), not bodyBlock
+        // This is important for nested loops where currentBlock != bodyBlock after processing body
+        currentBlock.addSuccessor(bodyBlock);
+        bodyBlock.addPredecessor(currentBlock);
+        currentBlock.addSuccessor(exitBlock);
+        exitBlock.addPredecessor(currentBlock);
 
         currentBlock = exitBlock;
     }
@@ -1235,40 +1251,25 @@ public class IRGenerator implements NodeVisitor {
 
     @Override
     public void visit(VariableDeclaration node) {
-        // System.err.println("DEBUG: Visiting VariableDeclaration for " + node.names().size() + " variables");
         for (Token name : node.names()) {
-            // System.err.println("DEBUG: Processing variable: " + name.lexeme());
             try {
-                // Try to insert, but if it fails (already exists), lookup instead
-                Symbol sym;
-                try {
-                    sym = symbolTable.insert(name.lexeme(), node.type());
-                } catch (Error insertError) {
-                    // Already inserted by assignGlobalOffsets, just lookup
-                    sym = symbolTable.lookup(name.lexeme());
-                }
-                
-                // System.err.println("DEBUG: " + name.lexeme() + " isGlobal() = " + sym.isGlobal());
+                Symbol sym = symbolTable.insert(name.lexeme(), node.type());
 
                 // Assign offset for local variable
                 // Globals are already handled in assignGlobalOffsets
                 if (!sym.isGlobal()) {
-                    // System.err.println("DEBUG: " + name.lexeme() + " is LOCAL, initializing...");
                     int size = calculateSize(node.type());
                     fpOffset -= size;
                     sym.setFpOffset(fpOffset);
 
-                    // Initialize locals to 0
+                    // Add to locals tracking
+                    // FIX: Initialize locals to 0 immediately at declaration
+                    // This prevents uninitialized phi node inputs in SSA form
                     initializeVariableToDefault(new Variable(sym));
                     initializedLocals.add(sym);
-                } else {
-                    // System.err.println("DEBUG: " + name.lexeme() + " is GLOBAL, initializing to 0...");
-                    // FIX: Initialize globals to 0 as well!
-                    initializeVariableToDefault(new Variable(sym));
-                    initializedGlobals.add(sym);
                 }
             } catch (Error e) {
-                // System.err.println("DEBUG: Error processing " + name.lexeme() + ": " + e.getMessage());
+                // Ignore re-declaration errors in IR gen (already caught in semantic analysis)
             }
         }
     }

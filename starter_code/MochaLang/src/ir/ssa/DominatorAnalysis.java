@@ -117,6 +117,12 @@ public class DominatorAnalysis {
                     if (current == null) break;
                 }
             }
+            
+            // CRITICAL FIX: For self-loops (repeat-until), ensure block is in its own DF
+            // This is needed so phi nodes are inserted for variables live across the back-edge
+            if (predecessors.contains(block)) {
+                dominanceFrontiers.get(block).add(block);
+            }
         }
     }
     
@@ -139,6 +145,9 @@ public class DominatorAnalysis {
                 children.add(entry.getKey());
             }
         }
+        // CRITICAL: Sort children by block number to ensure they're processed in CFG order
+        // This prevents later blocks (like join points) from being processed before earlier blocks
+        children.sort((a, b) -> a.getNum() - b.getNum());
         return children;
     }
     

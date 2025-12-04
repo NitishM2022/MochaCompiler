@@ -11,7 +11,12 @@ public class SSAElimination {
     public SSAElimination() {
     }
 
+    private static int nextBlockNum = 1000; // Start high to avoid conflicts - MUST be static for global uniqueness!
+
     public void eliminatePhis(CFG cfg) {
+        // First pass: identify critical edges and split them
+        splitCriticalEdges(cfg);
+
         for (BasicBlock bb : cfg.getAllBlocks()) {
             // Get Phis from the separate phiFunctions list
             List<Phi> phis = bb.getPhis();
@@ -20,7 +25,7 @@ public class SSAElimination {
                 continue;
 
             // For each predecessor, insert parallel copies at the end
-            List<BasicBlock> preds = bb.getPredecessors();
+            List<BasicBlock> preds = new ArrayList<>(bb.getPredecessors()); // Copy to avoid ConcurrentModification
             for (BasicBlock pred : preds) {
                 List<Mov> moves = new ArrayList<>();
 
@@ -40,6 +45,10 @@ public class SSAElimination {
 
                 // Insert moves at end of predecessor (before branch)
                 if (!moves.isEmpty()) {
+                    // System.err.println("DEBUG SSA ELIM: Inserting " + moves.size() + " moves from BB" + pred.getNum() + " to BB" + bb.getNum());
+                    // for (Mov m : moves) {
+                    //     System.err.println("  MOVE: " + m.getDest() + " = " + m.getSrc());
+                    // }
                     insertMovesAtEnd(pred, moves);
                 }
             }
@@ -49,12 +58,98 @@ public class SSAElimination {
         for (BasicBlock bb : cfg.getAllBlocks()) {
             bb.getPhis().clear();
         }
+    }
+
+    /**
+     * Split critical edges to ensure phi moves are placed correctly.
+     * A critical edge is from a block with multiple successors to a block with multiple predecessors.
+     */
+    private void splitCriticalEdges(CFG cfg) {
+        List<BasicBlock> blocks = new ArrayList<>(cfg.getAllBlocks());
         
-        // Debug: Print CFG after SSA elimination
-//        System.err.println("After SSA Elimination");
-//        System.err.println("CFG: " + cfg.getFunctionName());
-//        System.err.println(cfg.asDotGraph());
-//        System.err.println();
+        for (BasicBlock pred : blocks) {
+            if (pred.getSuccessors().size() <= 1) continue; // Not critical (single successor)
+            
+            List<BasicBlock> succs = new ArrayList<>(pred.getSuccessors());
+            for (BasicBlock succ : succs) {
+                if (succ.getPredecessors().size() <= 1) continue; // Not critical
+                if (succ.getPhis().isEmpty()) continue; // No phi functions, no need to split
+                
+                // This is a critical edge - split it
+                BasicBlock newBlock = new BasicBlock(nextBlockNum++);
+                cfg.addBlock(newBlock);
+                
+                // Add unconditional branch to successor
+                newBlock.addInstruction(new Bra(-1, succ));
+                
+                // Update CFG edges
+                pred.getSuccessors().remove(succ);
+                pred.getSuccessors().add(newBlock);
+                newBlock.addSuccessor(succ);
+                newBlock.addPredecessor(pred);
+                
+                succ.getPredecessors().remove(pred);
+                succ.addPredecessor(newBlock);
+                
+                // Update branch target in pred to point to newBlock
+                updateBranchTarget(pred, succ, newBlock);
+                
+                // Update phi functions: change source from pred to newBlock
+                for (Phi phi : succ.getPhis()) {
+                    Value srcVal = phi.getArgs().get(pred);
+                    if (srcVal != null) {
+                        phi.getArgs().remove(pred);
+                        phi.getArgs().put(newBlock, srcVal);
+                    }
+                }
+                
+                // System.err.println("DEBUG: Split critical edge BB" + pred.getNum() + " -> BB" + succ.getNum() + " with BB" + newBlock.getNum());
+            }
+        }
+    }
+
+    /**
+     * Update branch instruction in pred to target newBlock instead of oldTarget.
+     */
+    private void updateBranchTarget(BasicBlock pred, BasicBlock oldTarget, BasicBlock newBlock) {
+        for (TAC inst : pred.getInstructions()) {
+            if (inst instanceof Beq) {
+                Beq beq = (Beq) inst;
+                if (beq.getTarget() == oldTarget) {
+                    beq.setTarget(newBlock);
+                }
+            } else if (inst instanceof Bne) {
+                Bne bne = (Bne) inst;
+                if (bne.getTarget() == oldTarget) {
+                    bne.setTarget(newBlock);
+                }
+            } else if (inst instanceof Blt) {
+                Blt blt = (Blt) inst;
+                if (blt.getTarget() == oldTarget) {
+                    blt.setTarget(newBlock);
+                }
+            } else if (inst instanceof Ble) {
+                Ble ble = (Ble) inst;
+                if (ble.getTarget() == oldTarget) {
+                    ble.setTarget(newBlock);
+                }
+            } else if (inst instanceof Bgt) {
+                Bgt bgt = (Bgt) inst;
+                if (bgt.getTarget() == oldTarget) {
+                    bgt.setTarget(newBlock);
+                }
+            } else if (inst instanceof Bge) {
+                Bge bge = (Bge) inst;
+                if (bge.getTarget() == oldTarget) {
+                    bge.setTarget(newBlock);
+                }
+            } else if (inst instanceof Bra) {
+                Bra bra = (Bra) inst;
+                if (bra.getTarget() == oldTarget) {
+                    bra.setTarget(newBlock);
+                }
+            }
+        }
     }
 
     /**

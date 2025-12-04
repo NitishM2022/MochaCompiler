@@ -54,7 +54,16 @@ public class ConstantFolding extends BaseOptimization {
                 Value folded = tryConstantFolding(instruction);
                 if (folded != null) {
                     Variable dest = (Variable) instruction.getDest();
-                    Mov newMove = new Mov(instruction.getId(), dest, folded);
+                    
+                    // Preserve float flag from original instruction
+                    boolean isFloat = false;
+                    if (instruction instanceof Add) isFloat = ((Add) instruction).isFloat();
+                    else if (instruction instanceof Sub) isFloat = ((Sub) instruction).isFloat();
+                    else if (instruction instanceof Mul) isFloat = ((Mul) instruction).isFloat();
+                    else if (instruction instanceof Div) isFloat = ((Div) instruction).isFloat();
+                    else if (instruction instanceof Mod) isFloat = ((Mod) instruction).isFloat();
+                    
+                    Mov newMove = new Mov(instruction.getId(), dest, folded, isFloat);
                     instructions.set(i, newMove);
                     logInstruction(instruction, "Folded constant: " + instruction.toString() + " -> " + newMove.toString());
                     changed = true;
@@ -224,7 +233,13 @@ public class ConstantFolding extends BaseOptimization {
         if (leftNum == null || rightNum == null) return null;
         
         try {
-            boolean isFloat = (leftNum instanceof Double) || (rightNum instanceof Double);
+            // Check if this is a float operation using the instruction's isFloat flag
+            boolean isFloat = false;
+            if (instruction instanceof Add) isFloat = ((Add) instruction).isFloat();
+            else if (instruction instanceof Sub) isFloat = ((Sub) instruction).isFloat();
+            else if (instruction instanceof Mul) isFloat = ((Mul) instruction).isFloat();
+            else if (instruction instanceof Div) isFloat = ((Div) instruction).isFloat();
+            else if (instruction instanceof Mod) isFloat = ((Mod) instruction).isFloat();
             
             if (isFloat) {
                 double leftVal = leftNum.doubleValue();

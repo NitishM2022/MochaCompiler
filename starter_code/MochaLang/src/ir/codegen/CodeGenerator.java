@@ -230,8 +230,8 @@ public class CodeGenerator {
         boolean isMain = cfg.getFunctionSymbol().name().equals("main");
         functionPCMap.put(cfg.getFunctionSymbol(), pc);
 
-        // Clear block labels for this function
-        // blockPCMap.clear();
+        // Note: Do NOT clear blockPCMap - block IDs are globally unique across all CFGs
+        // and branch fixups need to resolve blocks from all functions
 
         // Prologue
         if (!isMain) {
@@ -249,14 +249,123 @@ public class CodeGenerator {
             }
         }
 
-        // Generate all basic blocks
-        for (BasicBlock bb : cfg.getAllBlocks()) {
-            blockPCMap.put(bb.getNum(), pc);
+        // Generate blocks in linearized order that respects fallthrough
+        // For conditional branches, the fallthrough block must immediately follow
+        Set<BasicBlock> visited = new HashSet<>();
+        Deque<BasicBlock> worklist = new ArrayDeque<>();
+        worklist.add(cfg.getEntryBlock());
 
+        while (!worklist.isEmpty()) {
+            BasicBlock bb = worklist.pollFirst();
+            if (visited.contains(bb)) continue;
+            visited.add(bb);
+            
+            blockPCMap.put(bb.getNum(), pc);
             for (TAC tac : bb.getInstructions()) {
                 generateInstruction(tac, isMain);
             }
+
+            // Find fallthrough successor (the one NOT targeted by branch instruction)
+            BasicBlock fallthrough = getFallthroughSuccessor(bb);
+            BasicBlock branchTarget = getBranchTarget(bb);
+            
+            // Add branch target to worklist (will be visited later)
+            if (branchTarget != null && !visited.contains(branchTarget)) {
+                worklist.addLast(branchTarget);
+            }
+            
+            // Fallthrough must be visited immediately next
+            if (fallthrough != null && !visited.contains(fallthrough)) {
+                worklist.addFirst(fallthrough);
+            }
+            
+            // For blocks without conditional branches, add all successors
+            if (fallthrough == null && branchTarget == null) {
+                for (BasicBlock succ : bb.getSuccessors()) {
+                    if (!visited.contains(succ)) {
+                        worklist.addLast(succ);
+                    }
+                }
+            }
         }
+
+        // Generate any remaining unreachable blocks
+        for (BasicBlock bb : cfg.getAllBlocks()) {
+            if (!visited.contains(bb)) {
+                blockPCMap.put(bb.getNum(), pc);
+                for (TAC tac : bb.getInstructions()) {
+                    generateInstruction(tac, isMain);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Get the fallthrough successor (the block that should immediately follow in the instruction stream).
+     * For conditional branches, this is the block we go to when the branch is NOT taken.
+     */
+    private BasicBlock getFallthroughSuccessor(BasicBlock bb) {
+        List<TAC> insts = bb.getInstructions();
+        if (insts.isEmpty()) return null;
+        
+        TAC lastInst = insts.get(insts.size() - 1);
+        
+        // Find the last branch instruction (might not be at the very end due to phi moves)
+        TAC branchInst = null;
+        for (int i = insts.size() - 1; i >= 0; i--) {
+            TAC inst = insts.get(i);
+            if (inst instanceof Beq || inst instanceof Bne || inst instanceof Blt ||
+                inst instanceof Ble || inst instanceof Bgt || inst instanceof Bge) {
+                branchInst = inst;
+                break;
+            } else if (inst instanceof Bra || inst instanceof Return) {
+                return null; // Unconditional branch or return - no fallthrough
+            }
+        }
+        
+        if (branchInst == null) {
+            // No branch instruction - check if there's an unconditional Bra
+            for (TAC inst : insts) {
+                if (inst instanceof Bra) {
+                    return null; // Has unconditional branch
+                }
+            }
+            // No branches at all - just return first successor if any
+            return bb.getSuccessors().isEmpty() ? null : bb.getSuccessors().get(0);
+        }
+        
+        // For conditional branches, find the successor that is NOT the branch target
+        BasicBlock branchTarget = getBranchTargetFromInst(branchInst);
+        for (BasicBlock succ : bb.getSuccessors()) {
+            if (succ != branchTarget) {
+                return succ;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Get the branch target (for conditional branches).
+     */
+    private BasicBlock getBranchTarget(BasicBlock bb) {
+        List<TAC> insts = bb.getInstructions();
+        for (int i = insts.size() - 1; i >= 0; i--) {
+            TAC inst = insts.get(i);
+            BasicBlock target = getBranchTargetFromInst(inst);
+            if (target != null) return target;
+        }
+        return null;
+    }
+    
+    private BasicBlock getBranchTargetFromInst(TAC inst) {
+        if (inst instanceof Beq) return ((Beq) inst).getTarget();
+        if (inst instanceof Bne) return ((Bne) inst).getTarget();
+        if (inst instanceof Blt) return ((Blt) inst).getTarget();
+        if (inst instanceof Ble) return ((Ble) inst).getTarget();
+        if (inst instanceof Bgt) return ((Bgt) inst).getTarget();
+        if (inst instanceof Bge) return ((Bge) inst).getTarget();
+        if (inst instanceof Bra) return ((Bra) inst).getTarget();
+        return null;
     }
 
     private void generateInstruction(TAC tac, boolean isMain) {
@@ -304,8 +413,8 @@ public class CodeGenerator {
             int addr = (addrVal instanceof Variable) ? getReg((Variable) addrVal) : R0;
 
             if (!(addrVal instanceof Variable)) {
-                // Immediate address - load into R1
-                addr = 1;
+                // Immediate address - load into R26 (scratch)
+                addr = 26;
                 int val = getImmediateValue(addrVal);
                 emit(ADDI, addr, R0, val);
             }
@@ -476,7 +585,7 @@ public class CodeGenerator {
                 cond = getReg((Variable) condVal);
             } else {
                 // Handle Literal or Immediate - convert to register
-                cond = 1; // Use R1 as scratch for condition
+                cond = 26; // Use R26 as scratch (never allocated by RegisterAllocator)
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -490,7 +599,7 @@ public class CodeGenerator {
             int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
 
             if (!(condVal instanceof Variable)) {
-                cond = 1;
+                cond = 26; // Use R26 as scratch (never allocated by RegisterAllocator)
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -504,7 +613,7 @@ public class CodeGenerator {
             int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
 
             if (!(condVal instanceof Variable)) {
-                cond = 1;
+                cond = 26; // Use R26 as scratch (never allocated by RegisterAllocator)
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -518,7 +627,7 @@ public class CodeGenerator {
             int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
 
             if (!(condVal instanceof Variable)) {
-                cond = 1;
+                cond = 26; // Use R26 as scratch (never allocated by RegisterAllocator)
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -532,7 +641,7 @@ public class CodeGenerator {
             int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
 
             if (!(condVal instanceof Variable)) {
-                cond = 1;
+                cond = 26; // Use R26 as scratch (never allocated by RegisterAllocator)
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -546,7 +655,7 @@ public class CodeGenerator {
             int cond = (condVal instanceof Variable) ? getReg((Variable) condVal) : R0;
 
             if (!(condVal instanceof Variable)) {
-                cond = 1;
+                cond = 26; // Use R26 as scratch (never allocated by RegisterAllocator)
                 int val = getImmediateValue(condVal);
                 emit(ADDI, cond, R0, val);
             }
@@ -754,7 +863,8 @@ public class CodeGenerator {
         Value src = mov.getOperands().get(0);
 
         if (isImmediate(src)) {
-            if (isFloatValue(src)) {
+            // Infer type from the immediate value itself (optimizations create immediates without isFloat flag)
+            if (isFloatImmediate(src)) {
                 // MOV R1, 1.0 -> fADDI R1, R0, 1.0
                 emit(fADDI, dest, R0, getFloatImmediateValue(src));
             } else {
@@ -765,6 +875,21 @@ public class CodeGenerator {
             // MOV R1, R2 -> ADD R1, R2, R0 (works for both int and float)
             emit(ADD, dest, getReg((Variable) src), R0);
         }
+    }
+    
+    /**
+     * Check if an immediate value is a float type (Float or Double).
+     */
+    private boolean isFloatImmediate(Value v) {
+        if (v instanceof Immediate) {
+            Object val = ((Immediate) v).getValue();
+            return val instanceof Float || val instanceof Double;
+        }
+        if (v instanceof Literal) {
+            Object val = ((Literal) v).getValue();
+            return val instanceof ast.FloatLiteral;
+        }
+        return false;
     }
 
     private void generateCmp(Cmp cmp) {
@@ -990,8 +1115,7 @@ public class CodeGenerator {
     private boolean isFloatValue(Value v) {
         if (v instanceof Immediate) {
             Object val = ((Immediate) v).getValue();
-            // Check for both Float and Double (0.0 creates a Double)
-            return val instanceof Float || val instanceof Double;
+            return val instanceof Float;
         }
         if (v instanceof Literal) {
             Object val = ((Literal) v).getValue();

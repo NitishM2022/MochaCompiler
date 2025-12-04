@@ -11,11 +11,20 @@ import java.util.List;
 public class Mov extends TAC {
     private Variable dest;
     private Value src;
+    private boolean isFloat;
 
     public Mov(int id, Variable dest, Value src) {
         super(id);
         this.dest = dest;
         this.src = src;
+        this.isFloat = false;
+    }
+    
+    public Mov(int id, Variable dest, Value src, boolean isFloat) {
+        super(id);
+        this.dest = dest;
+        this.src = src;
+        this.isFloat = isFloat;
     }
 
     @Override
@@ -33,6 +42,14 @@ public class Mov extends TAC {
 
     public void setSrc(Value src) {
         this.src = src;
+    }
+    
+    public boolean isFloat() {
+        return isFloat;
+    }
+    
+    public void setFloat(boolean isFloat) {
+        this.isFloat = isFloat;
     }
 
     @Override

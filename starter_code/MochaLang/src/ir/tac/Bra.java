@@ -16,6 +16,10 @@ public class Bra extends TAC {
         return target;
     }
     
+    public void setTarget(BasicBlock target) {
+        this.target = target;
+    }
+    
     @Override
     public void accept(TACVisitor visitor) {
         visitor.visit(this);
