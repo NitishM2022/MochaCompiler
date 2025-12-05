@@ -85,7 +85,8 @@ public class Cmp extends TAC {
 
     @Override
     public String toString() {
-        return (isFloat ? "fCmp " : "cmp ") + op + " " + getDest() + ", " + getLeft() + ", " + getRight();
+        String opSymbol = mapOpToSymbol(op);
+        return getDest() + " = " + getLeft() + " " + opSymbol + " " + getRight();
     }
 
     private String mapOpToSymbol(String op) {

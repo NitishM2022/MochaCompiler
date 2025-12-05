@@ -58,6 +58,7 @@ public class AddaFP extends TAC {
 
     @Override
     public String toString() {
-        return dest + " = adda FP, " + fpOffset + ", " + index;
+        String sign = fpOffset >= 0 ? "+" : "";
+        return dest + " = &(FP" + sign + fpOffset + " + " + index + ")";
     }
 }

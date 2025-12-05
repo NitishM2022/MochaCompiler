@@ -54,7 +54,7 @@ public class LoadFP extends TAC {
     @Override
     public String toString() {
         String sign = fpOffset >= 0 ? "+" : "";
-        return dest + " = load [FP" + sign + fpOffset + "]";
+        return dest + " = [FP" + sign + fpOffset + "]";
     }
 }
 

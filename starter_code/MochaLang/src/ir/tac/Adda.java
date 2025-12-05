@@ -13,6 +13,6 @@ public class Adda extends Assign {
 
     @Override
     public String toString() {
-        return getDest() + " = " + getLeft() + " + " + getRight() + " (addr)";
+        return getDest() + " = &(" + getLeft() + " + " + getRight() + ")";
     }
 }

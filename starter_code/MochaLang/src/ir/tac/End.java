@@ -1,8 +1,5 @@
 package ir.tac;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class End extends TAC {
     
     public End(int id) {

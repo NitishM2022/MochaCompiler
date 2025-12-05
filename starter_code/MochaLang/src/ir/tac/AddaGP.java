@@ -58,6 +58,7 @@ public class AddaGP extends TAC {
 
     @Override
     public String toString() {
-        return dest + " = adda GP, " + gpOffset + ", " + index;
+        String sign = gpOffset >= 0 ? "+" : "";
+        return dest + " = &(GP" + sign + gpOffset + " + " + index + ")";
     }
 }

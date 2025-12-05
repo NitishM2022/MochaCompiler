@@ -37,7 +37,8 @@ public class RegisterAllocator {
     }
 
     public RegisterAllocator(int numDataRegisters) {
-        this.numDataRegisters = Math.min(numDataRegisters, 24); // Cap to R1-R24 to leave R25-R31 for scratch/system
+        // Cap to R1-R24 to leave R25-R31 for scratch/system
+        this.numDataRegisters = Math.min(numDataRegisters, 24);
         this.physicalRegisters = new HashMap<>();
         this.reservedRegisters = new HashSet<>();
 
@@ -52,13 +53,7 @@ public class RegisterAllocator {
     }
 
     public void allocate(List<CFG> cfgs) {
-        // Pass 1 is gone; offsets are handled by IRGenerator now.
-//        System.out.println("Optimized");
         for (CFG cfg : cfgs) {
-//            System.out.println("CFG: " + cfg.getFunctionName());
-//            System.out.println(cfg.asDotGraph());
-//            System.out.println();
-            
             allocate(cfg);
         }
     }
@@ -102,7 +97,6 @@ public class RegisterAllocator {
             for (int i = blocks.size() - 1; i >= 0; i--) {
                 BasicBlock bb = blocks.get(i);
 
-                // OUT[block] = Union of IN[successors]
                 Set<Variable> out = new HashSet<>();
                 for (BasicBlock succ : bb.getSuccessors()) {
                     out.addAll(liveIn.get(succ));
@@ -120,7 +114,6 @@ public class RegisterAllocator {
                 for (int j = insts.size() - 1; j >= 0; j--) {
                     TAC tac = insts.get(j);
 
-                    // Remove DEF from IN
                     if (tac.getDest() instanceof Variable) {
                         Variable def = (Variable) tac.getDest();
                         if (!isPhysicalRegister(def)) {
@@ -128,7 +121,6 @@ public class RegisterAllocator {
                         }
                     }
 
-                    // Add USEs to IN
                     for (Value op : tac.getOperands()) {
                         if (op instanceof Variable) {
                             Variable v = (Variable) op;
@@ -138,7 +130,6 @@ public class RegisterAllocator {
                         }
                     }
 
-                    // Special case: StoreGP source is a use
                     if (tac instanceof StoreGP) {
                         StoreGP sgp = (StoreGP) tac;
                         if (sgp.getSrc() instanceof Variable) {
@@ -149,7 +140,6 @@ public class RegisterAllocator {
                         }
                     }
 
-                    // Special case: Store source is a use
                     if (tac instanceof Store) {
                         Store store = (Store) tac;
                         if (store.getSrc() instanceof Variable) {
@@ -179,7 +169,6 @@ public class RegisterAllocator {
             for (int i = insts.size() - 1; i >= 0; i--) {
                 TAC tac = insts.get(i);
 
-                // Handle Definition
                 Variable def = null;
                 if (tac.getDest() instanceof Variable) {
                     def = (Variable) tac.getDest();
@@ -195,7 +184,6 @@ public class RegisterAllocator {
                     graph.addNode(def);
                 }
 
-                // Handle Uses
                 for (Value op : tac.getOperands()) {
                     if (op instanceof Variable) {
                         Variable v = (Variable) op;
@@ -206,7 +194,6 @@ public class RegisterAllocator {
                     }
                 }
 
-                // Handle StoreGP source
                 if (tac instanceof StoreGP) {
                     StoreGP sgp = (StoreGP) tac;
                     if (sgp.getSrc() instanceof Variable) {
@@ -218,7 +205,6 @@ public class RegisterAllocator {
                     }
                 }
 
-                // Handle Store source
                 if (tac instanceof Store) {
                     Store store = (Store) tac;
                     if (store.getSrc() instanceof Variable) {
@@ -260,7 +246,7 @@ public class RegisterAllocator {
                 nodes.remove(lowDegreeNode);
                 removed.add(lowDegreeNode);
             } else {
-                return null; // Spill needed
+                return null;
             }
         }
 
@@ -281,7 +267,6 @@ public class RegisterAllocator {
                 }
             }
             coloring.put(node, color);
-//            System.err.println("  Allocated R" + color + " to " + node);
         }
         return coloring;
     }
@@ -296,54 +281,43 @@ public class RegisterAllocator {
                 candidate = node;
             }
         }
-//        System.err.println("  Spilling variable: " + candidate + " (degree=" + maxDegree + ")");
         return candidate;
     }
 
     private void spillVariable(CFG cfg, Variable v) {
         int offset;
-        Variable baseReg; // Either GP or FP
+        Variable baseReg;
 
-        // Check if this is a global variable (use GP offset) or local (use FP offset)
         if (v.getSymbol() != null && v.getSymbol().isGlobal()) {
-            // Global variable - spill to global memory
             offset = v.getSymbol().getGlobalOffset();
-            baseReg = physicalRegisters.get(30); // R30 = GP
+            baseReg = physicalRegisters.get(30);
             if (offset == 0) {
                 throw new RuntimeException("Global variable " + v + " has no GP offset assigned by IRGenerator");
             }
         } else {
-            // Local variable or temp - spill to stack
             if (v.getSymbol() != null && v.getSymbol().getFpOffset() != 0) {
                 offset = v.getSymbol().getFpOffset();
             } else {
-                // If it's a temp without an offset, you might need to assign one here
-                // or ensure IRGenerator did it. For now, assuming it exists:
                 throw new RuntimeException("Variable " + v + " has no FP offset assigned by IRGenerator");
             }
-            baseReg = physicalRegisters.get(28); // R28 = FP
+            baseReg = physicalRegisters.get(28);
         }
 
-        // We use these two scratch registers to load operands safely
         Variable[] scratchRegs = { physicalRegisters.get(26), physicalRegisters.get(27) };
 
         for (BasicBlock bb : cfg.getAllBlocks()) {
             List<TAC> newInsts = new ArrayList<>();
 
             for (TAC tac : bb.getInstructions()) {
-
-                // --- 1. Rewrite Uses (Load from memory) ---
-
                 List<Value> operands = tac.getOperands();
                 boolean needLoad = false;
                 List<Value> newOperands = new ArrayList<>();
 
-                // Track which scratch register we are using (0 or 1)
                 int scratchIndex = 0;
 
                 for (Value op : operands) {
                     if (op.equals(v)) {
-                        // FIX: Cycle between R26 and R27 to avoid overwriting the first operand
+                        // Cycle between R26 and R27 to avoid overwriting the first operand
                         // if both operands are the same spilled variable.
                         if (scratchIndex >= scratchRegs.length) {
                             throw new RuntimeException("Instruction has too many spilled operands (max 2 supported)");
@@ -352,9 +326,6 @@ public class RegisterAllocator {
                         Variable currentScratch = scratchRegs[scratchIndex];
                         scratchIndex++;
 
-                        // Load logic:
-                        // 1. Calc Address: currentScratch = baseReg + offset
-                        // 2. Load Value: currentScratch = *currentScratch
                         newInsts.add(new Add(tac.getId(), currentScratch, baseReg, new Immediate(offset)));
                         newInsts.add(new Load(tac.getId(), currentScratch, currentScratch));
 
@@ -365,11 +336,9 @@ public class RegisterAllocator {
                     }
                 }
 
-                // Handle StoreGP source specially (It effectively has 1 operand)
                 if (tac instanceof StoreGP) {
                     StoreGP sgp = (StoreGP) tac;
                     if (sgp.getSrc().equals(v)) {
-                        // Use R26 (scratchRegs[0])
                         Variable r26 = scratchRegs[0];
                         newInsts.add(new Add(tac.getId(), r26, baseReg, new Immediate(offset)));
                         newInsts.add(new Load(tac.getId(), r26, r26));
@@ -382,8 +351,6 @@ public class RegisterAllocator {
                 }
                 newInsts.add(tac);
 
-                // --- 2. Rewrite Defs (Store to memory) ---
-
                 Variable def = (tac.getDest() instanceof Variable) ? (Variable) tac.getDest() : null;
 
                 if (def != null && def.equals(v)) {
@@ -393,7 +360,6 @@ public class RegisterAllocator {
                     Variable valueReg = physicalRegisters.get(27);
                     setDest(tac, valueReg);
 
-                    // We use R26 to calculate the address
                     Variable addrReg = physicalRegisters.get(26);
 
                     newInsts.add(new Add(tac.getId(), addrReg, baseReg, new Immediate(offset)));
@@ -407,8 +373,6 @@ public class RegisterAllocator {
     private void rewriteCode(CFG cfg, Map<Variable, Integer> coloring) {
         for (BasicBlock bb : cfg.getAllBlocks()) {
             for (TAC tac : bb.getInstructions()) {
-
-                // 1. Rewrite Operands
                 List<Value> newOperands = new ArrayList<>();
                 boolean changed = false;
                 for (Value op : tac.getOperands()) {
@@ -423,7 +387,6 @@ public class RegisterAllocator {
                     tac.setOperands(newOperands);
                 }
 
-                // 2. Rewrite Destination
                 if (tac.getDest() instanceof Variable) {
                     Variable dest = (Variable) tac.getDest();
                     if (coloring.containsKey(dest)) {
@@ -431,7 +394,6 @@ public class RegisterAllocator {
                     }
                 }
 
-                // 3. Handle StoreGP Source
                 if (tac instanceof StoreGP) {
                     StoreGP sgp = (StoreGP) tac;
                     if (sgp.getSrc() instanceof Variable && coloring.containsKey(sgp.getSrc())) {
@@ -442,7 +404,6 @@ public class RegisterAllocator {
         }
     }
 
-    // Helper Methods
     private boolean isPhysicalRegister(Variable v) {
         // Physical registers: R0, R25-R31 (R25=scratch for CodeGen, R26/R27=scratch for spilling,
         // R28=FP, R29=SP, R30=GP, R31=RA)

@@ -28,6 +28,6 @@ public class Add extends Assign {
 
     @Override
     public String toString() {
-        return (isFloat ? "fAdd " : "add ") + getDest() + ", " + getLeft() + ", " + getRight();
+        return getDest() + " = " + getLeft() + " + " + getRight();
     }
 }

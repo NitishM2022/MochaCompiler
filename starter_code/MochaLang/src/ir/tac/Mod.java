@@ -28,6 +28,6 @@ public class Mod extends Assign {
 
     @Override
     public String toString() {
-        return (isFloat ? "fMod " : "mod ") + getDest() + ", " + getLeft() + ", " + getRight();
+        return getDest() + " = " + getLeft() + " % " + getRight();
     }
 }

@@ -1,7 +1,5 @@
 package ir.tac;
 
-import java.util.ArrayList;
-import java.util.List;
 import ir.cfg.BasicBlock;
 
 public class Bra extends TAC {
@@ -27,7 +25,7 @@ public class Bra extends TAC {
     
     @Override
     public String toString() {
-        return "bra BB" + target.getNum();
+        return "goto BB" + target.getNum();
     }
 }
 

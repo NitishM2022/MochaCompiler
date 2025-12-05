@@ -52,6 +52,7 @@ public class StoreGP extends TAC {
 
     @Override
     public String toString() {
-        return "[GP" + (gpOffset >= 0 ? "+" : "") + gpOffset + "] = " + src;
+        String sign = gpOffset >= 0 ? "+" : "";
+        return "[GP" + sign + gpOffset + "] = " + src;
     }
 }

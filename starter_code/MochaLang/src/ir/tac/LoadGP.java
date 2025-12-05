@@ -48,6 +48,6 @@ public class LoadGP extends TAC {
     @Override
     public String toString() {
         String sign = gpOffset >= 0 ? "+" : "";
-        return dest + " = load [GP" + sign + gpOffset + "]";
+        return dest + " = [GP" + sign + gpOffset + "]";
     }
 }

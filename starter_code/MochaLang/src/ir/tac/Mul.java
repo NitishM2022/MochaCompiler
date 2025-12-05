@@ -28,6 +28,6 @@ public class Mul extends Assign {
 
     @Override
     public String toString() {
-        return (isFloat ? "fMul " : "mul ") + getDest() + ", " + getLeft() + ", " + getRight();
+        return getDest() + " = " + getLeft() + " * " + getRight();
     }
 }

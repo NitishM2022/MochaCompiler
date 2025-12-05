@@ -186,6 +186,10 @@ public class Compiler {
     
     private java.util.List<ir.cfg.CFG> currentCFGs;
     
+    public java.util.List<ir.cfg.CFG> getCurrentCFGs() {
+        return currentCFGs;
+    }
+    
     // SymbolTable Management =====================================================
     private SymbolTable symbolTable;
 

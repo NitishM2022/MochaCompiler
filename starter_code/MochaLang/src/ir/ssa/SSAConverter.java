@@ -37,11 +37,6 @@ public class SSAConverter {
         domAnalysis.analyze();
         cfg.setDominatorAnalysis(domAnalysis);
 
-//        System.out.println("Pre SSA");
-//        System.out.println("CFG: " + cfg.getFunctionName());
-//        System.out.println(cfg.asDotGraph());
-//        System.out.println();
-
         Set<Symbol> allVars = findVariableDefinitionsAndCollectSymbols();
         insertPhiNodes(allVars);
         renameVariables(allVars);
@@ -102,7 +97,6 @@ public class SSAConverter {
                 worklist.add(defBlock);
                 inWorklist.add(defBlock);
             }
-            // System.err.println("DEBUG PHI: Variable " + sym.name() + " defined in blocks: " + variableDefs.get(sym).stream().map(BasicBlock::getNum).toList());
 
             // Iterate through dominance frontiers
             while (!worklist.isEmpty()) {
@@ -110,7 +104,6 @@ public class SSAConverter {
                 inWorklist.remove(currentBlock);
 
                 Set<BasicBlock> dominanceFrontier = domAnalysis.getDominanceFrontier(currentBlock);
-                // System.err.println("DEBUG PHI: DF(" + currentBlock.getNum() + ") = " + (dominanceFrontier == null ? "null" : dominanceFrontier.stream().map(BasicBlock::getNum).toList()));
                 if (dominanceFrontier == null)
                     continue;
 
@@ -124,7 +117,6 @@ public class SSAConverter {
                         Variable dest = new Variable(sym, -1);
                         Phi phi = new Phi(getNextInstructionId(), dest);
                         frontierBlock.addPhi(phi);
-                        // System.err.println("DEBUG PHI: Inserted Phi for " + sym.name() + " in block " + frontierBlock.getNum());
 
                         // Phi is a new definition, so add to worklist
                         if (!inWorklist.contains(frontierBlock)) {

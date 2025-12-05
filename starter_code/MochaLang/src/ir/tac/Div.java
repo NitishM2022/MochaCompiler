@@ -28,6 +28,6 @@ public class Div extends Assign {
 
     @Override
     public String toString() {
-        return (isFloat ? "fDiv " : "div ") + getDest() + ", " + getLeft() + ", " + getRight();
+        return getDest() + " = " + getLeft() + " / " + getRight();
     }
 }

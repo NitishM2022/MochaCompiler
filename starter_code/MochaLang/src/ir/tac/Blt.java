@@ -51,7 +51,7 @@ public class Blt extends TAC {
     
     @Override
     public String toString() {
-        return "blt " + condition + " BB" + target.getNum();
+        return "if (" + condition + " < 0) goto BB" + target.getNum();
     }
 }
 

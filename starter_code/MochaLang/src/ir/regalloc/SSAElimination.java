@@ -14,47 +14,35 @@ public class SSAElimination {
     private static int nextBlockNum = 1000; // Start high to avoid conflicts - MUST be static for global uniqueness!
 
     public void eliminatePhis(CFG cfg) {
-        // First pass: identify critical edges and split them
         splitCriticalEdges(cfg);
 
         for (BasicBlock bb : cfg.getAllBlocks()) {
-            // Get Phis from the separate phiFunctions list
             List<Phi> phis = bb.getPhis();
 
             if (phis.isEmpty())
                 continue;
 
-            // For each predecessor, insert parallel copies at the end
-            List<BasicBlock> preds = new ArrayList<>(bb.getPredecessors()); // Copy to avoid ConcurrentModification
+            List<BasicBlock> preds = new ArrayList<>(bb.getPredecessors());
             for (BasicBlock pred : preds) {
                 List<Mov> moves = new ArrayList<>();
 
-                // For each Phi, create a move from the source to the destination
                 for (Phi phi : phis) {
                     Variable dest = (Variable) phi.getDest();
                     Value src = phi.getArgs().get(pred);
 
-                    // Only insert move if source and dest are different
                     if (src instanceof Variable && !src.equals(dest)) {
                         moves.add(new Mov(-1, dest, (Variable) src));
                     } else if (src instanceof Immediate || src instanceof Literal) {
-                        // Move immediate/literal to dest
                         moves.add(new Mov(-1, dest, src));
                     }
                 }
 
-                // Insert moves at end of predecessor (before branch)
                 if (!moves.isEmpty()) {
-                    // System.err.println("DEBUG SSA ELIM: Inserting " + moves.size() + " moves from BB" + pred.getNum() + " to BB" + bb.getNum());
-                    // for (Mov m : moves) {
-                    //     System.err.println("  MOVE: " + m.getDest() + " = " + m.getSrc());
-                    // }
                     insertMovesAtEnd(pred, moves);
                 }
             }
         }
 
-        // Remove all Phi nodes from the CFG
         for (BasicBlock bb : cfg.getAllBlocks()) {
             bb.getPhis().clear();
         }
@@ -68,21 +56,18 @@ public class SSAElimination {
         List<BasicBlock> blocks = new ArrayList<>(cfg.getAllBlocks());
         
         for (BasicBlock pred : blocks) {
-            if (pred.getSuccessors().size() <= 1) continue; // Not critical (single successor)
+            if (pred.getSuccessors().size() <= 1) continue;
             
             List<BasicBlock> succs = new ArrayList<>(pred.getSuccessors());
             for (BasicBlock succ : succs) {
-                if (succ.getPredecessors().size() <= 1) continue; // Not critical
-                if (succ.getPhis().isEmpty()) continue; // No phi functions, no need to split
+                if (succ.getPredecessors().size() <= 1) continue;
+                if (succ.getPhis().isEmpty()) continue;
                 
-                // This is a critical edge - split it
                 BasicBlock newBlock = new BasicBlock(nextBlockNum++);
                 cfg.addBlock(newBlock);
                 
-                // Add unconditional branch to successor
                 newBlock.addInstruction(new Bra(-1, succ));
                 
-                // Update CFG edges
                 pred.getSuccessors().remove(succ);
                 pred.getSuccessors().add(newBlock);
                 newBlock.addSuccessor(succ);
@@ -91,10 +76,8 @@ public class SSAElimination {
                 succ.getPredecessors().remove(pred);
                 succ.addPredecessor(newBlock);
                 
-                // Update branch target in pred to point to newBlock
                 updateBranchTarget(pred, succ, newBlock);
                 
-                // Update phi functions: change source from pred to newBlock
                 for (Phi phi : succ.getPhis()) {
                     Value srcVal = phi.getArgs().get(pred);
                     if (srcVal != null) {
@@ -102,8 +85,6 @@ public class SSAElimination {
                         phi.getArgs().put(newBlock, srcVal);
                     }
                 }
-                
-                // System.err.println("DEBUG: Split critical edge BB" + pred.getNum() + " -> BB" + succ.getNum() + " with BB" + newBlock.getNum());
             }
         }
     }
@@ -157,23 +138,20 @@ public class SSAElimination {
      * Handles parallel copy resolution to avoid cycles.
      */
     private void insertMovesAtEnd(BasicBlock block, List<Mov> moves) {
-        // Resolve parallel copies (handle cycles with Swap)
         List<TAC> resolvedMoves = resolveParallelCopies(moves);
 
-        // Find insertion point (before FIRST branch, not last!)
         // This is critical: if there's a conditional branch followed by unconditional branch,
         // we need to insert moves BEFORE the conditional branch so they execute on both paths
         List<TAC> insts = block.getInstructions();
         int insertPos = insts.size();
 
-        // Scan from the beginning to find the FIRST branch instruction
         for (int i = 0; i < insts.size(); i++) {
             TAC inst = insts.get(i);
             if (inst instanceof Bra || inst instanceof Beq || inst instanceof Bne ||
                     inst instanceof Blt || inst instanceof Ble || inst instanceof Bgt ||
                     inst instanceof Bge || inst instanceof Return) {
                 insertPos = i;
-                break;  // Insert before the FIRST branch
+                break;
             }
         }
 
@@ -188,12 +166,10 @@ public class SSAElimination {
         List<Mov> pending = new ArrayList<>(moves);
 
         while (!pending.isEmpty()) {
-            // Remove self-moves
             pending.removeIf(m -> m.getDest().equals(m.getSrc()));
             if (pending.isEmpty())
                 break;
 
-            // Find a safe move (dest not used as source in other moves)
             Mov safeMove = null;
             for (Mov candidate : pending) {
                 boolean destUsedAsSrc = false;
@@ -210,7 +186,6 @@ public class SSAElimination {
             }
 
             if (safeMove != null) {
-                // Emit safe move
                 result.add(safeMove);
                 pending.remove(safeMove);
             } else {
@@ -227,7 +202,6 @@ public class SSAElimination {
                 result.add(new Swap(-1, dest, src));
                 pending.remove(cycleMove);
 
-                // Update other moves that referenced the swapped values
                 for (Mov other : pending) {
                     if (other.getSrc().equals(dest)) {
                         other.setSrc(src);

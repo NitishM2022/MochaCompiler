@@ -51,7 +51,7 @@ public class Bgt extends TAC {
     
     @Override
     public String toString() {
-        return "bgt " + condition + " BB" + target.getNum();
+        return "if (" + condition + " > 0) goto BB" + target.getNum();
     }
 }
 

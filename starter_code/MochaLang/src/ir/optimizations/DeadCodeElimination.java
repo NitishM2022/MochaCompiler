@@ -69,20 +69,9 @@ public class DeadCodeElimination extends BaseOptimization {
     }
 
     private boolean canEliminate(TAC instruction) {
-        if (hasSideEffects(instruction))
-            return false;
-
-        // Check for global variable assignment
-        Value dest = instruction.getDest();
-        if (dest instanceof Variable) {
-            Variable var = (Variable) dest;
-            if (var.getSymbol() != null && var.getSymbol().isGlobal()) {
-                return false;
-            }
-        }
-
-        return true;
+        return !hasSideEffects(instruction);
     }
+
 
     private List<Value> getOperands(TAC instruction) {
         if (instruction instanceof Phi) {

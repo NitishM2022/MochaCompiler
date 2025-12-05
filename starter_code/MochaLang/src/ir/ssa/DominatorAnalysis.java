@@ -150,20 +150,4 @@ public class DominatorAnalysis {
         children.sort((a, b) -> a.getNum() - b.getNum());
         return children;
     }
-    
-    public void printDominatorTree() {
-        System.out.println("Dominator Tree:");
-        printDomTreeHelper(cfg.getEntryBlock(), 0);
-    }
-    
-    private void printDomTreeHelper(BasicBlock block, int indent) {
-        for (int i = 0; i < indent; i++) {
-            System.out.print("  ");
-        }
-        System.out.println("BB" + block.getNum());
-        
-        for (BasicBlock child : getDomTreeChildren(block)) {
-            printDomTreeHelper(child, indent + 1);
-        }
-    }
 }

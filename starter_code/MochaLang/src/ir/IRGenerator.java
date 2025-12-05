@@ -24,21 +24,17 @@ public class IRGenerator implements NodeVisitor {
     private int blockCounter;
     private int nextTempNumber;
 
-    // Offsets
-    private int fpOffset; // locals/temps (grows negative from 0)
-    private int gpOffset; // globals (grows positive from 0)
-    private int paramOffset; // parameters (grows positive from 8)
+    private int fpOffset;
+    private int gpOffset;
+    private int paramOffset;
 
-    // Temp recycling
     private Stack<Variable> freeTemps;
 
-    // Uninitialized tracking
-    private Set<Symbol> initializedGlobals;  // User-assigned globals
-    private Set<Symbol> initializedLocals;   // User-assigned locals
-    private Set<Symbol> needsDefaultInitGlobals;  // Globals needing default init
-    private Set<Symbol> needsDefaultInitLocals;   // Locals needing default init
+    private Set<Symbol> initializedGlobals;
+    private Set<Symbol> initializedLocals;
+    private Set<Symbol> needsDefaultInitGlobals;
+    private Set<Symbol> needsDefaultInitLocals;
 
-    // Global tracking
     private List<Symbol> globalVariables;
     private List<Symbol> globalNonArrayVars;
 
@@ -94,7 +90,7 @@ public class IRGenerator implements NodeVisitor {
             // Arrays need: 4 bytes for address slot + array data size
             return 4 + ((ArrayType) type).getAllocationSize();
         }
-        return 4; // Default size for scalar types
+        return 4;
     }
 
     private void loadAllGlobals() {
@@ -129,17 +125,14 @@ public class IRGenerator implements NodeVisitor {
     private Variable getTemp() {
         if (!freeTemps.isEmpty()) {
             Variable temp = freeTemps.pop();
-            // Type will be set by caller if needed
             return temp;
         } else {
-            // Create new temp with new number
             int tempNum = nextTempNumber++;
             fpOffset -= 4;
             int offset = fpOffset;
 
             Symbol tempSym = new Symbol("$t" + tempNum);
             tempSym.setFpOffset(offset);
-            // No type set - caller will set if needed
 
             return new Variable(tempSym, true, tempNum);
         }
@@ -147,7 +140,6 @@ public class IRGenerator implements NodeVisitor {
 
     private Variable getTemp(boolean isFloat) {
         Variable temp = getTemp();
-        // Set type based on request
         if (isFloat) {
             temp.getSymbol().setType(new FloatType());
         } else {
@@ -238,7 +230,6 @@ public class IRGenerator implements NodeVisitor {
     }
 
     private boolean isImmediate(Value v) {
-        // Adjust specific class names based on your AST/Value hierarchy
         return v instanceof Immediate || v instanceof Literal;
     }
 
@@ -282,16 +273,13 @@ public class IRGenerator implements NodeVisitor {
             Type elemType = arrType.getElementType();
 
             if (elemType instanceof ArrayType) {
-                // Multi-dim: element is a sub-array
-                // Return total size of all remaining dimensions
                 return ((ArrayType) elemType).getAllocationSize();
             } else {
-                // Final dimension: element is scalar (4 bytes for int)
                 return 4;
             }
         }
 
-        return 4; // Default for scalars
+        return 4;
     }
 
     /**
@@ -324,14 +312,12 @@ public class IRGenerator implements NodeVisitor {
             ArrayIndex ai = (ArrayIndex) expr;
             Type baseType = getExpressionType(ai.base());
             if (baseType instanceof ArrayType) {
-                // Indexing reduces one dimension level
                 return ((ArrayType) baseType).getElementType();
             }
         }
         return null;
     }
 
-    // Literals
     @Override
     public void visit(IntegerLiteral node) {
         valueStack.push(new Literal(node));
@@ -347,21 +333,16 @@ public class IRGenerator implements NodeVisitor {
         valueStack.push(new Literal(node));
     }
 
-    // Designators
     @Override
     public void visit(Designator node) {
         Symbol sym = symbolTable.lookup(node.name().lexeme());
 
         if (sym.type() instanceof ArrayType) {
-            // === HANDLING ARRAYS ===
             // We must push the BASE ADDRESS of the array onto the stack.
-
             if (sym.isParameter()) {
                 // Array Parameters: address was loaded in loadAllParams()
-                // The Variable already holds the address - just use it!
                 valueStack.push(new Variable(sym));
             } else {
-                // For local/global arrays, compute the data address
                 Variable baseAddr = getTemp();
                 baseAddr.getSymbol().setType(sym.type());
                 
@@ -378,26 +359,21 @@ public class IRGenerator implements NodeVisitor {
                 valueStack.push(baseAddr);
             }
         } else {
-            // === HANDLING SCALARS ===
-            // Standard variable usage
             valueStack.push(new Variable(sym));
         }
     }
 
     @Override
     public void visit(ArrayIndex node) {
-        // 1. Get base address
         node.base().accept(this);
         node.index().accept(this);
 
         Value indexVal = loadIfNeeded(valueStack.pop());
         Value baseAddr = valueStack.pop();
 
-        // 2. Calculate element size based on remaining dimensions
         // For multi-dim arrays, this is critical!
         int elementSize = calculateElementSize(node.base());
 
-        // 3. Scale index by element size
         Value scaledIndex;
         if (isImmediate(indexVal) && isZero(indexVal)) {
             scaledIndex = new Immediate(0);
@@ -410,27 +386,22 @@ public class IRGenerator implements NodeVisitor {
             scaledIndex = tempScaled;
         }
 
-        // 4. Calculate element address: base + scaled offset
         Variable elementAddr = getTemp();
         addInstruction(new Adda(nextInstructionId(), elementAddr, baseAddr, scaledIndex));
 
-        // 5. Determine if this is an intermediate access (multi-dim) or final access
         // Intermediate: arr[i] in arr[i][j] -> return ADDRESS
         // Final: arr[i][j] or arr[i] (1D) -> LOAD and return VALUE
         boolean isIntermediateAccess = isIntermediateArrayAccess(node.base());
 
         if (isIntermediateAccess) {
-            // Multi-dim intermediate access - push ADDRESS for next dimension
             valueStack.push(elementAddr);
 
-            // Cleanup (but keep elementAddr on stack)
             if (indexVal != scaledIndex && indexVal instanceof Variable)
                 freeTemp(indexVal);
             if (scaledIndex instanceof Variable)
                 freeTemp(scaledIndex);
             freeTemp(baseAddr);
         } else {
-            // Final dimension or 1D array - LOAD the value
             Variable loadedValue = getTemp();
             // FIX: Set type of loaded value so isFloat() works correctly!
             loadedValue.getSymbol().setType(getExpressionType(node));
@@ -438,7 +409,6 @@ public class IRGenerator implements NodeVisitor {
             addInstruction(new Load(nextInstructionId(), loadedValue, elementAddr));
             valueStack.push(loadedValue);
 
-            // Cleanup
             if (indexVal != scaledIndex && indexVal instanceof Variable)
                 freeTemp(indexVal);
             if (scaledIndex instanceof Variable)
@@ -453,7 +423,6 @@ public class IRGenerator implements NodeVisitor {
         throw new RuntimeException("Dereference not supported in IR");
     }
 
-    // Arithmetic operations
     // ==========================================
     // Commutative Operations (Add, Mul, And, Or)
     // Strategy: Swap operands if Left is Immediate
@@ -469,16 +438,13 @@ public class IRGenerator implements NodeVisitor {
         Variable temp = getTemp(isFloat);
 
         if (isImmediate(leftVal) && !isImmediate(rightVal)) {
-            // Case: 12 + a (Commutative -> a + 12)
             addInstruction(new Add(nextInstructionId(), temp, rightVal, leftVal, isFloat));
         } else if (isImmediate(leftVal)) {
-            // Case: 12 + 13 (Should be folded, but if not: t0=12, t0+13)
             Variable immTemp = getTemp(isFloat);
             addInstruction(new Mov(nextInstructionId(), immTemp, leftVal, isFloat));
             addInstruction(new Add(nextInstructionId(), temp, immTemp, rightVal, isFloat));
             freeTemp(immTemp);
         } else {
-            // Case: a + 12 or a + b
             addInstruction(new Add(nextInstructionId(), temp, leftVal, rightVal, isFloat));
         }
 
@@ -497,10 +463,8 @@ public class IRGenerator implements NodeVisitor {
         Variable temp = getTemp(isFloat);
 
         if (isImmediate(leftVal) && !isImmediate(rightVal)) {
-            // Swap: 5 * a -> a * 5
             addInstruction(new Mul(nextInstructionId(), temp, rightVal, leftVal, isFloat));
         } else if (isImmediate(leftVal)) {
-            // Materialize: 5 * 5
             Variable immTemp = getTemp(isFloat);
             addInstruction(new Mov(nextInstructionId(), immTemp, leftVal, isFloat));
             addInstruction(new Mul(nextInstructionId(), temp, immTemp, rightVal, isFloat));
@@ -516,7 +480,6 @@ public class IRGenerator implements NodeVisitor {
 
     @Override
     public void visit(LogicalAnd node) {
-        // 1. Evaluate Left
         node.getLeft().accept(this);
         Value leftVal = loadIfNeeded(valueStack.pop());
         
@@ -531,54 +494,41 @@ public class IRGenerator implements NodeVisitor {
         BasicBlock endBlock = new BasicBlock(++blockCounter);
         BasicBlock current = currentBlock;
 
-        // STRATEGY: Initialize Result to FALSE (0)
         Variable result = getTemp();
         addInstruction(new Mov(nextInstructionId(), result, new Immediate(0)));
 
         currentCFG.addBlock(evalRightBlock);
         currentCFG.addBlock(endBlock);
 
-        // --- LOGIC FOR AND ---
         // Logic: IF (Left == False) THEN Done ELSE CheckRight.
-        
-        // 1. Branch if False -> Skip to End (result already 0)
         addInstruction(new Beq(nextInstructionId(), leftVal, endBlock));
         freeTemp(leftVal);
 
-        // 2. Fallthrough means Left was True, evaluate Right.
-
-        // Link CFG
-        current.addSuccessor(endBlock);       // Branch taken (Left was FALSE)
-        current.addSuccessor(evalRightBlock); // Fallthrough (Left was TRUE)
+        current.addSuccessor(endBlock);
+        current.addSuccessor(evalRightBlock);
         evalRightBlock.addPredecessor(current);
         endBlock.addPredecessor(current);
 
-        // 3. Evaluate Right (Only reachable if Left was True)
         currentBlock = evalRightBlock;
         node.getRight().accept(this);
         
         // Use currentBlock (NOT evalRightBlock) because the right child might have added blocks
         Value rightVal = loadIfNeeded(valueStack.pop());
 
-        // If we are here, Left was True, so Result = RightVal
         addInstruction(new Mov(nextInstructionId(), result, rightVal));
         freeTemp(rightVal);
 
-        // Jump to End
         addInstruction(new Bra(nextInstructionId(), endBlock));
         
-        // Link CFG (Dynamic wiring)
         currentBlock.addSuccessor(endBlock);
         endBlock.addPredecessor(currentBlock);
 
-        // 4. Continue
         currentBlock = endBlock;
         valueStack.push(result);
     }
 
     @Override
     public void visit(LogicalOr node) {
-        // 1. Evaluate Left
         node.getLeft().accept(this);
         Value leftVal = loadIfNeeded(valueStack.pop());
         
@@ -593,49 +543,35 @@ public class IRGenerator implements NodeVisitor {
         BasicBlock endBlock = new BasicBlock(++blockCounter);
         BasicBlock current = currentBlock;
 
-        // STRATEGY: Initialize Result to TRUE (1)
         Variable result = getTemp();
         addInstruction(new Mov(nextInstructionId(), result, new Immediate(1)));
 
         currentCFG.addBlock(evalRightBlock);
         currentCFG.addBlock(endBlock);
 
-        // --- LOGIC FOR OR ---
         // Logic: IF (Left == True) THEN Done ELSE CheckRight.
-        
-        // 1. Branch if True -> Go to End (Short Circuit)
         // Bne branches when value != 0 (TRUE), Beq branches when value == 0 (FALSE)
         addInstruction(new Bne(nextInstructionId(), leftVal, endBlock));
         freeTemp(leftVal);
 
-        // 2. Fallthrough means Left was False.
-        // We must evaluate the Right side.
-        
-        // Link CFG
-        current.addSuccessor(endBlock);       // Branch taken (Left was true)
-        current.addSuccessor(evalRightBlock); // Fallthrough (Left was false)
+        current.addSuccessor(endBlock);
+        current.addSuccessor(evalRightBlock);
         endBlock.addPredecessor(current);
         evalRightBlock.addPredecessor(current);
 
-        // 3. Evaluate Right
         currentBlock = evalRightBlock;
         node.getRight().accept(this);
 
-        // Use currentBlock (NOT evalRightBlock)
         Value rightVal = loadIfNeeded(valueStack.pop());
 
-        // If we are here, Left was False, so Result = RightVal
         addInstruction(new Mov(nextInstructionId(), result, rightVal));
         freeTemp(rightVal);
 
-        // Jump to End
         addInstruction(new Bra(nextInstructionId(), endBlock));
         
-        // Link CFG
         currentBlock.addSuccessor(endBlock);
         endBlock.addPredecessor(currentBlock);
 
-        // 4. Continue
         currentBlock = endBlock;
         valueStack.push(result);
     }
@@ -655,14 +591,12 @@ public class IRGenerator implements NodeVisitor {
         Variable temp = getTemp(isFloat);
 
         if (isImmediate(leftVal)) {
-            // Case: 12 - a. Cannot swap. Must Load 12 into Reg.
-            // Generates: t0 = 12; t1 = t0 - a;
+            // Cannot swap. Must Load 12 into Reg.
             Variable immTemp = getTemp(isFloat);
             addInstruction(new Mov(nextInstructionId(), immTemp, leftVal, isFloat));
             addInstruction(new Sub(nextInstructionId(), temp, immTemp, rightVal, isFloat));
             freeTemp(immTemp);
         } else {
-            // Case: a - 12 (Valid SUBI) or a - b
             addInstruction(new Sub(nextInstructionId(), temp, leftVal, rightVal, isFloat));
         }
 
@@ -681,7 +615,6 @@ public class IRGenerator implements NodeVisitor {
         Variable temp = getTemp(isFloat);
 
         if (isImmediate(leftVal)) {
-            // Case: 12 / a
             Variable immTemp = getTemp(isFloat);
             addInstruction(new Mov(nextInstructionId(), immTemp, leftVal, isFloat));
             addInstruction(new Div(nextInstructionId(), temp, immTemp, rightVal, isFloat));
@@ -701,11 +634,11 @@ public class IRGenerator implements NodeVisitor {
         node.getRight().accept(this);
         Value rightVal = loadIfNeeded(valueStack.pop());
         Value leftVal = loadIfNeeded(valueStack.pop());
-        boolean isFloat = isFloat(leftVal) || isFloat(rightVal); // Modulo is typically integer-only
+        // Modulo is typically integer-only
+        boolean isFloat = isFloat(leftVal) || isFloat(rightVal);
         Variable temp = getTemp(isFloat);
 
         if (isImmediate(leftVal)) {
-            // Case: 12 % a
             Variable immTemp = getTemp(isFloat);
             addInstruction(new Mov(nextInstructionId(), immTemp, leftVal, isFloat));
             addInstruction(new Mod(nextInstructionId(), temp, immTemp, rightVal, isFloat));
@@ -749,11 +682,11 @@ public class IRGenerator implements NodeVisitor {
         Value rightVal = loadIfNeeded(valueStack.pop());
         Value leftVal = loadIfNeeded(valueStack.pop());
         boolean isFloat = isFloat(leftVal) || isFloat(rightVal);
-        Variable temp = getTemp(); // Result of CMP is always boolean (int 0/1)
+        // Result of CMP is always boolean (int 0/1)
+        Variable temp = getTemp();
         String cmpOp = getComparisonOp(node.getOperator().kind());
 
         if (isImmediate(leftVal)) {
-            // Case: 5 < a.
             // We could flip to a > 5, but we'd have to flip the string 'cmpOp'.
             // Safer to just materialize 5 into a register.
             Variable immTemp = getTemp(isFloat);
@@ -809,7 +742,6 @@ public class IRGenerator implements NodeVisitor {
     public void visit(FunctionCallExpression node) {
         String funcName = node.name().lexeme();
 
-        // Handle built-in functions
         switch (funcName) {
             case "readInt", "readFloat", "readBool" -> {
                 Variable temp = getTemp();
@@ -833,7 +765,6 @@ public class IRGenerator implements NodeVisitor {
             }
             case "println" -> addInstruction(new WriteNL(nextInstructionId()));
             default -> {
-                // User-defined function call
                 List<Value> args = new ArrayList<>();
                 List<Type> argTypes = new ArrayList<>();
 
@@ -845,10 +776,8 @@ public class IRGenerator implements NodeVisitor {
                         // CRITICAL FIX: Don't load arrays - we want the ADDRESS!
                         Type argType = getType(argVal);
                         if (argType instanceof ArrayType) {
-                            // For arrays, pass the address as-is
                             args.add(argVal);
                         } else {
-                            // For scalars, load the value
                             args.add(loadIfNeeded(argVal));
                         }
                         argTypes.add(argType);
@@ -868,7 +797,6 @@ public class IRGenerator implements NodeVisitor {
 
                 loadAllGlobals();
 
-                // Free arguments
                 for (Value arg : args) {
                     freeTemp(arg);
                 }
@@ -922,10 +850,8 @@ public class IRGenerator implements NodeVisitor {
         Expression dest = node.getDestination();
         Expression source = node.getSource();
 
-        // 1. Determine the RHS value
         Value rhsValue;
         if (source != null) {
-            // Standard assignment (a = b, a += b)
             source.accept(this);
             rhsValue = loadIfNeeded(valueStack.pop());
         } else {
@@ -933,7 +859,6 @@ public class IRGenerator implements NodeVisitor {
             rhsValue = new Immediate(1);
         }
 
-        // 2. Dispatch based on destination type
         if (dest instanceof Designator) {
             handleVariableAssignment((Designator) dest, op, rhsValue);
         } else if (dest instanceof ArrayIndex) {
@@ -942,7 +867,6 @@ public class IRGenerator implements NodeVisitor {
             throw new RuntimeException("Unsupported assignment destination: " + dest.getClass().getSimpleName());
         }
 
-        // Cleanup
         freeTemp(rhsValue);
     }
 
@@ -952,11 +876,9 @@ public class IRGenerator implements NodeVisitor {
         Variable targetVar = new Variable(sym);
 
         if (op.kind() == Token.Kind.ASSIGN) {
-            // Case: a = 5
             boolean isFloat = isFloat(targetVar) || isFloat(rhs);
             addInstruction(new Mov(nextInstructionId(), targetVar, rhs, isFloat));
         } else {
-            // Case: a += 5, a++, etc.
             boolean isFloat = isFloat(targetVar) || isFloat(rhs);
             Variable resultTemp = getTemp(isFloat);
 
@@ -985,12 +907,10 @@ public class IRGenerator implements NodeVisitor {
                     throw new RuntimeException("Unknown variable assignment operator: " + op);
             }
 
-            // Store result back: targetVar = result
             addInstruction(new Mov(nextInstructionId(), targetVar, resultTemp, isFloat));
             freeTemp(resultTemp);
         }
 
-        // Mark initialized
         if (sym.isGlobal()) {
             initializedGlobals.add(sym);
         } else {
@@ -999,16 +919,14 @@ public class IRGenerator implements NodeVisitor {
     }
 
     private void handleArrayAssignment(ArrayIndex dest, Token op, Value rhs) {
-        // 1. Calculate Array Address
         dest.base().accept(this);
         dest.index().accept(this);
         Value indexVal = loadIfNeeded(valueStack.pop());
         Value baseVal = valueStack.pop();
 
-        // 2. Calculate element size (CRITICAL: must match visit(ArrayIndex) scaling)
+        // CRITICAL: must match visit(ArrayIndex) scaling
         int elementSize = calculateElementSize(dest.base());
 
-        // 3. Scale Index by element size
         Value scaledIndex;
         if (isImmediate(indexVal) && isZero(indexVal)) {
             scaledIndex = new Immediate(0);
@@ -1021,18 +939,13 @@ public class IRGenerator implements NodeVisitor {
             scaledIndex = tempScaled;
         }
 
-        // 4. Calculate Element Address
         Variable addrTemp = getTemp();
         addInstruction(new Adda(nextInstructionId(), addrTemp, baseVal, scaledIndex));
 
         if (op.kind() == Token.Kind.ASSIGN) {
-            // Case: A[i] = 5
             addInstruction(new Store(nextInstructionId(), rhs, addrTemp));
         } else {
-            // Case: A[i] += 5, A[i]++
             // Logic: val = load(addr); val = val + 5; store(val, addr);
-
-            // 1. Load current value
             Variable currentVal = getTemp();
             addInstruction(new Load(nextInstructionId(), currentVal, addrTemp));
 
@@ -1064,14 +977,12 @@ public class IRGenerator implements NodeVisitor {
                     throw new RuntimeException("Unknown array assignment operator: " + op);
             }
 
-            // 3. Store result back
             addInstruction(new Store(nextInstructionId(), resultTemp, addrTemp));
 
             freeTemp(currentVal);
             freeTemp(resultTemp);
         }
 
-        // Cleanup
         freeTemp(addrTemp);
         freeTemp(indexVal);
         if (scaledIndex instanceof Variable)
@@ -1084,7 +995,7 @@ public class IRGenerator implements NodeVisitor {
         node.variables().declarations().forEach(decl -> decl.accept(this));
         node.functions().declarations().forEach(func -> func.accept(this));
 
-        // blockCounter = 0; // CRITICAL FIX: Do NOT reset blockCounter! IDs must be globally unique.
+        // CRITICAL FIX: Do NOT reset blockCounter! IDs must be globally unique.
         Symbol mainSymbol = new Symbol("main");
         currentCFG = new CFG(mainSymbol);
         BasicBlock entry = new BasicBlock(++blockCounter);
@@ -1096,7 +1007,6 @@ public class IRGenerator implements NodeVisitor {
         initializedGlobals = new HashSet<>();
         needsDefaultInitGlobals = new HashSet<>();
 
-        // Load/initialize globals at start of main
         loadAllGlobals();
         
         // Remember the entry block and insertion point for default initializations
@@ -1105,17 +1015,14 @@ public class IRGenerator implements NodeVisitor {
 
         node.mainStatementSequence().accept(this);
         
-        // Now we know which variables need default initialization
         // Insert them at the beginning of the ENTRY block (after loadAllGlobals)
         List<TAC> defaultInits = new ArrayList<>();
         for (Symbol global : needsDefaultInitGlobals) {
             Variable var = new Variable(global);
             initializeVariableToDefault(var);
-            // Remove the instruction we just added and save it
             defaultInits.add(currentBlock.getInstructions().remove(currentBlock.getInstructions().size() - 1));
         }
         
-        // Insert default initializations at the insertion point in the ENTRY block
         for (int i = defaultInits.size() - 1; i >= 0; i--) {
             entryBlock.getInstructions().add(insertionPoint, defaultInits.get(i));
         }
@@ -1147,32 +1054,24 @@ public class IRGenerator implements NodeVisitor {
 
         // CRITICAL: beq branches when condition == 0 (FALSE)
         // Fall-through happens when condition != 0 (TRUE)
-
-        // Determine where to branch when condition is FALSE
         BasicBlock falseTarget = elseBlock != null ? elseBlock : joinBlock;
 
-        // Add the beq instruction (branches on FALSE/zero)
         addInstruction(new Beq(nextInstructionId(), conditionValue, falseTarget));
-        addInstruction(new Bra(nextInstructionId(), thenBlock)); // Explicit jump to THEN to handle block reordering
+        // Explicit jump to THEN to handle block reordering
+        addInstruction(new Bra(nextInstructionId(), thenBlock));
         freeTemp(conditionValue);
 
-        // Set up CFG edges in the RIGHT ORDER:
-        // 1. Fall-through edge (TRUE case) -> then block
         branchBlock.addSuccessor(thenBlock);
         thenBlock.addPredecessor(branchBlock);
-
-        // 2. Branch edge (FALSE case) -> else or join
         branchBlock.addSuccessor(falseTarget);
         falseTarget.addPredecessor(branchBlock);
 
-        // Generate then block
         currentBlock = thenBlock;
         node.thenBlock().accept(this);
         addInstruction(new Bra(nextInstructionId(), joinBlock));
         currentBlock.addSuccessor(joinBlock);
         joinBlock.addPredecessor(currentBlock);
 
-        // Generate else block if it exists
         if (elseBlock != null) {
             currentBlock = elseBlock;
             node.elseBlock().accept(this);
@@ -1186,7 +1085,6 @@ public class IRGenerator implements NodeVisitor {
 
     @Override
     public void visit(WhileStatement node) {
-        // Create a new loop header block
         BasicBlock loopHeader = new BasicBlock(++blockCounter);
         BasicBlock loopBody = new BasicBlock(++blockCounter);
         BasicBlock loopExit = new BasicBlock(++blockCounter);
@@ -1195,26 +1093,23 @@ public class IRGenerator implements NodeVisitor {
         currentCFG.addBlock(loopBody);
         currentCFG.addBlock(loopExit);
 
-        // Jump from current block to loop header
         addInstruction(new Bra(nextInstructionId(), loopHeader));
         currentBlock.addSuccessor(loopHeader);
         loopHeader.addPredecessor(currentBlock);
 
-        // Generate condition in loop header
         currentBlock = loopHeader;
         node.condition().accept(this);
         Value conditionValue = loadIfNeeded(valueStack.pop());
 
         // Branch to exit if condition is FALSE (beq means "branch if zero")
         addInstruction(new Beq(nextInstructionId(), conditionValue, loopExit));
-        addInstruction(new Bra(nextInstructionId(), loopBody)); // Explicit jump to BODY
+        addInstruction(new Bra(nextInstructionId(), loopBody));
         freeTemp(conditionValue);
         loopHeader.addSuccessor(loopExit);
         loopHeader.addSuccessor(loopBody);
         loopExit.addPredecessor(loopHeader);
         loopBody.addPredecessor(loopHeader);
 
-        // Generate loop body
         currentBlock = loopBody;
         node.body().accept(this);
         addInstruction(new Bra(nextInstructionId(), loopHeader));
@@ -1242,8 +1137,8 @@ public class IRGenerator implements NodeVisitor {
 
         // The issue is the Beq should be: if TRUE, go to exit; if FALSE, go to body
         // So: Bne conditionValue exitBlock (if TRUE, exit)
-        addInstruction(new Bne(nextInstructionId(), conditionValue, exitBlock)); // Exit when condition is TRUE
-        addInstruction(new Bra(nextInstructionId(), bodyBlock)); // Otherwise loop back
+        addInstruction(new Bne(nextInstructionId(), conditionValue, exitBlock));
+        addInstruction(new Bra(nextInstructionId(), bodyBlock));
         freeTemp(conditionValue);
         // CRITICAL FIX: Add edges from currentBlock (where the branch actually is), not bodyBlock
         // This is important for nested loops where currentBlock != bodyBlock after processing body
@@ -1275,15 +1170,11 @@ public class IRGenerator implements NodeVisitor {
             try {
                 Symbol sym = symbolTable.insert(name.lexeme(), node.type());
 
-                // Assign offset for local variable
                 // Globals are already handled in assignGlobalOffsets
                 if (!sym.isGlobal()) {
                     int size = calculateSize(node.type());
                     fpOffset -= size;
                     sym.setFpOffset(fpOffset);
-
-                    // Don't initialize here - will be initialized at entry block
-                    // if used before explicit assignment
                 }
             } catch (Error e) {
                 // Ignore re-declaration errors in IR gen (already caught in semantic analysis)
@@ -1293,11 +1184,11 @@ public class IRGenerator implements NodeVisitor {
 
     @Override
     public void visit(FunctionDeclaration node) {
-        // Reset state for new function
         fpOffset = 0;
-        paramOffset = 12; // Skip FP, RA, and return value slot at FP+8
+        // Skip FP, RA, and return value slot at FP+8
+        paramOffset = 12;
         initializedLocals = new HashSet<>();
-        needsDefaultInitLocals = new HashSet<>();  // Reset for new function
+        needsDefaultInitLocals = new HashSet<>();
         
         // Reset global tracking for this function's CFG (each CFG tracks independently)
         initializedGlobals = new HashSet<>();
@@ -1307,19 +1198,18 @@ public class IRGenerator implements NodeVisitor {
 
         symbolTable.enterScope();
 
-        // Handle parameters
         List<Symbol> params = new ArrayList<>();
         for (Symbol param : node.formals()) {
             try {
                 Symbol sym = symbolTable.insert(param.name(), param.type());
                 sym.setParameter(true);
                 sym.setFpOffset(paramOffset);
-                paramOffset += 4; // All params are 4 bytes (pointers or scalars)
+                // All params are 4 bytes (pointers or scalars)
+                paramOffset += 4;
 
-                initializedLocals.add(sym); // Parameters are initialized
+                initializedLocals.add(sym);
                 params.add(sym);
             } catch (Error e) {
-                // Ignore
             }
         }
 
@@ -1342,7 +1232,6 @@ public class IRGenerator implements NodeVisitor {
         currentCFG.addBlock(entry);
         currentBlock = entry;
 
-        // Load globals and params at entry
         loadAllGlobals();
         loadAllParams(params);
         
@@ -1354,17 +1243,14 @@ public class IRGenerator implements NodeVisitor {
             node.body().accept(this);
         }
         
-        // Now we know which locals need default initialization
         // Insert them at the beginning of the ENTRY block (after loadAllGlobals and loadAllParams)
         List<TAC> defaultInits = new ArrayList<>();
         for (Symbol local : needsDefaultInitLocals) {
             Variable var = new Variable(local);
             initializeVariableToDefault(var);
-            // Remove the instruction we just added and save it
             defaultInits.add(currentBlock.getInstructions().remove(currentBlock.getInstructions().size() - 1));
         }
         
-        // Insert default initializations at the insertion point in the ENTRY block
         for (int i = defaultInits.size() - 1; i >= 0; i--) {
             entryBlock.getInstructions().add(insertionPoint, defaultInits.get(i));
         }
