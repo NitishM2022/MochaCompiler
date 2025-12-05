@@ -106,15 +106,13 @@ public class CompilerTester {
         // if (cmd.hasOption("int")) { // Interpreter mode - at this point the program is well-formed
         //     c.interpret(in);
         // } else {
+        //     System.out.println("Success type-checking file.");
         // }
 
-        // For IR Visualizer - use SSA-converted IR
+        // For IR Visualizer
         String dotgraph_text = null;
         try {
-            // Generate SSA-converted IR for better visualization
-            java.util.List<ir.cfg.CFG> ssaCfgs = c.genSSA(ast);
-            ir.IROutput ssaOutput = new ir.IROutput(ssaCfgs);
-            dotgraph_text = ssaOutput.asDotGraph();
+            dotgraph_text = c.genIR(ast).asDotGraph();
             
             if (cmd.hasOption("cfg")) {
                 String[] cfg_output_options = cmd.getOptionValues("cfg");
@@ -145,47 +143,14 @@ public class CompilerTester {
             System.exit(-5);
         }
 
-        // The next 3 lines are for Optimization - reuses already-generated SSA CFGs
+        // The next 3 lines are for Optimization - Comment/Uncomment them as needed
         String[] optArgs = cmd.getOptionValues("opt");
         List<String> optArguments = (optArgs!=null && optArgs.length != 0) ? Arrays.asList(optArgs) : new ArrayList<String>();
-        c.optimization(optArguments, cmd.hasOption("loop"), cmd.hasOption("max"));  // Uses currentCFGs set by genSSA above
+        c.optimization(optArguments, cmd.hasOption("loop"), cmd.hasOption("max"));
         // we expect after this, there is file recording all transformations your compiler did
         // e.g., if we run -s test000.txt -o cp -o cf -o dce -loop
         // the file will have the name "record_test000_cp_cf_dce_loop.txt"
-        
-        // Output post-optimization CFG if optimizations were applied
-        if (cmd.hasOption("cfg") && !optArguments.isEmpty()) {
-            try {
-                ir.IROutput postOptOutput = new ir.IROutput(c.getCurrentCFGs());
-                String postOptDotGraph = postOptOutput.asDotGraph();
-                
-                String[] cfg_output_options = cmd.getOptionValues("cfg");
-                for (String cfg_output: cfg_output_options) {
-                    switch (cfg_output) {
-                        case "screen":
-                            System.out.println("\n=== POST-OPTIMIZATION CFG ===");
-                            System.out.println(postOptDotGraph);
-                            break;
-                        case "file":
-                            String basename2 = sourceFile.substring(sourceFile.lastIndexOf(File.separator) + 1);
-                            String optSuffix = String.join("_", optArguments);
-                            String postFilename = basename2.substring(0, basename2.lastIndexOf('.')) + "_post_" + optSuffix + "_cfg.dot";
-                            try (PrintStream out = new PrintStream(GRAPH_DIR_NAME+File.separator+postFilename)) {               
-                                out.print(postOptDotGraph);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                                System.err.println("Error accessing the post-opt cfg file: " + GRAPH_DIR_NAME + File.separator + postFilename);
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.err.println("Error generating post-optimization CFG: " + e.getMessage());
-            }
-        }
+        // You might want to output the CFG after optimization as well using the same flag 'cfg' above
 
         //Register Allocation
         c.regAlloc(numRegs);
