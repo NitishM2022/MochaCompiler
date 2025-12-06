@@ -211,21 +211,20 @@ public class CodeGenerator {
     }
 
     private void generateFunction(CFG cfg) {
-        boolean isMain = cfg.getFunctionSymbol().name().equals("main");
         functionPCMap.put(cfg.getFunctionSymbol(), pc);
 
         // Note: Do NOT clear blockPCMap - block IDs are globally unique across all CFGs
         // and branch fixups need to resolve blocks from all functions
 
-        if (!isMain) {
-            emit(PSH, RA, SP, -4);
-            emit(PSH, FP, SP, -4);
-            emit(ADD, FP, R0, SP);
+        // Standard prologue for ALL functions, including main
+        // This ensures FP is initialized correctly for local variable access (spilling)
+        emit(PSH, RA, SP, -4);
+        emit(PSH, FP, SP, -4);
+        emit(ADD, FP, R0, SP);
 
-            int frameSize = cfg.getFrameSize();
-            if (frameSize > 0) {
-                emit(SUBI, SP, SP, frameSize);
-            }
+        int frameSize = cfg.getFrameSize();
+        if (frameSize > 0) {
+            emit(SUBI, SP, SP, frameSize);
         }
 
         // For conditional branches, the fallthrough block must immediately follow
@@ -240,7 +239,7 @@ public class CodeGenerator {
             
             blockPCMap.put(bb.getNum(), pc);
             for (TAC tac : bb.getInstructions()) {
-                generateInstruction(tac, isMain);
+                generateInstruction(tac);
             }
 
             BasicBlock fallthrough = getFallthroughSuccessor(bb);
@@ -267,7 +266,7 @@ public class CodeGenerator {
             if (!visited.contains(bb)) {
                 blockPCMap.put(bb.getNum(), pc);
                 for (TAC tac : bb.getInstructions()) {
-                    generateInstruction(tac, isMain);
+                    generateInstruction(tac);
                 }
             }
         }
@@ -331,7 +330,7 @@ public class CodeGenerator {
         return null;
     }
 
-    private void generateInstruction(TAC tac, boolean isMain) {
+    private void generateInstruction(TAC tac) {
         if (tac instanceof Add) {
             generateBinaryOp((Add) tac, ADD, ADDI);
         } else if (tac instanceof Sub) {
@@ -457,7 +456,7 @@ public class CodeGenerator {
                 if (offset instanceof Variable) {
                     offsetReg = getReg((Variable) offset);
                 } else {
-                    offsetReg = 27;
+                    offsetReg = 25;
                     int val = getImmediateValue(offset);
                     emit(ADDI, offsetReg, R0, val);
                 }
@@ -602,7 +601,7 @@ public class CodeGenerator {
             generateCall((Call) tac);
         }
         else if (tac instanceof Return) {
-            generateReturn((Return) tac, isMain);
+            generateReturn((Return) tac);
         }
         else if (tac instanceof Swap) {
             Swap swap = (Swap) tac;
@@ -616,7 +615,7 @@ public class CodeGenerator {
             emit(XOR, reg1, reg1, reg2);
         }
         else if (tac instanceof End) {
-            generateReturn(null, isMain);
+            generateReturn(null);
         }
         else if (tac instanceof Read) {
             Read read = (Read) tac;
@@ -913,11 +912,9 @@ public class CodeGenerator {
         }
     }
 
-    private void generateReturn(Return ret, boolean isMain) {
-        if (isMain) {
-            emit(RET, R0);
-            return;
-        }
+    private void generateReturn(Return ret) {
+        // Standard epilogue for ALL functions, including main
+        // Remove special handling for main to ensure stack frame is properly popped
 
         // Store return value in stack slot at FP+8 (above saved FP and RA)
         if (ret != null && !ret.getOperands().isEmpty()) {

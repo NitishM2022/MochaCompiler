@@ -34,6 +34,7 @@ public class IRGenerator implements NodeVisitor {
     private Set<Symbol> initializedLocals;
     private Set<Symbol> needsDefaultInitGlobals;
     private Set<Symbol> needsDefaultInitLocals;
+    private Set<Symbol> usedGlobalsInFunction;  // Track globals actually used in this function
 
     private List<Symbol> globalVariables;
     private List<Symbol> globalNonArrayVars;
@@ -93,17 +94,18 @@ public class IRGenerator implements NodeVisitor {
         return 4;
     }
 
-    private void loadAllGlobals() {
+    private void loadUsedGlobals() {
         for (Symbol global : globalNonArrayVars) {
-            Variable var = new Variable(global);
-            addInstruction(new LoadGP(nextInstructionId(), var, global.getGlobalOffset()));
-            // Don't mark as initialized - let loadIfNeeded warn if used before assignment
+            if (usedGlobalsInFunction.contains(global)) {
+                Variable var = new Variable(global);
+                addInstruction(new LoadGP(nextInstructionId(), var, global.getGlobalOffset()));
+            }
         }
     }
 
-    private void storeAllGlobals() {
+    private void storeUsedGlobals() {
         for (Symbol global : globalNonArrayVars) {
-            if (initializedGlobals.contains(global)) {
+            if (usedGlobalsInFunction.contains(global) && initializedGlobals.contains(global)) {
                 Variable var = new Variable(global);
                 addInstruction(new StoreGP(nextInstructionId(), var, global.getGlobalOffset()));
             }
@@ -336,6 +338,11 @@ public class IRGenerator implements NodeVisitor {
     @Override
     public void visit(Designator node) {
         Symbol sym = symbolTable.lookup(node.name().lexeme());
+
+        // Track global usage
+        if (sym.isGlobal() && !(sym.type() instanceof ArrayType)) {
+            usedGlobalsInFunction.add(sym);
+        }
 
         if (sym.type() instanceof ArrayType) {
             // We must push the BASE ADDRESS of the array onto the stack.
@@ -784,7 +791,7 @@ public class IRGenerator implements NodeVisitor {
                     }
                 }
 
-                storeAllGlobals();
+                storeUsedGlobals();
 
                 // Lookup specific function symbol based on name AND argument types
                 Symbol funcSym = symbolTable.lookupFunction(funcName, argTypes);
@@ -795,7 +802,7 @@ public class IRGenerator implements NodeVisitor {
                 }
                 addInstruction(new Call(nextInstructionId(), returnTemp, funcSym, args));
 
-                loadAllGlobals();
+                loadUsedGlobals();
 
                 for (Value arg : args) {
                     freeTemp(arg);
@@ -879,6 +886,9 @@ public class IRGenerator implements NodeVisitor {
             boolean isFloat = isFloat(targetVar) || isFloat(rhs);
             addInstruction(new Mov(nextInstructionId(), targetVar, rhs, isFloat));
         } else {
+            // Compound assignment reads the variable first, so check initialization
+            targetVar = (Variable) loadIfNeeded(targetVar);
+            
             boolean isFloat = isFloat(targetVar) || isFloat(rhs);
             Variable resultTemp = getTemp(isFloat);
 
@@ -1006,8 +1016,9 @@ public class IRGenerator implements NodeVisitor {
         // Reset global tracking for main's CFG (each CFG tracks independently)
         initializedGlobals = new HashSet<>();
         needsDefaultInitGlobals = new HashSet<>();
+        usedGlobalsInFunction = new HashSet<>();  // Track which globals are used in main
 
-        loadAllGlobals();
+        loadUsedGlobals();
         
         // Remember the entry block and insertion point for default initializations
         BasicBlock entryBlock = currentBlock;
@@ -1155,10 +1166,10 @@ public class IRGenerator implements NodeVisitor {
         if (node.value() != null) {
             node.value().accept(this);
             Value returnVal = loadIfNeeded(valueStack.pop());
-            storeAllGlobals();
+            storeUsedGlobals();
             addInstruction(new Return(nextInstructionId(), returnVal));
         } else {
-            storeAllGlobals();
+            storeUsedGlobals();
             addInstruction(new Return(nextInstructionId(), null));
         }
     }
@@ -1193,6 +1204,7 @@ public class IRGenerator implements NodeVisitor {
         // Reset global tracking for this function's CFG (each CFG tracks independently)
         initializedGlobals = new HashSet<>();
         needsDefaultInitGlobals = new HashSet<>();
+        usedGlobalsInFunction = new HashSet<>();  // Track which globals are used in this function
         
         freeTemps = new Stack<>();
 
@@ -1232,7 +1244,7 @@ public class IRGenerator implements NodeVisitor {
         currentCFG.addBlock(entry);
         currentBlock = entry;
 
-        loadAllGlobals();
+        loadUsedGlobals();
         loadAllParams(params);
         
         // Remember the entry block and insertion point for default initializations
@@ -1256,7 +1268,7 @@ public class IRGenerator implements NodeVisitor {
         }
 
         // Ensure globals are stored before implicit return/end
-        storeAllGlobals();
+        storeUsedGlobals();
         addInstruction(new End(nextInstructionId()));
         cfgs.add(currentCFG);
 

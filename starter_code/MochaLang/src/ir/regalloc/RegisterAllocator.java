@@ -303,8 +303,6 @@ public class RegisterAllocator {
             baseReg = physicalRegisters.get(28);
         }
 
-        Variable[] scratchRegs = { physicalRegisters.get(26), physicalRegisters.get(27) };
-
         for (BasicBlock bb : cfg.getAllBlocks()) {
             List<TAC> newInsts = new ArrayList<>();
 
@@ -314,22 +312,33 @@ public class RegisterAllocator {
                 List<Value> newOperands = new ArrayList<>();
 
                 int scratchIndex = 0;
+                // Use R26 for address computation (it's reserved for spilling, so safe to use)
+                Variable addrReg = physicalRegisters.get(26);
+                // Scratch registers for values: R27 first, then R26
+                // This ensures the first loaded value goes to R27, avoiding conflict with addrReg (R26)
+                Variable[] valueScratchRegs = { physicalRegisters.get(27), physicalRegisters.get(26) };
 
                 for (Value op : operands) {
+                    // Skip null operands (some TAC instructions may have null operands)
+                    if (op == null) {
+                        newOperands.add(null);
+                        continue;
+                    }
+                    
                     if (op.equals(v)) {
-                        // Cycle between R26 and R27 to avoid overwriting the first operand
-                        // if both operands are the same spilled variable.
-                        if (scratchIndex >= scratchRegs.length) {
+                        // Use R27 for first value, R26 for second (if both operands are spilled)
+                        if (scratchIndex >= valueScratchRegs.length) {
                             throw new RuntimeException("Instruction has too many spilled operands (max 2 supported)");
                         }
 
-                        Variable currentScratch = scratchRegs[scratchIndex];
+                        Variable valueReg = valueScratchRegs[scratchIndex];
                         scratchIndex++;
+                        
+                        // Compute address in R26, then load value into valueReg (R27 or R26)
+                        newInsts.add(new Add(tac.getId(), addrReg, baseReg, new Immediate(offset)));
+                        newInsts.add(new Load(tac.getId(), valueReg, addrReg));
 
-                        newInsts.add(new Add(tac.getId(), currentScratch, baseReg, new Immediate(offset)));
-                        newInsts.add(new Load(tac.getId(), currentScratch, currentScratch));
-
-                        newOperands.add(currentScratch);
+                        newOperands.add(valueReg);
                         needLoad = true;
                     } else {
                         newOperands.add(op);
@@ -339,10 +348,11 @@ public class RegisterAllocator {
                 if (tac instanceof StoreGP) {
                     StoreGP sgp = (StoreGP) tac;
                     if (sgp.getSrc().equals(v)) {
-                        Variable r26 = scratchRegs[0];
-                        newInsts.add(new Add(tac.getId(), r26, baseReg, new Immediate(offset)));
-                        newInsts.add(new Load(tac.getId(), r26, r26));
-                        sgp.setSrc(r26);
+                        // Use addrReg (R25) for address, R27 for loaded value
+                        Variable valueReg = physicalRegisters.get(27);
+                        newInsts.add(new Add(tac.getId(), addrReg, baseReg, new Immediate(offset)));
+                        newInsts.add(new Load(tac.getId(), valueReg, addrReg));
+                        sgp.setSrc(valueReg);
                     }
                 }
 
@@ -359,8 +369,6 @@ public class RegisterAllocator {
                     // because the instruction has already executed by now.
                     Variable valueReg = physicalRegisters.get(27);
                     setDest(tac, valueReg);
-
-                    Variable addrReg = physicalRegisters.get(26);
 
                     newInsts.add(new Add(tac.getId(), addrReg, baseReg, new Immediate(offset)));
                     newInsts.add(new Store(tac.getId(), valueReg, addrReg));
