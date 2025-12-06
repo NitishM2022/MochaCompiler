@@ -312,11 +312,34 @@ public class RegisterAllocator {
                 boolean needLoad = false;
                 List<Value> newOperands = new ArrayList<>();
 
+                // Detect if we actually need to spill 'v' in this instruction
+                boolean needSpill = false;
+                for (Value op : operands) {
+                    if (op != null && op.equals(v)) {
+                        needSpill = true;
+                        break;
+                    }
+                }
+
                 int scratchIndex = 0;
+                if (needSpill) {
+                    // Detect if R27 or R26 are already used by previous spills in this instruction
+                    boolean r27Used = false;
+                    boolean r26Used = false;
+                    for (Value op : operands) {
+                        if (op == null) continue;
+                        if (op.equals(physicalRegisters.get(27))) r27Used = true;
+                        if (op.equals(physicalRegisters.get(26))) r26Used = true;
+                    }
+
+                    if (r27Used) scratchIndex = 1; // Skip R27 if used
+                    if (r26Used && scratchIndex == 1) {
+                         throw new RuntimeException("RegisterAllocator: Ran out of scratch registers for spilling instruction: " + tac);
+                    }
+                }
+
                 // Use R26 for address computation (it's reserved for spilling, so safe to use)
                 Variable addrReg = physicalRegisters.get(26);
-                // Scratch registers for values: R27 first, then R26
-                // This ensures the first loaded value goes to R27, avoiding conflict with addrReg (R26)
                 Variable[] valueScratchRegs = { physicalRegisters.get(27), physicalRegisters.get(26) };
 
                 for (Value op : operands) {

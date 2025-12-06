@@ -903,17 +903,23 @@ public class IRGenerator implements NodeVisitor {
 
         if (sym.isGlobal()) {
             usedGlobalsInFunction.add(sym);
-            initializedGlobals.add(sym);
+            // initializedGlobals.add(sym); // Moved down
         } else {
-            initializedLocals.add(sym);
+            // initializedLocals.add(sym); // Moved down
         }
 
         if (op.kind() == Token.Kind.ASSIGN) {
+            if (sym.isGlobal()) initializedGlobals.add(sym);
+            else initializedLocals.add(sym);
+
             boolean isFloat = isFloat(targetVar) || isFloat(rhs);
             addInstruction(new Mov(nextInstructionId(), targetVar, rhs, isFloat));
         } else {
             // Compound assignment reads the variable first, so check initialization
             targetVar = (Variable) loadIfNeeded(targetVar);
+
+            if (sym.isGlobal()) initializedGlobals.add(sym);
+            else initializedLocals.add(sym);
             
             boolean isFloat = isFloat(targetVar) || isFloat(rhs);
             Variable resultTemp = getTemp(isFloat);
@@ -1300,8 +1306,12 @@ public class IRGenerator implements NodeVisitor {
         insertEntryLoads(entryBlock, 0);
 
         // Ensure globals are stored before implicit return/end
+        // Ensure globals are stored before implicit return/end
         storeUsedGlobals();
         addInstruction(new End(nextInstructionId()));
+        
+        // CRITICAL FIX: Set frame size so CodeGenerator allocates stack references
+        currentCFG.setFrameSize(Math.abs(fpOffset));
         cfgs.add(currentCFG);
 
         symbolTable.exitScope();
