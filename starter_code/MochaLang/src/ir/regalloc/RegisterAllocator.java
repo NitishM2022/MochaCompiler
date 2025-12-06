@@ -73,6 +73,7 @@ public class RegisterAllocator {
 
             if (coloring != null) {
                 rewriteCode(cfg, coloring);
+                removeRedundantMoves(cfg);
                 break;
             } else {
                 Variable toSpill = selectSpillCandidate(graph);
@@ -474,5 +475,25 @@ public class RegisterAllocator {
             ((AddaGP) tac).setDest(dest);
         else if (tac instanceof AddaFP)
             ((AddaFP) tac).setDest(dest);
+    }
+
+    private void removeRedundantMoves(CFG cfg) {
+        for (BasicBlock bb : cfg.getAllBlocks()) {
+            Iterator<TAC> it = bb.getInstructions().iterator();
+            while (it.hasNext()) {
+                TAC tac = it.next();
+                if (tac instanceof Mov) {
+                    Mov mov = (Mov) tac;
+                    if (mov.getDest() instanceof Variable && !mov.getOperands().isEmpty() && mov.getOperands().get(0) instanceof Variable) {
+                        Variable dest = (Variable) mov.getDest();
+                        Variable src = (Variable) mov.getOperands().get(0);
+                        if (dest.getSymbol() != null && src.getSymbol() != null && 
+                            dest.getSymbol().name().equals(src.getSymbol().name())) {
+                            it.remove();
+                        }
+                    }
+                }
+            }
+        }
     }
 }

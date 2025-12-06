@@ -94,17 +94,36 @@ public class IRGenerator implements NodeVisitor {
         return 4;
     }
 
-    private void loadUsedGlobals() {
+    private void loadAllGlobals() {
+        for (Symbol global : globalNonArrayVars) {
+            Variable var = new Variable(global);
+            addInstruction(new LoadGP(nextInstructionId(), var, global.getGlobalOffset()));
+            // Conservative: assume loaded implies potentially used/read, preventing warnings
+            initializedGlobals.add(global);
+        }
+    }
+
+    private void insertEntryLoads(BasicBlock entryBlock, int insertionIndex) {
+        // Optimization: Only load globals that were actually used in the function/main
+        // We insert these in reverse order at the specific index so they appear in correct order
+        // (Though order of loads doesn't strictly matter for correctness)
+        List<TAC> loads = new ArrayList<>();
         for (Symbol global : globalNonArrayVars) {
             if (usedGlobalsInFunction.contains(global)) {
                 Variable var = new Variable(global);
-                addInstruction(new LoadGP(nextInstructionId(), var, global.getGlobalOffset()));
+                 // Note: Instruction ID ordering might look slightly out of sequence, but that's fine for IR
+                loads.add(new LoadGP(nextInstructionId(), var, global.getGlobalOffset()));
+                initializedGlobals.add(global);
             }
         }
+        
+        // Insert into block
+        entryBlock.getInstructions().addAll(insertionIndex, loads);
     }
 
     private void storeUsedGlobals() {
         for (Symbol global : globalNonArrayVars) {
+            // Optimization: Only store globals that were USED and MODIFIED (Initialized)
             if (usedGlobalsInFunction.contains(global) && initializedGlobals.contains(global)) {
                 Variable var = new Variable(global);
                 addInstruction(new StoreGP(nextInstructionId(), var, global.getGlobalOffset()));
@@ -802,7 +821,7 @@ public class IRGenerator implements NodeVisitor {
                 }
                 addInstruction(new Call(nextInstructionId(), returnTemp, funcSym, args));
 
-                loadUsedGlobals();
+                loadAllGlobals();
 
                 for (Value arg : args) {
                     freeTemp(arg);
@@ -881,6 +900,13 @@ public class IRGenerator implements NodeVisitor {
         String varName = dest.name().lexeme();
         Symbol sym = symbolTable.lookup(varName);
         Variable targetVar = new Variable(sym);
+
+        if (sym.isGlobal()) {
+            usedGlobalsInFunction.add(sym);
+            initializedGlobals.add(sym);
+        } else {
+            initializedLocals.add(sym);
+        }
 
         if (op.kind() == Token.Kind.ASSIGN) {
             boolean isFloat = isFloat(targetVar) || isFloat(rhs);
@@ -1018,7 +1044,7 @@ public class IRGenerator implements NodeVisitor {
         needsDefaultInitGlobals = new HashSet<>();
         usedGlobalsInFunction = new HashSet<>();  // Track which globals are used in main
 
-        loadUsedGlobals();
+        // loadUsedGlobals(); // Deferred to insertEntryLoads at end
         
         // Remember the entry block and insertion point for default initializations
         BasicBlock entryBlock = currentBlock;
@@ -1038,6 +1064,9 @@ public class IRGenerator implements NodeVisitor {
             entryBlock.getInstructions().add(insertionPoint, defaultInits.get(i));
         }
         
+        // Optimization: Insert Loads for used globals
+        insertEntryLoads(entryBlock, 0);
+
         addInstruction(new End(nextInstructionId()));
         cfgs.add(currentCFG);
     }
@@ -1244,7 +1273,7 @@ public class IRGenerator implements NodeVisitor {
         currentCFG.addBlock(entry);
         currentBlock = entry;
 
-        loadUsedGlobals();
+        // loadUsedGlobals(); // Deferred to insertEntryLoads at end
         loadAllParams(params);
         
         // Remember the entry block and insertion point for default initializations
@@ -1266,6 +1295,9 @@ public class IRGenerator implements NodeVisitor {
         for (int i = defaultInits.size() - 1; i >= 0; i--) {
             entryBlock.getInstructions().add(insertionPoint, defaultInits.get(i));
         }
+
+        // Optimization: Insert Loads for used globals
+        insertEntryLoads(entryBlock, 0);
 
         // Ensure globals are stored before implicit return/end
         storeUsedGlobals();
