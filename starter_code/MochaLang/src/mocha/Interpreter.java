@@ -438,11 +438,8 @@ public class Interpreter implements NodeVisitor {
                 System.out.println();
                 break;
             default:
-                // User-defined functions - just return (no-op for now)
-                // Evaluate arguments but don't do anything with them
                 node.arguments().accept(this);
-                // Return a default value - use 0 for most cases
-                valueStack.push(0); // Default return value
+                valueStack.push(0);
                 break;
         }
     }

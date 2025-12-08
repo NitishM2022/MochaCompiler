@@ -331,6 +331,9 @@ public class CodeGenerator {
     }
 
     private void generateInstruction(TAC tac) {
+        if (tac.isEliminated()) {
+            return;
+        }
         if (tac instanceof Add) {
             generateBinaryOp((Add) tac, ADD, ADDI);
         } else if (tac instanceof Sub) {

@@ -166,8 +166,11 @@ public class ConstantPropagation extends BaseOptimization {
         for (Value arg : args.values()) {
             LatticeValue argValue = getLatticeValue(arg, lattice);
 
+            // TOP is the identity element: CONSTANT ^ TOP = CONSTANT
             if (argValue.type == LatticeType.TOP)
-                return LatticeValue.TOP();
+                continue;
+
+            // BOTTOM is the absorbing element: CONSTANT ^ BOTTOM = BOTTOM
             if (argValue.type == LatticeType.BOTTOM)
                 return LatticeValue.BOTTOM();
 
@@ -183,7 +186,8 @@ public class ConstantPropagation extends BaseOptimization {
             }
         }
 
-        return result != null ? result : LatticeValue.BOTTOM();
+        // If result is null, all inputs were TOP, so result is TOP
+        return result != null ? result : LatticeValue.TOP();
     }
 
     private LatticeValue evaluateMov(Mov mov, Map<Variable, LatticeValue> lattice) {

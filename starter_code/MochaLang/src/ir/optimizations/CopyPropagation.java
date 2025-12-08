@@ -166,8 +166,11 @@ public class CopyPropagation extends BaseOptimization {
         for (Value arg : args.values()) {
             LatticeValue argValue = getLatticeValue(arg, lattice);
 
+            // TOP is the identity element for meet: LOW ^ TOP = LOW
             if (argValue.type == LatticeType.TOP)
-                return LatticeValue.TOP();
+                continue;
+
+            // BOTTOM is the absorbing element: LOW ^ BOTTOM = BOTTOM
             if (argValue.type == LatticeType.BOTTOM)
                 return LatticeValue.BOTTOM();
 
@@ -183,7 +186,8 @@ public class CopyPropagation extends BaseOptimization {
             }
         }
 
-        return result != null ? result : LatticeValue.BOTTOM();
+        // If result is still null, it means all args were TOP
+        return result != null ? result : LatticeValue.TOP();
     }
 
     private LatticeValue evaluateMov(Mov mov, Map<Variable, LatticeValue> lattice) {

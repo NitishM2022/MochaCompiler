@@ -31,7 +31,7 @@ public class Optimizer {
         List<String> optimizationsToApply = parseOptimizationFlags(opts, max);
 
         // Handle Orphan Function Elimination (requires global CFG list)
-        if (opts != null && opts.contains("ofe")) {
+        if ((opts != null && opts.contains("ofe")) || max) {
             new OrphanFunctionElimination(this).eliminateOrphans(cfgs);
         }
 
@@ -55,6 +55,7 @@ public class Optimizer {
         List<String> optimizationsToApply = new ArrayList<>();
 
         if (max) {
+            // Note: OFE is handled separately as a global pass, but standard per-CFG opts listed here
             return Arrays.asList("cf", "cp", "cpp", "dce", "cse");
         }
 

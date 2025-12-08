@@ -504,6 +504,7 @@ public class IRGenerator implements NodeVisitor {
         valueStack.push(temp);
     }
 
+    /* diasabled: Short-circuiting
     @Override
     public void visit(LogicalAnd node) {
         node.getLeft().accept(this);
@@ -599,6 +600,39 @@ public class IRGenerator implements NodeVisitor {
         endBlock.addPredecessor(currentBlock);
 
         currentBlock = endBlock;
+        valueStack.push(result);
+    }
+    */
+
+    @Override
+    public void visit(LogicalAnd node) {
+        node.getLeft().accept(this);
+        Value leftVal = loadIfNeeded(valueStack.pop());
+
+        node.getRight().accept(this);
+        Value rightVal = loadIfNeeded(valueStack.pop());
+
+        Variable result = getTemp();
+        addInstruction(new And(nextInstructionId(), result, leftVal, rightVal));
+
+        freeTemp(leftVal);
+        freeTemp(rightVal);
+        valueStack.push(result);
+    }
+
+    @Override
+    public void visit(LogicalOr node) {
+        node.getLeft().accept(this);
+        Value leftVal = loadIfNeeded(valueStack.pop());
+
+        node.getRight().accept(this);
+        Value rightVal = loadIfNeeded(valueStack.pop());
+
+        Variable result = getTemp();
+        addInstruction(new Or(nextInstructionId(), result, leftVal, rightVal));
+
+        freeTemp(leftVal);
+        freeTemp(rightVal);
         valueStack.push(result);
     }
     
@@ -1070,8 +1104,28 @@ public class IRGenerator implements NodeVisitor {
             entryBlock.getInstructions().add(insertionPoint, defaultInits.get(i));
         }
         
-        // Optimization: Insert Loads for used globals
-        insertEntryLoads(entryBlock, 0);
+        // Optimization: For MAIN, globals are fresh and 0-initialized by runtime.
+        // Instead of loading from memory (which returns unknown), explicitly initialize to 0.
+        // This allows Constant Propagation to assume they are 0.
+        List<TAC> globalInits = new ArrayList<>();
+        for (Symbol global : globalNonArrayVars) {
+            if (usedGlobalsInFunction.contains(global)) {
+                Variable var = new Variable(global);
+                // Same logic as initializeVariableToDefault but for globals at start
+                Type type = global.type();
+                Value defaultValue;
+                if (type instanceof IntType) defaultValue = new Immediate(0);
+                else if (type instanceof FloatType) defaultValue = new Immediate(0.0);
+                else if (type instanceof BoolType) defaultValue = new Immediate(0);
+                else defaultValue = new Immediate(0);
+                
+                globalInits.add(new Mov(nextInstructionId(), var, defaultValue));
+                
+                // Mark as initialized so we don't warn about them or re-init
+                initializedGlobals.add(global);
+            }
+        }
+        entryBlock.getInstructions().addAll(0, globalInits);
 
         addInstruction(new End(nextInstructionId()));
         cfgs.add(currentCFG);

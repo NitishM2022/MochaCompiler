@@ -185,6 +185,14 @@ public class RegisterAllocator {
                     graph.addNode(def);
                 }
 
+                if (tac instanceof Call) {
+                    for (Variable v : live) {
+                        for (int r = 1; r <= 24; r++) {
+                             graph.addEdge(v, physicalRegisters.get(r));
+                        }
+                    }
+                }
+
                 for (Value op : tac.getOperands()) {
                     if (op instanceof Variable) {
                         Variable v = (Variable) op;
@@ -221,11 +229,26 @@ public class RegisterAllocator {
         return graph;
     }
 
+    private List<Variable> getSortedNodes(Set<Variable> nodes) {
+        List<Variable> sorted = new ArrayList<>(nodes);
+        sorted.sort((v1, v2) -> {
+            if (v1.isTemp() != v2.isTemp()) return v1.isTemp() ? -1 : 1;
+            if (v1.isTemp()) return Integer.compare(v1.getTempIndex(), v2.getTempIndex());
+            if (v1.getSymbol() == null || v2.getSymbol() == null) return 0;
+            int nameComp = v1.getSymbol().name().compareTo(v2.getSymbol().name());
+            if (nameComp != 0) return nameComp;
+            if (v1.getVersion() != v2.getVersion()) return Integer.compare(v1.getVersion(), v2.getVersion());
+            return Integer.compare(v1.getSymbol().getFpOffset(), v2.getSymbol().getFpOffset());
+        });
+        return sorted;
+    }
+
     private Map<Variable, Integer> colorGraph(InterferenceGraph graph) {
         Map<Variable, Integer> coloring = new HashMap<>();
         Stack<Variable> stack = new Stack<>();
         Set<Variable> removed = new HashSet<>();
-        Set<Variable> nodes = new HashSet<>(graph.getNodes());
+        // Use LinkedHashSet with sorted inputs for deterministic iteration
+        Set<Variable> nodes = new LinkedHashSet<>(getSortedNodes(graph.getNodes()));
 
         while (!nodes.isEmpty()) {
             Variable lowDegreeNode = null;
@@ -254,6 +277,10 @@ public class RegisterAllocator {
         while (!stack.isEmpty()) {
             Variable node = stack.pop();
             Set<Integer> usedColors = new HashSet<>();
+            // Neighbors iteration also needs to be deterministic?
+            // Yes, strict determinism requires it, but for coloring 'first valid color' logic,
+            // as long as 'usedColors' set is built fully, the ORDER of checking neighbors doesn't change the SET of used colors.
+            // So neighbor iteration order effectively doesn't matter for the resulting color choice.
             for (Variable neighbor : graph.getNeighbors(node)) {
                 if (coloring.containsKey(neighbor)) {
                     usedColors.add(coloring.get(neighbor));
@@ -275,7 +302,8 @@ public class RegisterAllocator {
     private Variable selectSpillCandidate(InterferenceGraph graph) {
         Variable candidate = null;
         int maxDegree = -1;
-        for (Variable node : graph.getNodes()) {
+        // Sort nodes to ensure deterministic tie-breaking for maxDegree
+        for (Variable node : getSortedNodes(graph.getNodes())) {
             int degree = graph.getNeighbors(node).size();
             if (degree > maxDegree) {
                 maxDegree = degree;
