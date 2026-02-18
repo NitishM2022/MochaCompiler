@@ -1,17 +1,18 @@
-# Compiled class file
+# macOS
+.DS_Store
+
+# Java / JVM outputs
 *.class
-
-# Log file
 *.log
-
-# BlueJ files
 *.ctxt
-
-# Mobile Tools for Java (J2ME)
 .mtj.tmp/
+hs_err_pid*
+replay_pid*
+target/
+build/
+dist/
 
-# Package Files #
-*.jar
+# Optional packaged archives
 *.war
 *.nar
 *.ear
@@ -20,33 +21,27 @@
 *.rar
 *.lst
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
-
-# vscode
-.vscode
+# Editor / workspace
+.vscode/
 *-workspace
 
-# tests
+# Local scratch
 personal_tests/
 *.out_tmp
-*_asm.txt
-target/
-record*
-starter_code/MochaLang/graphs/
 
-# reports 
-reports/
-CSCE_434_605_F25_Project_Report/
+# Generated pipeline artifacts (kept out of VCS)
+/artifacts/
+/graphs/
 
-#nb files
-/starter_code/MochaLang/nbproject
-/starter_code/MochaLang/build
-/starter_code/MochaLang/test
-/starter_code/MochaLang/build.xml
-/starter_code/MochaLang/manifest.mf
+# Legacy workbench metadata
+/archive/historical-notes/workbench/nbproject/
+/archive/historical-notes/workbench/build.xml
+/archive/historical-notes/workbench/manifest.mf
 
-#misc
-.DS_Store
-/starter_code/MochaLang/dist/
+# LaTeX temporary files
+**/.texpadtmp/
+*.aux
+*.auxlock
+*.toc
+*.out
+*.synctex.gz
