@@ -1,21 +1,42 @@
 # Compiler Module
 
-Core compiler implementation and helper scripts.
+This folder contains the production pipeline from typed AST to DLX machine code.
 
-## Layout
+## Module Layout
 
-- `src/mocha`: scanner/parser/compiler front-end and CLI
-- `src/ast`: AST node types and visitors
-- `src/types`: type system and checker
-- `src/ir`: IR generation, SSA, optimizations, regalloc, TAC, codegen
-- `scripts`: auxiliary analysis/document-generation scripts
+- `src/mocha`: front-end orchestration and CLI (`Compiler`, `CompilerTester`)
+- `src/ir`: IR generation, TAC model, CFG model, SSA, optimization, register allocation, codegen
+- `scripts`: analysis helpers for records/graphs/report generation
 
-## Entrypoint
+## Execution Contract
 
-`mocha.CompilerTester` in `src/mocha/CompilerTester.java`
+`mocha.CompilerTester` drives this sequence:
+1. parse + type-check
+2. IR generation (`IRGenerator`)
+3. SSA conversion (`SSAConverter`)
+4. optimization (`Optimizer`)
+5. register allocation + spill rewrite (`RegisterAllocator`)
+6. code emission (`CodeGenerator`)
+7. DLX execute
 
-## Build
+## Calling Convention Used By Codegen
 
-```bash
-javac -d target/classes -cp third_party/lib/commons-cli-1.9.0.jar -sourcepath compiler/src compiler/src/mocha/CompilerTester.java
-```
+- `R28` = FP, `R29` = SP, `R30` = GP, `R31` = RA
+- function prologue: push `RA`, push `FP`, set `FP=SP`, allocate frame
+- return slot at `FP+8`
+- arguments pushed right-to-left, then `JSR`
+- epilogue restores `SP`, `FP`, `RA`, then `RET`
+
+## Low-Level Design Notes
+
+- IR and CFG block IDs are globally unique across functions.
+- Branch and call targets are patched after full emission via fixup tables.
+- Register allocator colors to `R1..R24`; `R25..R27` are scratch/spill helpers.
+- Spill rewrite emits explicit `Load`/`Store` TAC around uses/defs.
+
+## Technical Debt (Module-Specific)
+
+- `IRGenerator` currently mixes semantic checks, default-init policy, CFG construction, and lowering.
+- `CodeGenerator.generateCall` chooses save-set using callee-level register usage, not caller liveness at that site.
+- Spilling logic is constrained by scratch-register assumptions and can throw on high-pressure forms.
+- Legacy comments/reference material still mention phases that are not explicit in current code path.

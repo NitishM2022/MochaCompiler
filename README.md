@@ -1,91 +1,63 @@
 # MochaLang Optimizing Compiler
 
-A Java-based compiler toolchain for a small imperative language with SSA construction, multiple optimization passes, register allocation, and DLX code generation.
+A Java compiler pipeline that lowers AST to CFG/TAC IR, converts to SSA, runs optimization passes, allocates registers with spilling, and emits DLX assembly.
 
-## Overview
-
-This repository is organized as an engineering portfolio project:
-- `compiler/src`: compiler implementation (`mocha.CompilerTester` entrypoint)
-- `tests`: regression, optimization, and fixture inputs
-- `docs`: architecture notes, optimization notes, and report culmination
-- `archive`: historical material and starter snapshots
-- `artifacts`: generated outputs (records/graphs/asm/logs; gitignored)
-
-## Pipeline
-
-```mermaid
-flowchart LR
-    A["Source Program"] --> B["Scanner + Parser"]
-    B --> C["AST"]
-    C --> D["IR Generation"]
-    D --> E["Mem2Reg"]
-    E --> F["SSA Conversion"]
-    F --> G["Optimizer"]
-    G --> H["Register Allocation"]
-    H --> I["Code Generation"]
-    I --> J["DLX Execution"]
-```
-
-## Optimization Control Flow
-
-```mermaid
-flowchart TD
-    A["CLI flags"] --> B{"-max?"}
-    B -- yes --> C["Run ofe + cf/cp/cpp/dce/cse"]
-    B -- no --> D{"-o flags present?"}
-    D -- no --> Z["Skip optimization"]
-    D -- yes --> E["Apply requested passes in order"]
-    C --> F{"-loop or -max fixed-point"}
-    E --> F
-    F -- yes --> G["Repeat until no changes"]
-    F -- no --> H["Single pass sequence"]
-    G --> I["Emit record_*.txt transformations"]
-    H --> I
-    Z --> J["Continue to regalloc + codegen"]
-    I --> J
-```
-
-## Repository Architecture
-
-```mermaid
-flowchart TB
-    R["Repository Root"] --> C["compiler/"]
-    R --> T["tests/"]
-    R --> D["docs/"]
-    R --> A["archive/"]
-    R --> X["artifacts/ (ignored)"]
-    R --> S["scripts/"]
-```
-
-## Quick Commands
+## Quick Start
 
 ```bash
-# compile
 bash scripts/build.sh
-
-# smoke test
 bash scripts/run-smoke.sh
-
-# regression sweep (set LIMIT=10 for first 10)
 bash scripts/run-regression.sh
-
-# generate CFG graph artifacts
 bash scripts/gen-graphs.sh
 ```
 
-## Key Components
+Generated outputs are written to `artifacts/` (ignored by git).
 
-- SSA path: `compiler/src/ir/IRGenerator.java`, `compiler/src/ir/ssa/SSAConverter.java`
-- Optimization framework: `compiler/src/ir/optimizations/Optimizer.java`
-- Passes: CF, CP, CPP, DCE, CSE, OFE
-- CLI entrypoint: `compiler/src/mocha/CompilerTester.java`
+## Compiler Data Path
 
-## Reports and Evidence
+```mermaid
+flowchart LR
+    A["Parser + TypeChecker"] --> B["IRGenerator\nCFG + TAC"]
+    B --> C["SSAConverter\nPhi insertion + rename"]
+    C --> D["Optimizer\nCF/CP/CPP/DCE/CSE/OFE"]
+    D --> E["SSAElimination\nphi -> moves"]
+    E --> F["RegisterAllocator\ncoloring + spill rewrite"]
+    F --> G["CodeGenerator\nDLX encode + fixups"]
+    G --> H["DLX runtime"]
+```
 
-- Architecture deep dive: `docs/architecture/pipeline.md`
-- Optimization notes: `docs/optimizations/passes.md`
-- Culminated report index: `docs/reports/index.md`
-- Executive summary: `docs/reports/executive-summary.md`
-- Verification matrix: `docs/reports/verification-matrix.md`
-- Raw legacy reports: `docs/reports/raw/`
-- Final written report (PDF): `docs/final-report/final-report.pdf`
+## Where The Core Logic Lives
+
+- IR generation and lowering rules: `compiler/src/ir/IRGenerator.java`
+- Register allocation + spill rewriting: `compiler/src/ir/regalloc/RegisterAllocator.java`
+- SSA destruction: `compiler/src/ir/regalloc/SSAElimination.java`
+- Machine code emission + calling convention: `compiler/src/ir/codegen/CodeGenerator.java`
+
+## Deep-Dive Docs
+
+- Pipeline internals: `docs/architecture/pipeline.md`
+- IR generator deep dive: `docs/architecture/ir-generator-deep-dive.md`
+- Code generator deep dive: `docs/architecture/codegen-deep-dive.md`
+- Technical debt register: `docs/architecture/technical-debt.md`
+- Optimization pass behavior: `docs/optimizations/passes.md`
+- Report culmination index: `docs/reports/index.md`
+
+## Concrete Evidence
+
+- CFG snapshots: `artifacts/graphs/`
+- Transformation logs: `artifacts/records/`
+- Assembly output snapshots: `artifacts/asm/`
+- Regression summary: `artifacts/logs/regression-summary.txt`
+
+Example signals from current artifacts:
+- `artifacts/records/record_test209-cf_cf.txt` shows algebraic simplification rewrites.
+- `artifacts/asm/regression/test209-cf_asm.txt` shows folded constants emitted directly as immediates.
+
+## Technical Debt (Top-Level)
+
+- SSA conversion is present, but there is no explicit Mem2Reg stage despite historical documentation references.
+- Call save/restore policy in codegen is function-level and not call-site precise.
+- Global state synchronization around calls is conservative and can over-serialize loads/stores.
+- Spill rewriting assumes limited scratch-register scenarios and can fail on complex instructions.
+
+See `docs/architecture/technical-debt.md` for details, impact, and cleanup strategy.
