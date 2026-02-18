@@ -1,0 +1,24 @@
+\newpage
+\section{Reflection}
+
+\subsection*{What went well}
+
+The frontend went really well, I think PA3 was very enjoyable in building the AST. I did not have too many hiccups while building either the Type Checker or Interpreter. And it was very cool to finally get some output from our code.
+
+IR Generation before I had to refactor it for code generation, went pretty smooth. This was the first time we could visualize the compiler output because we created SketchViz graphs. This greatly helped while building the optimization since you could see what was being changed in each pass.  
+
+The satisfaction of seeing the compiler work at the end, is definitely worth it. It demystifies one of the major pillars of Computer Science, and combines knowledge of Programming Languages, Data Structures, and Micro Architecture.
+\subsection*{What did not go well}
+
+
+Debugging code generation was extremely painful to diagnose since it was difficult to map program code to register operations. Using a debugger with DLX in debug mode helped but still was extremely tedious. The ASM output was the key here but you had to combine it with register allocations to see how data traversed around the registers.
+
+Although I did not do a group project, from the Syllabus I felt like I was the stoic. I was able to figure out things on my own, but it would require way less effort if I actually asked for help. I recommend that you start early so you have enough time to get help.
+
+\subsection*{Advice}
+I would read the entire Project document front from back, so that you are actively thinking about design considerations you can implement now, that will make your life easier in the future. I made a mistake of not thinking about memory when I began backend development which forced me to make many changes during the development of code generation. I also completely overlooked global variables, which are handled differently then I originally expected.
+
+Start backend development earlier than you think. PA4 really snuck up on me and I had to rush to be able to hit all the requirements I wanted to fit into my compiler. 
+
+Also SSA is not to difficult to implement and make life a lot easier when doing optimizations. It is definitely worth the time! 
+

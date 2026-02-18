@@ -1,8 +1,11 @@
 import os
 import re
+from pathlib import Path
 
 def analyze_records():
-    files = [f for f in os.listdir('.') if f.startswith('record_') and f.endswith('.txt')]
+    repo_root = Path(__file__).resolve().parents[2]
+    records_dir = repo_root / "artifacts" / "records"
+    files = [f for f in os.listdir(records_dir) if f.startswith('record_') and f.endswith('.txt')]
     files.sort()
     
     missing_optimizations = []
@@ -71,7 +74,7 @@ def analyze_records():
             # Maybe test name is everything?
             real_test_name = "_".join(parts)
         
-        with open(filename, 'r') as f:
+        with open(records_dir / filename, 'r') as f:
             content = f.read()
             
         if not content.strip():

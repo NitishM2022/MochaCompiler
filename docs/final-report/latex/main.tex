@@ -1,0 +1,140 @@
+\documentclass{tamureport}
+\graphicspath{{./images/}}
+%************************************************************
+% ABOUT THIS REPORT
+\def\course{CSCE 434/605: Compiler Design}      %Course TODO: specify which
+\def\thetitle{Report Title}               % TODO: Report Title
+\def\Headauthor{Nitish M.}         % TODO: Header Authors of work
+\def\date{\today}                         % Date
+
+\usepackage{times} %times font
+\usepackage{framed}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{dot2texi}
+% \definecolor{shadecolor}{RGB}{209,209,209}
+% \definecolor{shadecolor}{RGB}{115,47,47}
+\definecolor{shadecolor}{RGB}{80,0,0}
+
+\usepackage{lipsum}
+\usepackage{pifont}
+
+\setlength{\headheight}{15pt}%% min header, suggested by fancyhdr
+
+\newlist{todolist}{itemize}{2}
+\setlist[todolist]{label=$\square$}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\let\oldlipsum\lipsum
+\renewcommand{\lipsum}[1][]{%
+  \textcolor{blue}{\it \oldlipsum[#1]}%
+}
+ 
+% DOCUMENT START
+\begin{document}
+
+\input{instruction}
+
+% TITLE PAGE
+\begin{center}
+    
+    \vspace*{1.5cm}
+    % Dept Logo
+    \includegraphics[scale = 0.4]{CSCE_logo.png}\\[1.75cm]
+    % University Name
+    % \textsc{\color[RGB]{80, 0, 0}\LARGE{Texas A\&M University}}\\[1cm]
+    \textsc{\huge{\course}}\\[.5cm]
+    \textsc{\Large{Fall 2025}}\\[.5cm]
+    \textsc{\Large{Project Report}}\\[.5cm] %%TODO: change this to something else if you want
+    \textsc{\date}\\[.5cm]
+    \vspace{1em} 
+    \begin{tabular}{L{4cm} R{4cm}}
+        \textit{Author} &  \textit{UIN}\\
+        \hline
+        % TODO: author names and UIN
+        Nitish Malluru & 932007196\\
+    \end{tabular}
+\end{center}
+
+\tableofcontents{}
+
+\thispagestyle{empty}
+\pagebreak
+
+
+\sloppy
+
+
+% REPORT START
+\section{Summary}
+
+\begin{dot2tex}[dot,tikz,codeonly]
+digraph G {
+  A -> B;
+  B -> C;
+  C -> A;
+  B [label="$\\alpha$"];
+}
+\end{dot2tex}
+
+\subsection{IR Generator}
+To create the unoptimized IR we need to traverse the AST. Each function is a different CFG. Each CFG consists of a set of basic blocks. A basic block is a set of instructions that are guaranteed to run together, so whenever a branch is encountered we create a new basic block. This occurs in loops and if statements, so they are broken down into condition, and body blocks. For the individual instructions I use 4 parameter TACS that best match up with the DLX instruction set. I have a few helper TACS like MOV, CALL, and RET that are substituted with actual instructions during code generation. One other responsibility of the IR Generator is to set aside space for locals and temps. For both local and global variable declarations, 4 byte space are allocated in memory for all types except array type. ArrayTypes dimensions are multiplied together and then by 4 to allocate space for. 
+
+To make implementing optimizations easier I implemented SSA. In a first pass I do dominator analysis to find the merge points for separate branches that eventually merge. With this information I could proceed with SSA. For every declaration of the same variable I increment its version. then when two different versions of merge I place a phi instruction associating to each branch's definition of the variable I am merging. 
+
+The point of SSA is to make optimization easier as now variable are only declared once. Common Subexpression Elimination becomes a lot easier to compute since variables are only declared once, so we can more easily eliminate redundant expressions. Copy and Constant Propagations work similarly in that they use lattices to map if a value can have a constant value propagated to it. Using Data Flow analysis we can use the lattice to trace if a variable will always be a certain variable or constant. DCE works by tracking what is live at the out block and tracking what is used to define variable in the live out set. Constant Folding tries to eliminate impossible branches and evaluates expressions where all arguments are constants.
+
+\subsection{Register Allocator}
+Moving on to the Register Allocator I first eliminate all Phi Instructions. Then I use the Chaitin Briggs algorithm to allocate all the registers. I first calculate the live in and out for every block until they converge on a consistent definition. Then I iterate through the cfg in reverse, when I hit a variable definition I can add an edge from all the variables that are live out in the block. Then I can begin actually allocating registers. I first start by popping the first node with less than K degrees.  I update the graph to remember this removal from the graph and continue. If it is impossible to pop all the nodes I spill the node with the highest number of edges. 
+\subsection{Code Generator}
+The Code Generator uses a two passes. In the first pass I replace all TACs with there actual instructions. I also create function prologues to save arguments, return address, stack pointer, and frame pointer. For function epilogues I save the return value, and restore return address, stack pointer, and frame pointer. In the second pass I assign actual PC counts for where all the blocks are located since I now know the length of each block.
+
+
+\subsection*{Feature Check List}
+\begin{todolist}
+    % \item Error Recovery
+    \item[\cmark] SSA
+    \item[\cmark] Type Checker 
+    \item[\cmark] Constant Folding 
+    \item[\cmark] Constant Propagation
+    \item[\cmark] Copy Propagation 
+    \item[\cmark] Orphan Function Elimination
+    \item[\cmark] Uninitialized Variables
+    \item[\cmark] Common Subexpression Elimination
+    \item[\cmark] Dead Code Elimination
+    % \item Redundant Load/Store Elimination
+    % \item Partial Redundant Elimination
+    \item[\cmark] Graph-coloring Register Allocation
+    \item[\xmark] Linear Scan Register Allocation
+    \item[\xmark] Register Allocation - Coalescing
+    % \item Instruction Scheduling for superscalar machine
+\end{todolist}
+
+\vspace{2em}
+{
+\subsection*{KLOC}
+\large
+\begin{tabular}{p{3.5cm}l}
+    Code: & \\
+    Comment: & \\
+    Total: &  
+\end{tabular}
+}
+% \noindent\rule{\textwidth}{1pt}
+
+\vspace{2em}
+
+\input{design}
+
+\input{reflection}
+
+\input{certification}
+
+
+
+% % % TABLE OF CONTENTS
+% \tableofcontents{}
+% \pagebreak
+%************************************************************
+\end{document}

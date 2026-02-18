@@ -1,0 +1,37 @@
+Transformations:
+--------------------------------------------------------------------------------
+1: Iteration #1
+2: ConstantFolding: Folded constant: 1: add t0 2 1 -> 1: mov t0 #3
+3: ConstantFolding: Folded constant: 9: mul t2 5 3 -> 9: mov t2 #15
+4: Iteration #2
+5: CP: Propagated in: 2: mul t1 #3 2
+6: CP: Propagated in: 7: write t1
+7: CP: Propagated in: 10: add t3 #15 7
+8: CP: Propagated in: 13: write t3
+9: Iteration #3
+10: ConstantFolding: Folded constant: 2: mul t1 #3 2 -> 2: mov t1 #6
+11: ConstantFolding: Folded constant: 10: add t3 #15 7 -> 10: mov t3 #22
+12: Iteration #4
+13: CP: Propagated in: 3: div t0 #6 2
+14: CP: Propagated in: 17: mov a_2 #22
+15: CP: Propagated in: 13: write #22
+16: Iteration #5
+17: ConstantFolding: Folded constant: 3: div t0 #6 2 -> 3: mov t0 #3
+18: Iteration #6
+19: CP: Propagated in: 4: sub t1 #3 1
+20: Iteration #7
+21: ConstantFolding: Folded constant: 4: sub t1 #3 1 -> 4: mov t1 #2
+22: Iteration #8
+23: CP: Propagated in: 16: mov a_1 #2
+24: CP: Propagated in: 7: write #2
+25: Iteration #9
+26: DCE: Eliminated: 16: mov a_1 #2
+27: DCE: Eliminated: 9: mov t2 #15
+28: DCE: Eliminated: 1: mov t0 #3
+29: DCE: Eliminated: 3: mov t0 #3
+30: DCE: Eliminated: 10: mov t3 #22
+31: DCE: Eliminated: 2: mov t1 #6
+32: DCE: Eliminated: 4: mov t1 #2
+33: DCE: Eliminated: 17: mov a_2 #22
+34: Iteration #10
+--------------------------------------------------------------------------------

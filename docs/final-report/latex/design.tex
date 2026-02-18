@@ -1,0 +1,61 @@
+\newpage
+\section{Implementation}
+
+
+\subsection{Design and Implementation Details} 
+
+    \begin{itemize}
+		\item \textbf{Uninitialized variables:} During IR Generation I track all initialized globals and initialized locals in distinct sets. Whenever an instruction needs uses a variable I check if they exists within theses sets. If absent a warning and save to a list to add. After I am done processing the entire function AST I add initialization instructions to a block after the entry block. When a variable is defined it is added to the proper set.
+		\item \textbf{IR instruction:} IR is generated using the visitor pattern to to transform the Abstract Syntax Tree nodes to CFGs constructed from TAC instructions. Basic arithmetic and comparison nodes directly map to tacs, however IF, WHILE, and REPEAT nodes require more complex instructions. For example in IF nodes, the generator will create a thenBlock, joinBlock, and an optional elseBlock, using different branch instructions. Loops are constructed using a headerBlock, bodyBlock, and exitBlock.
+		\item \textbf{Stack Frame Layout and Epilogues:} Function calls and returns have specific TACs that notify the code generator when to add prologue and epilogue blocks. These blocks modify the stack frame. The stack is laid out with the return value slot located at (FP+8), sitting immediately above the saved Frame Pointer (FP+4) and Return Address (FP+0). 
+		\item \textbf{Function Calls and Return Values:} At every function call push params onto the stack and save all our registers, then in the called function pop all the params. After every return we read the saved return value in the stack.
+		\begin{verbatim}
+			
+			FP+8:  Return value slot
+
+			FP+4:  Saved Frame Pointer (old FP)
+
+			FP+0:  Saved Return Address (old RA)
+
+			FP-4:  Local variable 1
+
+			FP-8:  Local variable 2
+
+			...
+
+			FP-N:  Temporary variables
+		\end{verbatim} 
+		
+		\item \textbf{Heuristics used for Graph Coloring:} I simply remove the node with the greatest number of edges to reduce the amount of variables that would need to be spilled in future iterations of graph coloring.
+		\item \textbf{Spilled variables:} I reserve R26 and R27 to be used for spilling, so R1–25 can be used as data registers. When a spilled register is used, its address is loaded into the first available spilled register. The next instruction then loads the value into the same register. This does not clobber the register since the address is no longer needed again as the value lives directly in the register. 
+		\item \textbf{Global Load and Commit Strategy} Global Variables are loaded at function entry and committed before function end or function call. This allows us to optimize them as any other regular variable. Global Variables exists at -4 offsets from the Global Pointer. 
+		\item \textbf{Float Detection for Instructions} There exists many float alternatives for instructions so we need to know when to choose the correct one. To accomplish this TACS that have both an integer and float form have an isfloat instance variable. When generating a TAC we can see if one of the operands is a tac and set the flag to true if so.
+		\item \textbf{Array Handling} ArrayType tracks element type and dimensions. Arrays live contiguously in memory, either GP-relative (globals) or FP-relative (locals). The IR generator uses AddaGP/AddaFP + Load/Store to compute and use element addresses. Arrays are passed as pointers; no extra loads for array params. Multi-dimensional arrays use element size computations to handles sub-array sizes, so index scaling is correct across dimensions. 
+    \end{itemize}
+    
+\subsection{Testcases}
+Demonstrate that the compiler is working, focusing on optimizations: Either pick from public testcases or create one yourself, list the tests (see here: \url{https://www.overleaf.com/learn/latex/Code_listing}) and similar to PA4 dotgraph assignment, include pre- and post-optimization Dot graphs. In the post-optimization graph, noted where the optimation takes place
+
+
+
+
+
+
+
+* If you have used generative AI for any coding, you have to disclose it here. For example, the tool used, the prompt used, the code generated, and the part of the compiler 
+
+	I used Github Copilot tab completions. Outside of that I used AI to architect SSA Elimination aswell as Code Gen transformation. I used Gemini with the following prompts.
+	
+	\begin{verbatim}
+		
+	\end{verbatim}
+
+
+
+
+\newpage
+\section*{Updates after Evaluation}
+\textcolor{red}{Only include this in the final report - not the prelim}
+
+List any fixes/updates you made after the evaluation session, e.g., if any tests fail earlier, show that they work now. If there is none, say so.
+

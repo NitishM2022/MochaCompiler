@@ -1,0 +1,45 @@
+
+
+% boxed marks
+% \item[\rlap{\raisebox{0.3ex}{\hspace{0.4ex}\tiny \ding{52}}}$\square$]
+% failed
+% \item[\rlap{\raisebox{0.3ex}{\hspace{0.4ex}\scriptsize \ding{56}}}$\square$]
+% checked
+
+\newpage
+\section*{Check List}
+
+Sample List
+\begin{todolist}
+\item no checked 1
+\item[$\square$] no checked 2
+\item[\cmark] done
+\item[\xmark] not done
+\end{todolist}
+
+\vspace{2em}
+
+
+
+\vspace{2em}
+Design Check List
+\begin{todolist}
+    \item Only errors and warnings related to user programs are shown in stdout/stderr. Internal errors and debug information must be hidden.
+    \item No reliance on JVM's assertion: i.e., no "-ea"
+    \item Use JDK no newer than JDK17(LTS) 
+    \item \texttt{main() is void} - should not return any expression.
+    \item All syntactic errors are shown. Must not stop after one parsing error.
+    \item All semantic errors are shown. Must not stop after one semantic error.
+    \item No hard-coded optimization order.
+    \item An additional pass after register allocation to remove silly MOVE
+    % \item Dot graph files end with ".dot"
+    \item A mode where Dot graphs are overwritten so that I can see the graph on-the-fly
+    \item Dot graph before and after each optimization, in order.
+    \item Dot graph files separated by input program.
+    % \item Auto-optimization pass
+    % \item Optimization sequence is treated as seed sequence. The whole optimization pass must run till fixed-point.
+    \item Print all code modifications (easier to grade by counting?)
+\end{todolist}
+
+
+\clearpage

@@ -6,12 +6,13 @@ Uses minimal test cases for clearer, simpler IR graphs.
 
 import os
 import re
+from pathlib import Path
 
-# Paths
-GRAPHS_DIR = "/Users/nitishmalluru/HW/CSCE_434/starter_code/MochaLang/graphs"
-RECORDS_DIR = "/Users/nitishmalluru/HW/CSCE_434/starter_code/MochaLang"
-SOURCE_DIR = "/Users/nitishmalluru/HW/CSCE_434/starter_code/MochaLang"
-OUTPUT_FILE = "/Users/nitishmalluru/.gemini/antigravity/brain/2ad34f07-d4c1-41ab-b0de-e0494973280f/optimization_demonstration.tex"
+ROOT_DIR = Path(__file__).resolve().parents[2]
+GRAPHS_DIR = ROOT_DIR / "artifacts" / "graphs"
+RECORDS_DIR = ROOT_DIR / "artifacts" / "records"
+SOURCE_DIR = ROOT_DIR / "tests" / "fixtures" / "mocha"
+OUTPUT_FILE = ROOT_DIR / "docs" / "reports" / "optimization_demonstration.tex"
 
 def split_digraphs(content):
     """Split a DOT file into separate digraph blocks."""
@@ -56,7 +57,7 @@ def read_dot_content(filepath):
 
 def read_source_code(test_name):
     """Read source code from local directory."""
-    source_path = f"{SOURCE_DIR}/{test_name}.mocha"
+    source_path = SOURCE_DIR / f"{test_name}.mocha"
     try:
         with open(source_path, 'r') as f:
             return f.read()
@@ -65,7 +66,7 @@ def read_source_code(test_name):
 
 def read_record(test_name, opt):
     """Read optimization record file."""
-    record_path = f"{RECORDS_DIR}/record_{test_name}_{opt}.txt"
+    record_path = RECORDS_DIR / f"record_{test_name}_{opt}.txt"
     try:
         with open(record_path, 'r') as f:
             content = f.read().strip()
@@ -207,8 +208,8 @@ for i, test in enumerate(tests, 1):
     # Read files
     source = read_source_code(test_name)
     record = read_record(test_name, opt)
-    pre_digraphs = read_dot_content(f"{GRAPHS_DIR}/{test_name}_cfg.dot")
-    post_digraphs = read_dot_content(f"{GRAPHS_DIR}/{test_name}_post_{opt}_cfg.dot")
+    pre_digraphs = read_dot_content(GRAPHS_DIR / f"{test_name}_cfg.dot")
+    post_digraphs = read_dot_content(GRAPHS_DIR / f"{test_name}_post_{opt}_cfg.dot")
     
     # Create section
     latex_content += f'''\\section{{Test {i}: {test['opt_name']}}}
