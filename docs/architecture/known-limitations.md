@@ -1,12 +1,12 @@
-# Technical Debt Register
+# Known Limitations Register
 
-This is the active debt list for the current compiler implementation.
+This is the active known-limitations list for the current compiler implementation.
 
 ## 1) Phase Contract Drift (High)
 
-- Symptom: historical references mention Mem2Reg-style staging, but current `genSSA` path runs `IRGenerator` then `SSAConverter` directly.
+- Symptom: historical references mention an extra memory-promotion staging step, but current `genSSA` path runs `IRGenerator` then `SSAConverter` directly.
 - Impact: docs/tests can assume a pass boundary that does not exist, making debugging and optimization expectations inconsistent.
-- Suggested fix: either add explicit Mem2Reg pass or remove stale assumptions and codify current contract in tests.
+- Suggested fix: either add the missing stage explicitly or remove stale assumptions and codify the current contract in tests.
 
 ## 2) IRGenerator Responsibility Overload (High)
 

@@ -83,7 +83,7 @@ This is intentionally conservative for correctness with mutable globals.
 `loadIfNeeded` issues warnings for first use-before-write and records symbols needing default initialization.
 Later, default-init `Mov` instructions are inserted near the function/main entry.
 
-## Technical Debt In This File
+## Known Limitations In This File
 
 - Single class handles too many concerns (layout, diagnostics, CFG creation, lowering).
 - Initialization policy mutates “initialized” sets during reads, which can mask dataflow intent.

@@ -6,12 +6,12 @@ This document describes the concrete internal flow and invariants enforced betwe
 
 ```mermaid
 flowchart TD
-    A["AST"] --> B["IRGenerator\n- creates CFG blocks\n- emits TAC\n- assigns FP/GP offsets"]
-    B --> C["SSAConverter\n- dominators\n- phi placement\n- renaming"]
-    C --> D["Optimizer\n- marks TAC eliminated\n- rewrites operands"]
-    D --> E["SSAElimination\n- split critical edges\n- phi -> mov/swap"]
-    E --> F["RegisterAllocator\n- liveness\n- interference graph\n- coloring/spilling"]
-    F --> G["CodeGenerator\n- DLX encode\n- branch/call fixups"]
+    A["AST"] --> B["IRGenerator<br/>- creates CFG blocks<br/>- emits TAC<br/>- assigns FP/GP offsets"]
+    B --> C["SSAConverter<br/>- dominators<br/>- phi placement<br/>- renaming"]
+    C --> D["Optimizer<br/>- marks TAC eliminated<br/>- rewrites operands"]
+    D --> E["SSAElimination<br/>- split critical edges<br/>- phi -> mov/swap"]
+    E --> F["RegisterAllocator<br/>- liveness<br/>- interference graph<br/>- coloring/spilling"]
+    F --> G["CodeGenerator<br/>- DLX encode<br/>- branch/call fixups"]
 ```
 
 ## Cross-Stage Invariants
@@ -33,4 +33,4 @@ flowchart TD
 
 - `docs/architecture/ir-generator-deep-dive.md`
 - `docs/architecture/codegen-deep-dive.md`
-- `docs/architecture/technical-debt.md`
+- `docs/architecture/known-limitations.md`

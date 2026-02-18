@@ -38,7 +38,7 @@ flowchart TD
 - Example CF evidence: `artifacts/records/record_test209-cf_cf.txt`
 - Example CFG evidence: `artifacts/graphs/demo_cf_post_cf.dot`
 
-## Current Technical Debt
+## Current Known Limitations
 
 - Pass ordering and interaction are encoded in imperative logic rather than a declarative pass manager.
 - Some transformations rely on instruction-level mutation with limited validation tooling.

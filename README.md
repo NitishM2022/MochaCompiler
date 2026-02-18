@@ -17,12 +17,12 @@ Generated outputs are written to `artifacts/` (ignored by git).
 
 ```mermaid
 flowchart LR
-    A["Parser + TypeChecker"] --> B["IRGenerator\nCFG + TAC"]
-    B --> C["SSAConverter\nPhi insertion + rename"]
-    C --> D["Optimizer\nCF/CP/CPP/DCE/CSE/OFE"]
-    D --> E["SSAElimination\nphi -> moves"]
-    E --> F["RegisterAllocator\ncoloring + spill rewrite"]
-    F --> G["CodeGenerator\nDLX encode + fixups"]
+    A["Parser + TypeChecker"] --> B["IRGenerator<br/>CFG + TAC"]
+    B --> C["SSAConverter<br/>Phi insertion + rename"]
+    C --> D["Optimizer<br/>CF/CP/CPP/DCE/CSE/OFE"]
+    D --> E["SSAElimination<br/>phi -> moves"]
+    E --> F["RegisterAllocator<br/>coloring + spill rewrite"]
+    F --> G["CodeGenerator<br/>DLX encode + fixups"]
     G --> H["DLX runtime"]
 ```
 
@@ -38,7 +38,7 @@ flowchart LR
 - Pipeline internals: `docs/architecture/pipeline.md`
 - IR generator deep dive: `docs/architecture/ir-generator-deep-dive.md`
 - Code generator deep dive: `docs/architecture/codegen-deep-dive.md`
-- Technical debt register: `docs/architecture/technical-debt.md`
+- Known limitations register: `docs/architecture/known-limitations.md`
 - Optimization pass behavior: `docs/optimizations/passes.md`
 - Report culmination index: `docs/reports/index.md`
 
@@ -53,11 +53,11 @@ Example signals from current artifacts:
 - `artifacts/records/record_test209-cf_cf.txt` shows algebraic simplification rewrites.
 - `artifacts/asm/regression/test209-cf_asm.txt` shows folded constants emitted directly as immediates.
 
-## Technical Debt (Top-Level)
+## Known Limitations (Top-Level)
 
-- SSA conversion is present, but there is no explicit Mem2Reg stage despite historical documentation references.
+- Historical docs still reference an extra memory-promotion phase that is not present in the current pipeline.
 - Call save/restore policy in codegen is function-level and not call-site precise.
 - Global state synchronization around calls is conservative and can over-serialize loads/stores.
 - Spill rewriting assumes limited scratch-register scenarios and can fail on complex instructions.
 
-See `docs/architecture/technical-debt.md` for details, impact, and cleanup strategy.
+See `docs/architecture/known-limitations.md` for details, impact, and cleanup strategy.

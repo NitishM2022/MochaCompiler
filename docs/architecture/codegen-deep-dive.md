@@ -77,7 +77,7 @@ Current implementation:
 
 That confirms constant-folded values are materialized directly at codegen.
 
-## Technical Debt In This File
+## Known Limitations In This File
 
 - Save-set selection in `generateCall` uses callee-level live-register set, not caller call-site liveness.
 - Scratch register policy (`R25` globally reused) increases coupling across lowering cases.
