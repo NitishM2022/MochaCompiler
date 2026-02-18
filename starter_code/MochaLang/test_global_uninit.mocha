@@ -1,0 +1,7 @@
+// Test uninitialized global detection
+main
+int globalVar;
+
+{
+  call printInt(globalVar);
+}.

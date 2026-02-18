@@ -1,0 +1,28 @@
+main
+int[3] arr;
+int c;
+
+function sumArray(int[] vals, int elems) : int
+{
+    int i;
+    int sum;
+    
+    i = 0;
+    sum = 0;
+    
+    while (i < elems) do
+        sum += vals[i];
+        i++;
+    od;
+    return sum;
+};
+
+{
+    c = 0;
+    while (c < 3) do
+        arr[c] = c + 10;
+        c++;
+    od;
+    call printInt(call sumArray(arr, c));
+}.
+

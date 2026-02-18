@@ -1,0 +1,17 @@
+// Test that initialized variables don't get warnings
+main
+int g;
+
+function foo() : void {
+  int a, b;
+  a = 5;  // Initialize a
+  b = 10; // Initialize b
+  call printInt(a);
+  call printInt(b);
+};
+
+{
+  g = 100;  // Initialize g
+  call foo();
+  call printInt(g);
+}.

@@ -1,0 +1,638 @@
+% Fragment for Testcases subsection: only source, CFGs, and records.
+% Assumes a listings style 'code' is already defined in the main document.
+
+% ------------------------ test008: cp + cf + loop ------------------------
+
+\subsubsection*{test008 \texttt{-o cp -o cf -loop}}
+
+% Source file: ../../PA6/test008.txt
+\begin{lstlisting}[style=code,caption={Source for test008},label={lst:test008-src}]
+// Testcase nested if/else condition for RegAllocation and CodeGeneration
+
+main
+
+int a, b, c, d, e;
+
+{
+    a = 1;
+    b = a + 1;
+    c = b + 1;
+    d = c + 1;
+    e = d * 2;
+    if ( a > b )
+    then 
+      if (c > d)
+      then
+        call printInt(c);
+      else
+        call printInt(d);
+      fi;
+    else // taken branch, b is 2; e is 8
+      if (b > e)
+      then 
+        call printInt(b);
+      else
+        call printInt(e); // 8
+      fi;
+    fi;
+}.
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Pre-optimization SSA CFG for test008},label={lst:test008-pre}]
+digraph G {
+bb1 [ shape = record , label = " <b > BB1 | {1: a_1 = 1 | 2: add $t0_1, a_1, 1 | 3: b_1 = $t0_1 | 4: add $t0_2, b_1, 1 | 5: c_1 = $t0_2 | 6: add $t0_3, c_1, 1 | 7: d_1 = $t0_3 | 8: mul $t0_4, d_1, 2 | 9: e_1 = $t0_4 | 10: cmp gt $t0_5, a_1, b_1 | 11: beq $t0_5 BB4 | 12: bra BB2}"];
+bb2 [ shape = record , label = " <b > BB2 | {13: cmp gt $t0_6, c_1, d_1 | 14: beq $t0_6 BB7 | 15: bra BB5}"];
+bb3 [ shape = record , label = " <b > BB3 | {30: $t0_7 = phi [BB6: $t0_6, BB9: $t0_8] | 29: end}"];
+bb4 [ shape = record , label = " <b > BB4 | {21: cmp gt $t0_8, b_1, e_1 | 22: beq $t0_8 BB10 | 23: bra BB8}"];
+bb5 [ shape = record , label = " <b > BB5 | {16: write c_1 | 17: bra BB6}"];
+bb6 [ shape = record , label = " <b > BB6 | {20: bra BB3}"];
+bb7 [ shape = record , label = " <b > BB7 | {18: write d_1 | 19: bra BB6}"];
+bb8 [ shape = record , label = " <b > BB8 | {24: write b_1 | 25: bra BB9}"];
+bb9 [ shape = record , label = " <b > BB9 | {28: bra BB3}"];
+bb10 [ shape = record , label = " <b > BB10 | {26: write e_1 | 27: bra BB9}"];
+bb1 : s -> bb2 : n [ label = " branch " ];
+bb1 : s -> bb4 : n [ label = " fall - through " ];
+bb2 : s -> bb5 : n [ label = " branch " ];
+bb2 : s -> bb7 : n [ label = " fall - through " ];
+bb4 : s -> bb8 : n [ label = " branch " ];
+bb4 : s -> bb10 : n [ label = " fall - through " ];
+bb5 : s -> bb6 : n [ label = " branch " ];
+bb6 : s -> bb3 : n [ label = " branch " ];
+bb7 : s -> bb6 : n [ label = " branch " ];
+bb8 : s -> bb9 : n [ label = " branch " ];
+bb9 : s -> bb3 : n [ label = " branch " ];
+bb10 : s -> bb9 : n [ label = " branch " ];
+bb1 : b -> bb2 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb1 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb1 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb7 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb6 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb8 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb10 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb9 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Post-optimization SSA CFG for test008 with cp, cf, loop},label={lst:test008-post}]
+digraph G {
+bb1 [ shape = record , label = " <b > BB1 | {1: a_1 = 1 | 2: $t0_1 = #2 | 3: b_1 = #2 | 4: $t0_2 = #3 | 5: c_1 = #3 | 6: $t0_3 = #4 | 7: d_1 = #4 | 8: $t0_4 = #8 | 9: e_1 = #8 | 10: $t0_5 = #0 | 11: beq #0 BB4 | 12: bra BB2}"];
+bb2 [ shape = record , label = " <b > BB2 | {13: $t0_6 = #0 | 14: beq #0 BB7 | 15: bra BB5}"];
+bb3 [ shape = record , label = " <b > BB3 | {30: $t0_7 = phi [BB9: #0, BB6: #0] | 29: end}"];
+bb4 [ shape = record , label = " <b > BB4 | {21: $t0_8 = #0 | 22: beq #0 BB10 | 23: bra BB8}"];
+bb5 [ shape = record , label = " <b > BB5 | {16: write #3 | 17: bra BB6}"];
+bb6 [ shape = record , label = " <b > BB6 | {20: bra BB3}"];
+bb7 [ shape = record , label = " <b > BB7 | {18: write #4 | 19: bra BB6}"];
+bb8 [ shape = record , label = " <b > BB8 | {24: write #2 | 25: bra BB9}"];
+bb9 [ shape = record , label = " <b > BB9 | {28: bra BB3}"];
+bb10 [ shape = record , label = " <b > BB10 | {26: write #8 | 27: bra BB9}"];
+bb1 : s -> bb2 : n [ label = " branch " ];
+bb1 : s -> bb4 : n [ label = " fall - through " ];
+bb2 : s -> bb5 : n [ label = " branch " ];
+bb2 : s -> bb7 : n [ label = " fall - through " ];
+bb4 : s -> bb8 : n [ label = " branch " ];
+bb4 : s -> bb10 : n [ label = " fall - through " ];
+bb5 : s -> bb6 : n [ label = " branch " ];
+bb6 : s -> bb3 : n [ label = " branch " ];
+bb7 : s -> bb6 : n [ label = " branch " ];
+bb8 : s -> bb9 : n [ label = " branch " ];
+bb9 : s -> bb3 : n [ label = " branch " ];
+bb10 : s -> bb9 : n [ label = " branch " ];
+bb1 : b -> bb2 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb1 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb1 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb7 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb6 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb8 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb10 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb9 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Record file for test008 with cp, cf, loop},label={lst:test008-record}]
+Function: main
+Iteration #1
+2: cp: Constant propagated in: add $t0_1, 1, 1
+10: cp: Constant propagated in: cmp gt $t0_5, 1, b_1
+Iteration #2
+2: CF: Folded constant: add $t0_1, 1, 1 -> $t0_1 = #2
+Iteration #3
+3: cp: Constant propagated in: b_1 = #2
+4: cp: Constant propagated in: add $t0_2, #2, 1
+10: cp: Constant propagated in: cmp gt $t0_5, 1, #2
+21: cp: Constant propagated in: cmp gt $t0_8, #2, e_1
+24: cp: Constant propagated in: write #2
+Iteration #4
+4: CF: Folded constant: add $t0_2, #2, 1 -> $t0_2 = #3
+10: CF: Folded constant: cmp gt $t0_5, 1, #2 -> $t0_5 = #0
+Iteration #5
+5: cp: Constant propagated in: c_1 = #3
+6: cp: Constant propagated in: add $t0_3, #3, 1
+11: cp: Constant propagated in: beq #0 BB4
+13: cp: Constant propagated in: cmp gt $t0_6, #3, d_1
+16: cp: Constant propagated in: write #3
+Iteration #6
+6: CF: Folded constant: add $t0_3, #3, 1 -> $t0_3 = #4
+Iteration #7
+7: cp: Constant propagated in: d_1 = #4
+8: cp: Constant propagated in: mul $t0_4, #4, 2
+13: cp: Constant propagated in: cmp gt $t0_6, #3, #4
+18: cp: Constant propagated in: write #4
+Iteration #8
+8: CF: Folded constant: mul $t0_4, #4, 2 -> $t0_4 = #8
+13: CF: Folded constant: cmp gt $t0_6, #3, #4 -> $t0_6 = #0
+Iteration #9
+9: cp: Constant propagated in: e_1 = #8
+14: cp: Constant propagated in: beq #0 BB7
+30: cp: Constant propagated in phi: $t0_7 = phi [BB9: $t0_8, BB6: #0]
+21: cp: Constant propagated in: cmp gt $t0_8, #2, #8
+26: cp: Constant propagated in: write #8
+Iteration #10
+21: CF: Folded constant: cmp gt $t0_8, #2, #8 -> $t0_8 = #0
+Iteration #11
+30: cp: Constant propagated in phi: $t0_7 = phi [BB9: #0, BB6: #0]
+22: cp: Constant propagated in: beq #0 BB10
+\end{lstlisting}
+
+% ------------------------ test007: dce ------------------------
+
+\subsubsection*{test007 \texttt{-o dce}}
+
+\begin{lstlisting}[style=code,caption={Source for test007},label={lst:test007-src}]
+//simple reg allocation and code gen
+//only allocate for a,b 
+
+main
+
+int a,b,c,d,e;
+
+{
+  a = 5;
+  b = 6;
+  c = a + b;
+  b = a + b; 
+  e = c;
+  while (a > 5)
+  do // not taken
+    d = a + b;
+    a = a + 1;
+
+  od;
+  c = a + b;
+  d = a + b;
+  e = c;
+  
+  
+  call printInt(a); //live 5
+  
+  call printInt(b); //live 11
+
+}.
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Pre-optimization SSA CFG for test007},label={lst:test007-pre}]
+digraph G {
+bb1 [ shape = record , label = " <b > BB1 | {1: x_1 = 5 | 2: y_1 = 11 | 3: z_1 = 9 | 4: a_1 = 1 | 5: b_1 = 2 | 6: c_1 = 3 | 7: bra BB2}"];
+bb2 [ shape = record , label = " <b > BB2 | {24: x_2 = phi [BB1: x_1, BB3: x_3] | 25: y_2 = phi [BB1: y_1, BB3: y_3] | 26: z_2 = phi [BB1: z_1, BB3: z_3] | 27: $t0_3 = phi [BB1: $t0_2, BB3: $t0_8] | 8: cmp gt $t0_4, x_2, a_1 | 9: beq $t0_4 BB4 | 10: bra BB3}"];
+bb3 [ shape = record , label = " <b > BB3 | {11: add $t0_5, x_2, b_1 | 12: x_3 = $t0_5 | 13: add $t0_6, y_2, c_1 | 14: y_3 = $t0_6 | 15: add $t0_7, z_2, a_1 | 16: z_3 = $t0_7 | 17: add $t0_8, a_1, b_1 | 18: a_2 = $t0_8 | 19: bra BB2}"];
+bb4 [ shape = record , label = " <b > BB4 | {20: write x_2 | 21: write y_2 | 22: write z_2 | 23: end}"];
+bb1 : s -> bb2 : n [ label = " branch " ];
+bb2 : s -> bb4 : n [ label = " fall - through " ];
+bb2 : s -> bb3 : n [ label = " branch " ];
+bb3 : s -> bb2 : n [ label = " branch " ];
+bb1 : b -> bb2 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Post-optimization SSA CFG for test007 with dce},label={lst:test007-post}]
+digraph G {
+bb1 [ shape = record , label = " <b > BB1 | {1: x_1 = 5 | 2: y_1 = 11 | 3: z_1 = 9 | 4: a_1 = 1 | 5: b_1 = 2 | 6: c_1 = 3 | 7: bra BB2}"];
+bb2 [ shape = record , label = " <b > BB2 | {24: x_2 = phi [BB1: x_1, BB3: x_3] | 25: y_2 = phi [BB1: y_1, BB3: y_3] | 26: z_2 = phi [BB1: z_1, BB3: z_3] | 8: cmp gt $t0_4, x_2, a_1 | 9: beq $t0_4 BB4 | 10: bra BB3}"];
+bb3 [ shape = record , label = " <b > BB3 | {11: add $t0_5, x_2, b_1 | 12: x_3 = $t0_5 | 13: add $t0_6, y_2, c_1 | 14: y_3 = $t0_6 | 15: add $t0_7, z_2, a_1 | 16: z_3 = $t0_7 | 17: add $t0_8, a_1, b_1 | 18: a_2 = $t0_8 | 19: bra BB2}"];
+bb4 [ shape = record , label = " <b > BB4 | {20: write x_2 | 21: write y_2 | 22: write z_2 | 23: end}"];
+bb1 : s -> bb2 : n [ label = " branch " ];
+bb2 : s -> bb4 : n [ label = " fall - through " ];
+bb2 : s -> bb3 : n [ label = " branch " ];
+bb3 : s -> bb2 : n [ label = " branch " ];
+bb1 : b -> bb2 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Record file for test007 with dce},label={lst:test007-record}]
+Function: main
+27: DCE: Eliminated: $t0_3 = phi [BB1: $t0_2, BB3: $t0_8]
+\end{lstlisting}
+
+% ------------------------ test202: cpp ------------------------
+
+\subsubsection*{test202 \texttt{-o cpp}}
+
+\begin{lstlisting}[style=code,caption={Source for test202},label={lst:test202-src}]
+// copy propagation transitive test
+
+main
+
+int a, b, c, d;
+
+{
+    b = a;
+    c = b;
+    d = c;
+    d = d + 1;
+
+    call printInt(a); // 0
+    call printInt(b); // 0
+    call printInt(c); // 0
+    call printInt(d); // 1
+}.
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Pre-optimization SSA CFG for test202},label={lst:test202-pre}]
+digraph G {
+bb1 [ shape = record , label = " <b > BB1 | {1: a_1 = #0 | 2: b_1 = a_1 | 3: c_1 = b_1 | 4: d_1 = c_1 | 5: add $t0_1, d_1, 1 | 6: d_2 = $t0_1 | 7: write a_1 | 8: write b_1 | 9: write c_1 | 10: write d_2 | 11: end}"];
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Post-optimization SSA CFG for test202 with cpp},label={lst:test202-post}]
+digraph G {
+bb1 [ shape = record , label = " <b > BB1 | {1: a_1 = #0 | 2: b_1 = a_1 | 3: c_1 = a_1 | 4: d_1 = a_1 | 5: add $t0_1, a_1, 1 | 6: d_2 = $t0_1 | 7: write a_1 | 8: write a_1 | 9: write a_1 | 10: write $t0_1 | 11: end}"];
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Record file for test202 with cpp},label={lst:test202-record}]
+Function: main
+3: cpp: Copy propagated in: c_1 = a_1
+4: cpp: Copy propagated in: d_1 = a_1
+5: cpp: Copy propagated in: add $t0_1, a_1, 1
+8: cpp: Copy propagated in: write a_1
+9: cpp: Copy propagated in: write a_1
+10: cpp: Copy propagated in: write $t0_1
+\end{lstlisting}
+
+% ------------------------ test113: cse ------------------------
+
+\subsubsection*{test113 \texttt{-o cse}}
+
+\begin{lstlisting}[style=code,caption={Source for test113},label={lst:test113-src}]
+main
+int a,b,c,d,e,f,g,h;
+
+{
+    a = 7;
+    b = a + 2;
+    c = a + b;
+    d = c + b;
+    b = c + b;
+    a = a + b;
+    e = c + d;
+    f = c + d;
+    g = a + b;
+    h = e + f;
+
+    //g and h are live
+    call printInt(g); // 57 
+    call printInt(h); // 82 
+}.
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Pre-optimization SSA CFG for test113},label={lst:test113-pre}]
+digraph G {
+bb1 [ shape = record , label = " <b > BB1 | {1: a_1 = 7 | 2: add $t0_1, a_1, 2 | 3: b_1 = $t0_1 | 4: add $t0_2, a_1, b_1 | 5: c_1 = $t0_2 | 6: add $t0_3, c_1, b_1 | 7: d_1 = $t0_3 | 8: add $t0_4, c_1, b_1 | 9: b_2 = $t0_4 | 10: add $t0_5, a_1, b_2 | 11: a_2 = $t0_5 | 12: add $t0_6, c_1, d_1 | 13: e_1 = $t0_6 | 14: add $t0_7, c_1, d_1 | 15: f_1 = $t0_7 | 16: add $t0_8, a_2, b_2 | 17: g_1 = $t0_8 | 18: add $t0_9, e_1, f_1 | 19: h_1 = $t0_9 | 20: write g_1 | 21: write h_1 | 22: end}"];
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Post-optimization SSA CFG for test113 with cse},label={lst:test113-post}]
+digraph G {
+bb1 [ shape = record , label = " <b > BB1 | {1: a_1 = 7 | 2: add $t0_1, a_1, 2 | 3: b_1 = $t0_1 | 4: add $t0_2, a_1, b_1 | 5: c_1 = $t0_2 | 6: add $t0_3, c_1, b_1 | 7: d_1 = $t0_3 | 8: $t0_4 = $t0_3 | 9: b_2 = $t0_4 | 10: add $t0_5, a_1, b_2 | 11: a_2 = $t0_5 | 12: add $t0_6, c_1, d_1 | 13: e_1 = $t0_6 | 14: $t0_7 = $t0_6 | 15: f_1 = $t0_7 | 16: add $t0_8, a_2, b_2 | 17: g_1 = $t0_8 | 18: add $t0_9, e_1, f_1 | 19: h_1 = $t0_9 | 20: write g_1 | 21: write h_1 | 22: end}"];
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Record file for test113 with cse},label={lst:test113-record}]
+Function: main
+8: CSE: Eliminated: add $t0_4, c_1, b_1 -> $t0_4 = $t0_3
+14: CSE: Eliminated: add $t0_7, c_1, d_1 -> $t0_7 = $t0_6
+\end{lstlisting}
+
+% ------------------------ test110: max ------------------------
+
+\subsubsection*{test110 \texttt{-max}}
+
+\begin{lstlisting}[style=code,caption={Source for test110},label={lst:test110-src}]
+// giant optimization 
+// CSE, CP, DCE, CF, AS
+
+main
+
+int x, y, z;
+int n, s, i, j, m, p, f;
+int a, b, c;
+int r, v, u, t;
+
+{
+    n = 5;
+    s = 0;
+    i = 0;
+    while (i <= n)  do
+        j = i;
+        m = n;
+        p = m;
+        f = 1;
+        while (p > 1) do
+            f *= p;
+            p--;
+        od;
+
+        a = f;
+        p = m - j;
+
+        f = 1;
+        while (p > 1) do
+            f *= p;
+            p--;
+        od;
+
+        b = f;
+        c = a + b;
+        s += c;
+        i++;
+    od;
+
+    y = s;
+    z = 4;
+    v = y + y;
+    u = z + 2;
+    r = s + s;
+    t = r + v;
+    x = u + t;
+
+    // s and x are live
+    call printInt(s); // 874
+    call printInt(x); // 3502
+    call println();
+}.
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Pre-optimization SSA CFG for test110},label={lst:test110-pre}]
+digraph G {
+bb1 [ shape = record , label = " <b > BB1 | {1: n_1 = 5 | 2: s_1 = 0 | 3: i_1 = 0 | 4: bra BB2}"];
+bb2 [ shape = record , label = " <b > BB2 | {58: c_1 = phi [BB1: c_0, BB10: c_2] | 59: p_1 = phi [BB1: p_0, BB10: p_5] | 62: $t0_1 = phi [BB1: $t0_0, BB10: $t0_12] | 65: a_1 = phi [BB1: a_0, BB10: a_2] | 66: j_1 = phi [BB1: j_0, BB10: j_2] | 67: f_1 = phi [BB1: f_0, BB10: f_5] | 70: s_2 = phi [BB1: s_1, BB10: s_3] | 71: i_2 = phi [BB1: i_1, BB10: i_3] | 72: m_1 = phi [BB1: m_0, BB10: m_2] | 73: b_1 = phi [BB1: b_0, BB10: b_2] | 5: cmp le $t0_2, i_2, n_1 | 6: beq $t0_2 BB4 | 7: bra BB3}"];
+bb3 [ shape = record , label = " <b > BB3 | {8: j_2 = i_2 | 9: m_2 = n_1 | 10: p_2 = m_2 | 11: f_2 = 1 | 12: bra BB5}"];
+bb4 [ shape = record , label = " <b > BB4 | {42: y_1 = s_2 | 43: z_1 = 4 | 44: add $t0_15, y_1, y_1 | 45: v_1 = $t0_15 | 46: add $t0_16, z_1, 2 | 47: u_1 = $t0_16 | 48: add $t0_17, s_2, s_2 | 49: r_1 = $t0_17 | 50: add $t0_18, r_1, v_1 | 51: t_1 = $t0_18 | 52: add $t0_19, u_1, t_1 | 53: x_1 = $t0_19 | 54: write s_2 | 55: write x_1 | 56: writeNL | 57: end}"];
+bb5 [ shape = record , label = " <b > BB5 | {61: p_3 = phi [BB3: p_2, BB6: p_7] | 64: $t0_3 = phi [BB3: $t0_2, BB6: $t0_14] | 69: f_3 = phi [BB3: f_2, BB6: f_7] | 13: cmp gt $t0_4, p_3, 1 | 14: beq $t0_4 BB7 | 15: bra BB6}"];
+bb6 [ shape = record , label = " <b > BB6 | {16: mul $t0_13, f_3, p_3 | 17: f_7 = $t0_13 | 18: $t0_14 = p_3 - #1 | 19: p_7 = $t0_14 | 20: bra BB5}"];
+bb7 [ shape = record , label = " <b > BB7 | {21: a_2 = f_3 | 22: $t0_5 = m_2 - j_2 | 23: p_4 = $t0_5 | 24: f_4 = 1 | 25: bra BB8}"];
+bb8 [ shape = record , label = " <b > BB8 | {60: p_5 = phi [BB7: p_4, BB9: p_6] | 63: $t0_6 = phi [BB7: $t0_5, BB9: $t0_9] | 68: f_5 = phi [BB7: f_4, BB9: f_6] | 26: cmp gt $t0_7, p_5, 1 | 27: beq $t0_7 BB10 | 28: bra BB9}"];
+bb9 [ shape = record , label = " <b > BB9 | {29: mul $t0_8, f_5, p_5 | 30: f_6 = $t0_8 | 31: $t0_9 = p_5 - #1 | 32: p_6 = $t0_9 | 33: bra BB8}"];
+bb10 [ shape = record , label = " <b > BB10 | {34: b_2 = f_5 | 35: add $t0_10, a_2, b_2 | 36: c_2 = $t0_10 | 37: add $t0_11, s_2, c_2 | 38: s_3 = $t0_11 | 39: add $t0_12, i_2, #1 | 40: i_3 = $t0_12 | 41: bra BB2}"];
+bb1 : s -> bb2 : n [ label = " branch " ];
+bb2 : s -> bb4 : n [ label = " fall - through " ];
+bb2 : s -> bb3 : n [ label = " branch " ];
+bb3 : s -> bb5 : n [ label = " branch " ];
+bb5 : s -> bb7 : n [ label = " fall - through " ];
+bb5 : s -> bb6 : n [ label = " branch " ];
+bb6 : s -> bb5 : n [ label = " branch " ];
+bb7 : s -> bb8 : n [ label = " branch " ];
+bb8 : s -> bb10 : n [ label = " fall - through " ];
+bb8 : s -> bb9 : n [ label = " branch " ];
+bb9 : s -> bb8 : n [ label = " branch " ];
+bb10 : s -> bb2 : n [ label = " branch " ];
+bb1 : b -> bb2 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb3 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb5 : b -> bb7 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb5 : b -> bb6 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb7 : b -> bb8 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb8 : b -> bb9 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb8 : b -> bb10 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Post-optimization SSA CFG for test110 with max},label={lst:test110-post}]
+digraph G {
+bb1 [ shape = record , label = " <b > BB1 | {1: n_1 = 5 | 2: s_1 = 0 | 3: i_1 = 0 | 4: bra BB2}"];
+bb2 [ shape = record , label = " <b > BB2 | {58: c_1 = phi [BB1: c_0, BB10: $t0_10] | 59: p_1 = phi [BB1: p_0, BB10: p_5] | 65: a_1 = phi [BB1: a_0, BB10: f_3] | 66: j_1 = phi [BB1: j_0, BB10: i_2] | 67: f_1 = phi [BB1: f_0, BB10: f_5] | 70: s_2 = phi [BB1: 0, BB10: $t0_11] | 71: i_2 = phi [BB1: 0, BB10: $t0_12] | 72: m_1 = phi [BB1: m_0, BB10: 5] | 73: b_1 = phi [BB1: b_0, BB10: f_5] | 5: cmp le $t0_2, i_2, 5 | 6: beq $t0_2 BB4 | 7: bra BB3}"];
+bb3 [ shape = record , label = " <b > BB3 | {8: j_2 = i_2 | 9: m_2 = 5 | 10: p_2 = 5 | 11: f_2 = 1 | 12: bra BB5}"];
+bb4 [ shape = record , label = " <b > BB4 | {42: y_1 = s_2 | 43: z_1 = 4 | 44: add $t0_15, s_2, s_2 | 45: v_1 = $t0_15 | 47: u_1 = #6 | 49: r_1 = $t0_15 | 50: add $t0_18, $t0_15, $t0_15 | 51: t_1 = $t0_18 | 52: add $t0_19, #6, $t0_18 | 53: x_1 = $t0_19 | 54: write s_2 | 55: write $t0_19 | 56: writeNL | 57: end}"];
+bb5 [ shape = record , label = " <b > BB5 | {61: p_3 = phi [BB3: 5, BB6: $t0_14] | 69: f_3 = phi [BB3: 1, BB6: $t0_13] | 13: cmp gt $t0_4, p_3, 1 | 14: beq $t0_4 BB7 | 15: bra BB6}"];
+bb6 [ shape = record , label = " <b > BB6 | {16: mul $t0_13, f_3, p_3 | 17: f_7 = $t0_13 | 18: $t0_14 = p_3 - #1 | 19: p_7 = $t0_14 | 20: bra BB5}"];
+bb7 [ shape = record , label = " <b > BB7 | {21: a_2 = f_3 | 22: $t0_5 = 5 - i_2 | 23: p_4 = $t0_5 | 24: f_4 = 1 | 25: bra BB8}"];
+bb8 [ shape = record , label = " <b > BB8 | {60: p_5 = phi [BB7: $t0_5, BB9: $t0_9] | 68: f_5 = phi [BB7: 1, BB9: $t0_8] | 26: cmp gt $t0_7, p_5, 1 | 27: beq $t0_7 BB10 | 28: bra BB9}"];
+bb9 [ shape = record , label = " <b > BB9 | {29: mul $t0_8, f_5, p_5 | 30: f_6 = $t0_8 | 31: $t0_9 = p_5 - #1 | 32: p_6 = $t0_9 | 33: bra BB8}"];
+bb10 [ shape = record , label = " <b > BB10 | {34: b_2 = f_5 | 35: add $t0_10, f_3, f_5 | 36: c_2 = $t0_10 | 37: add $t0_11, s_2, $t0_10 | 38: s_3 = $t0_11 | 39: add $t0_12, i_2, #1 | 40: i_3 = $t0_12 | 41: bra BB2}"];
+bb1 : s -> bb2 : n [ label = " branch " ];
+bb2 : s -> bb4 : n [ label = " fall - through " ];
+bb2 : s -> bb3 : n [ label = " branch " ];
+bb3 : s -> bb5 : n [ label = " branch " ];
+bb5 : s -> bb7 : n [ label = " fall - through " ];
+bb5 : s -> bb6 : n [ label = " branch " ];
+bb6 : s -> bb5 : n [ label = " branch " ];
+bb7 : s -> bb8 : n [ label = " branch " ];
+bb8 : s -> bb10 : n [ label = " fall - through " ];
+bb8 : s -> bb9 : n [ label = " branch " ];
+bb9 : s -> bb8 : n [ label = " branch " ];
+bb10 : s -> bb2 : n [ label = " branch " ];
+bb1 : b -> bb2 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb3 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb5 : b -> bb7 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb5 : b -> bb6 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb7 : b -> bb8 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb8 : b -> bb9 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb8 : b -> bb10 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Record file for test110 with max},label={lst:test110-record}]
+Function: main
+Iteration #1
+70: cp: Constant propagated in phi: s_2 = phi [BB1: 0, BB10: s_3]
+71: cp: Constant propagated in phi: i_2 = phi [BB1: 0, BB10: i_3]
+72: cp: Constant propagated in phi: m_1 = phi [BB1: m_0, BB10: 5]
+5: cp: Constant propagated in: cmp le $t0_2, i_2, 5
+9: cp: Constant propagated in: m_2 = 5
+10: cp: Constant propagated in: p_2 = 5
+46: cp: Constant propagated in: add $t0_16, 4, 2
+61: cp: Constant propagated in phi: p_3 = phi [BB3: 5, BB6: p_7]
+69: cp: Constant propagated in phi: f_3 = phi [BB3: 1, BB6: f_7]
+22: cp: Constant propagated in: $t0_5 = 5 - j_2
+68: cp: Constant propagated in phi: f_5 = phi [BB7: 1, BB9: f_6]
+Iteration #2
+46: CF: Folded constant: add $t0_16, 4, 2 -> $t0_16 = #6
+Iteration #3
+47: cp: Constant propagated in: u_1 = #6
+52: cp: Constant propagated in: add $t0_19, #6, t_1
+Iteration #4
+58: cpp: Copy propagated in phi: c_1 = phi [BB1: c_0, BB10: $t0_10]
+65: cpp: Copy propagated in phi: a_1 = phi [BB1: a_0, BB10: f_3]
+66: cpp: Copy propagated in phi: j_1 = phi [BB1: j_0, BB10: i_2]
+70: cpp: Copy propagated in phi: s_2 = phi [BB1: 0, BB10: $t0_11]
+71: cpp: Copy propagated in phi: i_2 = phi [BB1: 0, BB10: $t0_12]
+73: cpp: Copy propagated in phi: b_1 = phi [BB1: b_0, BB10: f_5]
+44: cpp: Copy propagated in: add $t0_15, s_2, s_2
+50: cpp: Copy propagated in: add $t0_18, $t0_17, $t0_15
+52: cpp: Copy propagated in: add $t0_19, #6, $t0_18
+55: cpp: Copy propagated in: write $t0_19
+61: cpp: Copy propagated in phi: p_3 = phi [BB3: 5, BB6: $t0_14]
+69: cpp: Copy propagated in phi: f_3 = phi [BB3: 1, BB6: $t0_13]
+22: cpp: Copy propagated in: $t0_5 = 5 - i_2
+60: cpp: Copy propagated in phi: p_5 = phi [BB7: $t0_5, BB9: $t0_9]
+68: cpp: Copy propagated in phi: f_5 = phi [BB7: 1, BB9: $t0_8]
+35: cpp: Copy propagated in: add $t0_10, f_3, f_5
+37: cpp: Copy propagated in: add $t0_11, s_2, $t0_10
+Iteration #5
+46: DCE: Eliminated: $t0_16 = #6
+62: DCE: Eliminated: $t0_1 = phi [BB1: $t0_0, BB10: $t0_12]
+64: DCE: Eliminated: $t0_3 = phi [BB3: $t0_2, BB6: $t0_14]
+63: DCE: Eliminated: $t0_6 = phi [BB7: $t0_5, BB9: $t0_9]
+Iteration #6
+48: CSE: Eliminated: add $t0_17, s_2, s_2 -> $t0_17 = $t0_15
+Iteration #7
+49: cpp: Copy propagated in: r_1 = $t0_15
+50: cpp: Copy propagated in: add $t0_18, $t0_15, $t0_15
+Iteration #8
+48: DCE: Eliminated: $t0_17 = $t0_15
+\end{lstlisting}
+
+% ------------------------ test206-ofe: ofe ------------------------
+
+\subsubsection*{test206-ofe \texttt{-o ofe}}
+
+\begin{lstlisting}[style=code,caption={Source for test206-ofe},label={lst:test206-src}]
+main
+
+int foo, too;
+int af;
+
+function bar (int n) : int
+{
+    call printInt(n);
+    return n;
+};
+
+function foo_func (int x) : int
+{
+    int par, q;
+
+    q = 9;
+    par = 3;
+    while (3 < par) do
+        q = par + q;
+        while (4 >= q) do
+            q = par - q;
+        od;
+        par = q - 3;
+    od;
+    x = par + q;
+    return x;
+};
+
+// ofe
+{
+    foo = 3 + too;
+    af = foo + 6;
+    call printInt(foo); // 3
+    call printInt(af); // 9
+    call println();
+}.
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Pre-optimization SSA CFG for test206-ofe},label={lst:test206-pre}]
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {1: foo_1 = load [GP-4] | 2: too_1 = load [GP-8] | 3: af_1 = load [GP-12] | 4: n_1 = load [FP+12] | 5: write n_1 | 6: [GP-4] = foo_1 | 7: [GP-8] = too_1 | 8: [GP-12] = af_1 | 9: return n_1 | 10: [GP-4] = foo_1 | 11: [GP-8] = too_1 | 12: [GP-12] = af_1 | 13: end}"];
+}
+
+digraph G {
+bb3 [ shape = record , label = " <b > BB3 | {14: foo_1 = load [GP-4] | 15: too_1 = load [GP-8] | 16: af_1 = load [GP-12] | 17: x_1 = load [FP+12] | 18: par_1 = #0 | 19: q_1 = #0 | 20: q_2 = 9 | 21: par_2 = 3 | 22: bra BB4}"];
+bb4 [ shape = record , label = " <b > BB4 | {51: q_3 = phi [BB3: q_2, BB9: q_5] | 52: $t1_1 = phi [BB3: $t1_0, BB9: $t1_4] | 54: par_3 = phi [BB3: par_2, BB9: par_4] | 55: $t0_1 = phi [BB3: $t0_0, BB9: $t0_7] | 23: $t1_2 = 3 | 24: cmp lt $t0_2, $t1_2, par_3 | 25: beq $t0_2 BB6 | 26: bra BB5}"];
+bb5 [ shape = record , label = " <b > BB5 | {27: add $t0_3, par_3, q_3 | 28: q_4 = $t0_3 | 29: bra BB7}"];
+bb6 [ shape = record , label = " <b > BB6 | {40: add $t0_8, par_3, q_3 | 41: x_2 = $t0_8 | 42: [GP-4] = foo_1 | 43: [GP-8] = too_1 | 44: [GP-12] = af_1 | 45: return x_2 | 46: [GP-4] = foo_1 | 47: [GP-8] = too_1 | 48: [GP-12] = af_1 | 49: end}"];
+bb7 [ shape = record , label = " <b > BB7 | {50: q_5 = phi [BB5: q_4, BB8: q_6] | 53: $t1_3 = phi [BB5: $t1_2, BB8: $t1_4] | 56: $t0_4 = phi [BB5: $t0_3, BB8: $t0_6] | 30: $t1_4 = 4 | 31: cmp ge $t0_5, $t1_4, q_5 | 32: beq $t0_5 BB9 | 33: bra BB8}"];
+bb8 [ shape = record , label = " <b > BB8 | {34: $t0_6 = par_3 - q_5 | 35: q_6 = $t0_6 | 36: bra BB7}"];
+bb9 [ shape = record , label = " <b > BB9 | {37: $t0_7 = q_5 - 3 | 38: par_4 = $t0_7 | 39: bra BB4}"];
+bb3 : s -> bb4 : n [ label = " branch " ];
+bb4 : s -> bb6 : n [ label = " fall - through " ];
+bb4 : s -> bb5 : n [ label = " branch " ];
+bb5 : s -> bb7 : n [ label = " branch " ];
+bb7 : s -> bb9 : n [ label = " fall - through " ];
+bb7 : s -> bb8 : n [ label = " branch " ];
+bb8 : s -> bb7 : n [ label = " branch " ];
+bb9 : s -> bb4 : n [ label = " branch " ];
+bb3 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb6 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb5 : b -> bb7 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb7 : b -> bb8 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb7 : b -> bb9 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+
+digraph G {
+bb1 [ shape = record , label = " <b > BB1 | {50: add $t0_1, too_0, 3 | 51: foo_1 = $t0_1 | 52: add $t0_2, foo_1, 6 | 53: af_1 = $t0_2 | 54: write foo_1 | 55: write af_1 | 56: writeNL | 57: end}"];
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Post-optimization SSA CFG for test206-ofe with ofe},label={lst:test206-post}]
+digraph G {
+bb1 [ shape = record , label = " <b > BB1 | {50: add $t0_1, too_0, 3 | 51: foo_1 = $t0_1 | 52: add $t0_2, foo_1, 6 | 53: af_1 = $t0_2 | 54: write foo_1 | 55: write af_1 | 56: writeNL | 57: end}"];
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Record file for test206-ofe with ofe},label={lst:test206-record}]
+OFE: Eliminated 2 orphan function(s)
+\end{lstlisting}
+
+

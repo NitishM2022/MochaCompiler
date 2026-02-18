@@ -1,0 +1,18 @@
+// Test uninitialized variable in loop
+main
+int g;
+
+function test() : void {
+  int i, sum;
+  let i = 0;
+  // sum is NOT initialized - should warn
+  while i < 5 do
+    let sum = sum + i;  // First use of sum is here
+    let i = i + 1;
+  od;
+  call printInt(sum);
+};
+
+{
+  call test();
+}.

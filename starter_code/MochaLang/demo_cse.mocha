@@ -1,0 +1,11 @@
+// Minimal Common Subexpression Elimination test
+main
+int a, b, c, d;
+{
+    a = 2;
+    b = 3;
+    c = a + b;
+    d = a + b;
+    call printInt(c);
+    call printInt(d);
+}.

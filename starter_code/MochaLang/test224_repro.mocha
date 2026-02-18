@@ -1,0 +1,11 @@
+main
+int k;
+int d;
+int m;
+{
+  k = 5;
+  d = k / 3;
+  m = k % 3;
+  call printInt(d);
+  call printInt(m);
+}.

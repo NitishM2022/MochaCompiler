@@ -1,0 +1,8 @@
+// Minimal Constant Propagation test
+main
+int x, y;
+{
+    x = 5;
+    y = x + 3;
+    call printInt(y);
+}.

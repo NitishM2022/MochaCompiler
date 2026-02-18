@@ -1,0 +1,17 @@
+// Minimal array param test
+main
+int[2] g;
+
+function printFirst(int[] a) : void {
+  call printInt(a[0]);
+};
+
+{
+  g[0] = 100;
+  g[1] = 200;
+  call printFirst(g);
+}.
+
+
+
+

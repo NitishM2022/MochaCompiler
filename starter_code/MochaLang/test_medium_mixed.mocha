@@ -1,0 +1,27 @@
+// Mixed array access test
+main
+int[4][3] x;
+int[4] y;
+
+function mix(int[] j) : void {
+  int k;
+  k = 0;
+  while (k < 4) do
+    x[k][0] = j[k] + y[k];
+    k++;
+  od;
+};
+
+{
+  y[0] = 1;
+  y[1] = 2; 
+  y[2] = 3; 
+  y[3] = 4;
+  call mix(y);
+  call printInt(x[0][0]);
+  call printInt(x[3][0]);
+}.
+
+
+
+

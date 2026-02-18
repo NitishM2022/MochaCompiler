@@ -1,0 +1,9 @@
+// Minimal Copy Propagation test
+main
+int a, b, c;
+{
+    a = 5;
+    b = a;
+    c = b;
+    call printInt(c);
+}.

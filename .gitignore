@@ -34,6 +34,7 @@ personal_tests/
 *_asm.txt
 target/
 record*
+starter_code/MochaLang/graphs/
 
 # reports 
 reports/

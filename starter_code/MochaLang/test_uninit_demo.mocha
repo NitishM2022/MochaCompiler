@@ -1,0 +1,15 @@
+// Uninitialized locals/globals demo
+main
+int g;
+
+function foo() : void {
+  int a, b;
+  // use before any explicit assignment
+  call printInt(a);
+  call printInt(b);
+  call printInt(g);
+};
+
+{
+  call foo();
+}.

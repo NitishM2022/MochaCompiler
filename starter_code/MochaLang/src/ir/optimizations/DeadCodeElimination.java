@@ -51,8 +51,7 @@ public class DeadCodeElimination extends BaseOptimization {
 
                 Variable var = (Variable) operand;
                 TAC def = defs.get(var);
-                if (def == null)
-                    continue;
+                if (def == null) continue;
 
                 Set<TAC> users = uses.get(var);
                 if (users != null) {
@@ -65,6 +64,43 @@ public class DeadCodeElimination extends BaseOptimization {
             }
         }
 
+        return changed | eliminateUnreachableBlocks(cfg);
+    }
+    
+    private boolean eliminateUnreachableBlocks(CFG cfg) {
+        Set<BasicBlock> reachable = new HashSet<>();
+        Queue<BasicBlock> worklist = new LinkedList<>();
+        
+        // Start from entry block
+        if (cfg.getEntryBlock() != null) {
+            worklist.add(cfg.getEntryBlock());
+            reachable.add(cfg.getEntryBlock());
+        }
+        
+        while (!worklist.isEmpty()) {
+            BasicBlock block = worklist.poll();
+            
+            for (BasicBlock succ : block.getSuccessors()) {
+                if (!reachable.contains(succ)) {
+                    reachable.add(succ);
+                    worklist.add(succ);
+                }
+            }
+        }
+        
+        boolean changed = false;
+        List<BasicBlock> allBlocks = new ArrayList<>(cfg.getAllBlocks());
+        
+        for (BasicBlock block : allBlocks) {
+            if (!reachable.contains(block)) {
+                // Remove block from CFG
+                cfg.removeBlock(block); // CFG has a helper method
+                
+                log("Removed unreachable block: BB" + block.getNum());
+                changed = true;
+            }
+        }
+        
         return changed;
     }
 

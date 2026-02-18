@@ -98,20 +98,31 @@ public class ConstantFolding extends BaseOptimization {
             List<TAC> instructions = block.getInstructions();
             if (instructions.isEmpty()) continue;
             
-            TAC lastInst = instructions.get(instructions.size() - 1);
-            
-            if (lastInst instanceof Beq) {
-                changed |= optimizeConditionalBranch((Beq) lastInst, block, instructions, true);
-            } else if (lastInst instanceof Bne) {
-                changed |= optimizeConditionalBranch((Bne) lastInst, block, instructions, false);
-            } else if (lastInst instanceof Blt) {
-                changed |= optimizeComparisonBranch((Blt) lastInst, block, instructions, "lt");
-            } else if (lastInst instanceof Ble) {
-                changed |= optimizeComparisonBranch((Ble) lastInst, block, instructions, "le");
-            } else if (lastInst instanceof Bgt) {
-                changed |= optimizeComparisonBranch((Bgt) lastInst, block, instructions, "gt");
-            } else if (lastInst instanceof Bge) {
-                changed |= optimizeComparisonBranch((Bge) lastInst, block, instructions, "ge");
+            // Scan for constant branches (might not be the very last instruction)
+            for (int i = 0; i < instructions.size(); i++) {
+                TAC inst = instructions.get(i);
+                boolean branchOptimized = false;
+                
+                if (inst instanceof Beq) {
+                    branchOptimized = optimizeConditionalBranch((Beq) inst, block, instructions, true, i);
+                } else if (inst instanceof Bne) {
+                    branchOptimized = optimizeConditionalBranch((Bne) inst, block, instructions, false, i);
+                } else if (inst instanceof Blt) {
+                    branchOptimized = optimizeComparisonBranch((Blt) inst, block, instructions, "lt", i);
+                } else if (inst instanceof Ble) {
+                    branchOptimized = optimizeComparisonBranch((Ble) inst, block, instructions, "le", i);
+                } else if (inst instanceof Bgt) {
+                    branchOptimized = optimizeComparisonBranch((Bgt) inst, block, instructions, "gt", i);
+                } else if (inst instanceof Bge) {
+                    branchOptimized = optimizeComparisonBranch((Bge) inst, block, instructions, "ge", i);
+                }
+                
+                if (branchOptimized) {
+                    changed = true;
+                    // If we optimized a branch, the block structure might have changed (jumps inserted, code removed)
+                    // It's safer to stop processing this block and move to the next
+                    break; 
+                }
             }
         }
         
@@ -366,7 +377,7 @@ public class ConstantFolding extends BaseOptimization {
     }
     
     private boolean optimizeConditionalBranch(TAC branch, BasicBlock block, 
-                                             List<TAC> instructions, boolean isBeq) {
+                                             List<TAC> instructions, boolean isBeq, int index) {
         Value condition;
         BasicBlock target;
         
@@ -381,13 +392,15 @@ public class ConstantFolding extends BaseOptimization {
         }
         
         Integer condValue = getIntegerValue(condition);
-        if (condValue == null) return false;
+        if (condValue == null) {
+            return false;
+        }
         
         boolean branchTaken = isBeq ? (condValue == 0) : (condValue != 0);
         
         if (branchTaken) {
             Bra unconditional = new Bra(branch.getId(), target);
-            instructions.set(instructions.size() - 1, unconditional);
+            instructions.set(index, unconditional);
             logInstruction(branch, "Branch always taken: " + branch.toString() + " -> " + unconditional.toString());
             
             if (isInfiniteLoop(block, target)) {
@@ -395,10 +408,23 @@ public class ConstantFolding extends BaseOptimization {
                 infiniteLoopsDetected.add(block);
             }
             
-            removeFallthroughSuccessor(block, target);
+            // Remove fallthrough successors
+            List<BasicBlock> oldSuccs = new ArrayList<>(block.getSuccessors());
+            for (BasicBlock s : oldSuccs) {
+                if (s != target) {
+                     s.getPredecessors().remove(block);
+                     block.getSuccessors().remove(s);
+                }
+            }
+            
+            // Remove dead code after the jump
+            while (instructions.size() > index + 1) {
+                instructions.remove(index + 1);
+            }
+            
             return true;
         } else {
-            instructions.remove(instructions.size() - 1);
+            instructions.remove(index);
             logInstruction(branch, "Branch never taken: " + branch.toString());
             removeBranchSuccessor(block, target);
             return true;
@@ -406,7 +432,7 @@ public class ConstantFolding extends BaseOptimization {
     }
     
     private boolean optimizeComparisonBranch(TAC branch, BasicBlock block,
-                                            List<TAC> instructions, String comparison) {
+                                            List<TAC> instructions, String comparison, int index) {
         Value condition;
         BasicBlock target;
         
@@ -439,7 +465,7 @@ public class ConstantFolding extends BaseOptimization {
         
         if (branchTaken) {
             Bra unconditional = new Bra(branch.getId(), target);
-            instructions.set(instructions.size() - 1, unconditional);
+            instructions.set(index, unconditional);
             logInstruction(branch, "Branch always taken: " + branch.toString() + " -> " + unconditional.toString());
             
             if (isInfiniteLoop(block, target)) {
@@ -447,10 +473,23 @@ public class ConstantFolding extends BaseOptimization {
                 infiniteLoopsDetected.add(block);
             }
             
-            removeFallthroughSuccessor(block, target);
+            // Remove fallthrough successors
+            List<BasicBlock> oldSuccs = new ArrayList<>(block.getSuccessors());
+            for (BasicBlock s : oldSuccs) {
+                if (s != target) {
+                     s.getPredecessors().remove(block);
+                     block.getSuccessors().remove(s);
+                }
+            }
+
+            // Remove dead code after the jump
+            while (instructions.size() > index + 1) {
+                instructions.remove(index + 1);
+            }
+            
             return true;
         } else {
-            instructions.remove(instructions.size() - 1);
+            instructions.remove(index);
             logInstruction(branch, "Branch never taken: " + branch.toString());
             removeBranchSuccessor(block, target);
             return true;
@@ -461,17 +500,6 @@ public class ConstantFolding extends BaseOptimization {
         return target.getNum() <= current.getNum();
     }
     
-    private void removeFallthroughSuccessor(BasicBlock block, BasicBlock target) {
-        List<BasicBlock> successors = block.getSuccessors();
-        Iterator<BasicBlock> iter = successors.iterator();
-        while (iter.hasNext()) {
-            BasicBlock succ = iter.next();
-            if (succ != target) {
-                iter.remove();
-                succ.getPredecessors().remove(block);
-            }
-        }
-    }
     
     private void removeBranchSuccessor(BasicBlock block, BasicBlock target) {
         block.getSuccessors().remove(target);

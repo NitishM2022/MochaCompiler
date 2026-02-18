@@ -1,0 +1,10 @@
+// Minimal Orphan Function Elimination test
+main
+
+function unused() : int {
+    return 42;
+};
+
+{
+    call printInt(10);
+}.

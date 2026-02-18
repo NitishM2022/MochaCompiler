@@ -1,0 +1,24 @@
+// Global 2D array access in function
+main
+int[4][3] x;
+
+function fillX() : void {
+  int k, o;
+  k = 0;
+  while(k < 4) do
+    o = 0;
+    while(o < 3) do
+      x[k][o] = k * o;
+      o++;
+    od;
+    k++;
+  od;
+};
+
+{
+  call fillX();
+}.
+
+
+
+

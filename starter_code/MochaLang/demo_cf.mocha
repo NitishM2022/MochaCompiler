@@ -1,0 +1,9 @@
+// Minimal Constant Folding test
+main
+int x;
+{
+    x = 2 * 1;
+    x = x + 0;
+    x = x - x;
+    call printInt(x);
+}.

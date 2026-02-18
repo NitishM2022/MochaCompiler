@@ -1,0 +1,2 @@
+WARNING: Variable 'a' may be used before initialization
+WARNING: Variable 'b' may be used before initialization

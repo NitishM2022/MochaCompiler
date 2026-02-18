@@ -125,8 +125,15 @@ public abstract class BaseOptimization {
                 instruction instanceof Sub ||
                 instruction instanceof Mul ||
                 instruction instanceof Div ||
+                instruction instanceof Mod ||
+                instruction instanceof Pow ||
+                instruction instanceof And ||
+                instruction instanceof Or ||
                 instruction instanceof Cmp ||
-                instruction instanceof Mov;
+                instruction instanceof Mov ||
+                instruction instanceof Adda ||
+                instruction instanceof AddaFP ||
+                instruction instanceof AddaGP;
     }
 
     protected static boolean isBinaryArithmetic(TAC instruction) {

@@ -1,0 +1,23 @@
+// Simple array param test
+main
+int[3] g;
+int c;
+
+function printArr(int[] a) : void {
+  int i;
+  i = 0;
+  while (i < 3) do
+    call printInt(a[i]);
+    i++;
+  od;
+};
+
+{
+  c = 0;
+  while (c < 3) do
+    g[c] = c + 10;
+    c++;
+  od;
+  call printArr(g);
+}.
+

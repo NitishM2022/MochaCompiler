@@ -1,0 +1,6 @@
+main
+int a, b, c, d, e;
+{
+    a = 5;
+    call printInt(a);
+}.
