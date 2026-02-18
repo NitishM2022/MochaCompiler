@@ -2,14 +2,12 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC="$ROOT/compiler/src"
+ART="$ROOT/artifacts"
 JAR="$ROOT/third_party/lib/commons-cli-1.9.0.jar"
 CLS="$ROOT/target/classes"
-ART="$ROOT/artifacts"
 
-mkdir -p "$CLS" "$ART/logs" "$ART/records" "$ART/graphs" "$ART/asm"
-
-javac -d "$CLS" -cp "$JAR" -sourcepath "$SRC" "$SRC/mocha/CompilerTester.java"
+mkdir -p "$ART/logs" "$ART/records" "$ART/graphs" "$ART/asm"
+"$ROOT/scripts/build.sh" >/tmp/build-smoke.log
 
 pushd "$ROOT" >/dev/null
 java -cp "$CLS:$JAR" mocha.CompilerTester \

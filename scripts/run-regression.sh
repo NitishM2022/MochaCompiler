@@ -2,16 +2,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC="$ROOT/compiler/src"
 JAR="$ROOT/third_party/lib/commons-cli-1.9.0.jar"
 CLS="$ROOT/target/classes"
 ART="$ROOT/artifacts"
 LIMIT="${LIMIT:-0}"
 OPT_MODE="${OPT_MODE:--max}"
 
-mkdir -p "$CLS" "$ART/logs" "$ART/records" "$ART/graphs"
-
-javac -d "$CLS" -cp "$JAR" -sourcepath "$SRC" "$SRC/mocha/CompilerTester.java"
+mkdir -p "$ART/logs" "$ART/records" "$ART/graphs"
+"$ROOT/scripts/build.sh" >/tmp/build-regression.log
 
 pass=0
 fail=0

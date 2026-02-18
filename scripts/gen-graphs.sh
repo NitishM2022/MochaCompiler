@@ -2,14 +2,12 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC="$ROOT/compiler/src"
 JAR="$ROOT/third_party/lib/commons-cli-1.9.0.jar"
 CLS="$ROOT/target/classes"
 ART="$ROOT/artifacts"
 
-mkdir -p "$CLS" "$ART/graphs" "$ART/records" "$ART/logs"
-
-javac -d "$CLS" -cp "$JAR" -sourcepath "$SRC" "$SRC/mocha/CompilerTester.java"
+mkdir -p "$ART/graphs" "$ART/records" "$ART/logs"
+"$ROOT/scripts/build.sh" >/tmp/build-graphs.log
 
 run_case() {
   local src_file="$1"
