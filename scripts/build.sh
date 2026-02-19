@@ -8,10 +8,13 @@ CLS="$ROOT/target/classes"
 
 mkdir -p "$CLS"
 
+SOURCE_LIST="$ROOT/target/java_sources.txt"
+find "$SRC" -name '*.java' | sort > "$SOURCE_LIST"
+
 javac \
   -d "$CLS" \
   -cp "$JAR" \
   -sourcepath "$SRC" \
-  "$SRC/mocha/CompilerTester.java"
+  @"$SOURCE_LIST"
 
 echo "Build complete: $CLS"

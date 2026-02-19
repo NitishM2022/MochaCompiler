@@ -1,8 +1,8 @@
 digraph G {
-bb2 [ shape = record , label = " <b > BB2 | {1: x_1 = [FP+12] | 2: y_1 = [FP+16] | 3: $t0_1 = x_1 + y_1 | 4: return $t0_1 | 5: end}"];
+bb2 [ shape = record , label = "<b> BB2 | {1: x_1 = [FP+12] | 2: y_1 = [FP+16] | 3: $t0_1 = x_1 + y_1 | 4: return $t0_1 | 5: end}"];
 }
 
 digraph G {
-bb3 [ shape = record , label = " <b > BB3 | {19: f1_1 = #0.0 | 20: f2_1 = #0.0 | 21: f3_1 = #0.0 | 6: $t1_1 = readF | 7: f1_2 = $t1_1 | 8: f2_2 = 1.15 | 9: [GP-4] = f1_2 | 10: [GP-8] = f2_2 | 11: $t1_2 = call add(f1_2, f2_2) | 12: f1_3 = [GP-4] | 13: f2_3 = [GP-8] | 14: f3_2 = [GP-12] | 15: f3_3 = $t1_2 | 16: writeF f3_3 | 17: $t1_3 = f3_3 - f1_3 | 18: writeF $t1_3 | 22: end}"];
+bb3 [ shape = record , label = "<b> BB3 | {19: f1_1 = #0.0 | 20: f2_1 = #0.0 | 21: f3_1 = #0.0 | 6: $t1_1 = readF | 7: f1_2 = $t1_1 | 8: f2_2 = 1.15 | 9: [GP-4] = f1_2 | 10: [GP-8] = f2_2 | 11: $t1_2 = call add(f1_2, f2_2) | 12: f1_3 = [GP-4] | 13: f2_3 = [GP-8] | 14: f3_2 = [GP-12] | 15: f3_3 = $t1_2 | 16: writeF f3_3 | 17: $t1_3 = f3_3 - f1_3 | 18: writeF $t1_3 | 22: end}"];
 }
 

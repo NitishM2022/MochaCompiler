@@ -43,7 +43,7 @@ public class CFGPrinter implements CFGVisitor {
     
     private void printBlock(BasicBlock block) {
         output.append("bb").append(block.getNum())
-              .append(" [ shape = record , label = \" <b > BB")
+              .append(" [ shape = record , label = \"<b> BB")
               .append(block.getNum()).append(" | ");
         
         boolean first = true;
@@ -54,7 +54,7 @@ public class CFGPrinter implements CFGVisitor {
             if (!phi.isEliminated()) {
                 if (!first) output.append(" | ");
                 first = false;
-                output.append(escapeDot(phi.getId() + ": " + phi.toString()));
+                output.append(escapeRecordLabel(phi.getId() + ": " + phi.toString()));
             }
         }
         
@@ -65,7 +65,7 @@ public class CFGPrinter implements CFGVisitor {
                 hasNonEliminated = true;
                 if (!first) output.append(" | ");
                 first = false;
-                output.append(escapeDot(tac.getId() + ": " + tac.toString()));
+                output.append(escapeRecordLabel(tac.getId() + ": " + tac.toString()));
             }
         }
         
@@ -123,8 +123,16 @@ public class CFGPrinter implements CFGVisitor {
         }
     }
     
-    private String escapeDot(String str) {
-        return str.replace("\"", "\\\"");
+    private String escapeRecordLabel(String str) {
+        return str
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("{", "\\{")
+                .replace("}", "\\}")
+                .replace("|", "\\|")
+                .replace("<", "\\<")
+                .replace(">", "\\>")
+                .replace("\n", "\\n");
     }
     
     private void printDominatorEdges(BasicBlock block, DominatorAnalysis domAnalysis) {

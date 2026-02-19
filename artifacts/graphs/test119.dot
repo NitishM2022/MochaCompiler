@@ -1,4 +1,4 @@
 digraph G {
-bb2 [ shape = record , label = " <b > BB2 | {9: a_1 = #0 | 1: $t1_1 = false | 2: $t0_1 = !$t1_1 | 3: $t1_2 = true && $t0_1 | 4: $t0_2 = false || $t1_2 | 5: $t1_3 = $t0_2 || false | 6: $t0_3 = true && $t1_3 | 7: a_2 = $t0_3 | 8: writeB a_2 | 10: end}"];
+bb2 [ shape = record , label = "<b> BB2 | {9: a_1 = #0 | 1: $t1_1 = false | 2: $t0_1 = !$t1_1 | 3: $t1_2 = true && $t0_1 | 4: $t0_2 = false \|\| $t1_2 | 5: $t1_3 = $t0_2 \|\| false | 6: $t0_3 = true && $t1_3 | 7: a_2 = $t0_3 | 8: writeB a_2 | 10: end}"];
 }
 

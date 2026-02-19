@@ -1,8 +1,8 @@
 digraph G {
-bb2 [ shape = record , label = " <b > BB2 | {1: n_1 = [FP+12] | 2: $t0_1 = n_1 == 0 | 3: if ($t0_1 == 0) goto BB5 | 4: goto BB3}"];
-bb3 [ shape = record , label = " <b > BB3 | {5: return 1 | 6: goto BB4}"];
-bb4 [ shape = record , label = " <b > BB4 | {15: sum_1 = phi [BB3: sum_0, BB5: sum_2] | 16: x_1 = phi [BB3: x_0, BB5: x_2] | 17: $t0_2 = phi [BB3: $t0_1, BB5: $t0_4] | 18: $t1_1 = phi [BB3: $t1_0, BB5: $t1_2] | 14: end}"];
-bb5 [ shape = record , label = " <b > BB5 | {7: $t0_3 = n_1 - 1 | 8: $t1_2 = call foo($t0_3) | 9: x_2 = [GP-4] | 10: sum_2 = [GP-8] | 11: $t0_4 = n_1 * $t1_2 | 12: return $t0_4 | 13: goto BB4}"];
+bb2 [ shape = record , label = "<b> BB2 | {1: n_1 = [FP+12] | 2: $t0_1 = n_1 == 0 | 3: if ($t0_1 == 0) goto BB5 | 4: goto BB3}"];
+bb3 [ shape = record , label = "<b> BB3 | {5: return 1 | 6: goto BB4}"];
+bb4 [ shape = record , label = "<b> BB4 | {15: sum_1 = phi [BB3: sum_0, BB5: sum_2] | 16: x_1 = phi [BB3: x_0, BB5: x_2] | 17: $t0_2 = phi [BB3: $t0_1, BB5: $t0_4] | 18: $t1_1 = phi [BB3: $t1_0, BB5: $t1_2] | 14: end}"];
+bb5 [ shape = record , label = "<b> BB5 | {7: $t0_3 = n_1 - 1 | 8: $t1_2 = call foo($t0_3) | 9: x_2 = [GP-4] | 10: sum_2 = [GP-8] | 11: $t0_4 = n_1 * $t1_2 | 12: return $t0_4 | 13: goto BB4}"];
 bb2 : s -> bb3 : n [ label = " branch " ];
 bb2 : s -> bb5 : n [ label = " fall - through " ];
 bb3 : s -> bb4 : n [ label = " branch " ];
@@ -16,10 +16,10 @@ label = " dom " ];
 }
 
 digraph G {
-bb6 [ shape = record , label = " <b > BB6 | {33: x_1 = #0 | 34: sum_1 = #0 | 15: $t1_1 = read | 16: x_2 = $t1_1 | 17: sum_2 = 0 | 18: goto BB7}"];
-bb7 [ shape = record , label = " <b > BB7 | {36: sum_3 = phi [BB6: sum_2, BB8: sum_5] | 37: $t2_1 = phi [BB6: $t2_0, BB8: $t2_2] | 38: x_3 = phi [BB6: x_2, BB8: x_5] | 39: $t1_2 = phi [BB6: $t1_1, BB8: $t1_5] | 19: $t1_3 = x_3 > 0 | 20: if ($t1_3 == 0) goto BB9 | 21: goto BB8}"];
-bb8 [ shape = record , label = " <b > BB8 | {22: [GP-4] = x_3 | 23: [GP-8] = sum_3 | 24: $t1_4 = call foo(x_3) | 25: x_4 = [GP-4] | 26: sum_4 = [GP-8] | 27: $t2_2 = sum_4 + $t1_4 | 28: sum_5 = $t2_2 | 29: $t1_5 = x_4 - #1 | 30: x_5 = $t1_5 | 31: goto BB7}"];
-bb9 [ shape = record , label = " <b > BB9 | {32: write sum_3 | 35: end}"];
+bb6 [ shape = record , label = "<b> BB6 | {33: x_1 = #0 | 34: sum_1 = #0 | 15: $t1_1 = read | 16: x_2 = $t1_1 | 17: sum_2 = 0 | 18: goto BB7}"];
+bb7 [ shape = record , label = "<b> BB7 | {36: sum_3 = phi [BB6: sum_2, BB8: sum_5] | 37: $t2_1 = phi [BB6: $t2_0, BB8: $t2_2] | 38: x_3 = phi [BB6: x_2, BB8: x_5] | 39: $t1_2 = phi [BB6: $t1_1, BB8: $t1_5] | 19: $t1_3 = x_3 \> 0 | 20: if ($t1_3 == 0) goto BB9 | 21: goto BB8}"];
+bb8 [ shape = record , label = "<b> BB8 | {22: [GP-4] = x_3 | 23: [GP-8] = sum_3 | 24: $t1_4 = call foo(x_3) | 25: x_4 = [GP-4] | 26: sum_4 = [GP-8] | 27: $t2_2 = sum_4 + $t1_4 | 28: sum_5 = $t2_2 | 29: $t1_5 = x_4 - #1 | 30: x_5 = $t1_5 | 31: goto BB7}"];
+bb9 [ shape = record , label = "<b> BB9 | {32: write sum_3 | 35: end}"];
 bb6 : s -> bb7 : n [ label = " branch " ];
 bb7 : s -> bb9 : n [ label = " fall - through " ];
 bb7 : s -> bb8 : n [ label = " branch " ];

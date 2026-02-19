@@ -1,4 +1,4 @@
 digraph G {
-bb2 [ shape = record , label = " <b > BB2 | {11: a_1 = #0 | 12: b_1 = #0 | 13: c_1 = #0 | 14: d_1 = #0 | 10: a_2 = #0 | 1: b_2 = a_2 | 2: c_2 = b_2 | 3: d_2 = c_2 | 4: $t0_1 = d_2 + 1 | 5: d_3 = $t0_1 | 6: write a_2 | 7: write b_2 | 8: write c_2 | 9: write d_3 | 15: end}"];
+bb2 [ shape = record , label = "<b> BB2 | {11: a_1 = #0 | 12: b_1 = #0 | 13: c_1 = #0 | 14: d_1 = #0 | 10: a_2 = #0 | 1: b_2 = a_2 | 2: c_2 = b_2 | 3: d_2 = c_2 | 4: $t0_1 = d_2 + 1 | 5: d_3 = $t0_1 | 6: write a_2 | 7: write b_2 | 8: write c_2 | 9: write d_3 | 15: end}"];
 }
 
