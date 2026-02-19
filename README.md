@@ -39,6 +39,18 @@ Generated outputs are written to `artifacts/`.
 - Assembly output snapshots: `artifacts/asm/`
 - Test run summary: `artifacts/logs/test-summary.txt`
 
+## Optimization Metrics
+
+Across 64 tests, generated DLX code size dropped from 4813 to 3286 instructions (31.73% reduction).
+
+### Pass Activity Heatmap
+
+![Optimization pass activity heatmap](artifacts/metrics/optimization-pass-heatmap.png)
+
+### Code-Size Reduction
+
+![Generated code-size reduction chart](artifacts/metrics/code-size-reduction.png)
+
 ## Limitations
 
 - Call save/restore policy in codegen is function-level, not call-site precise.

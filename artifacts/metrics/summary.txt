@@ -1,0 +1,14 @@
+Website Metrics Summary
+=======================
+Tests considered: 64
+Missing optimized asm files: 0
+Missing baseline asm files: 0
+Total baseline instructions: 4813
+Total optimized instructions: 3286
+Overall code-size reduction: 31.73%
+
+Output files:
+- /Users/nitishmalluru/HW/CSCE_434/artifacts/metrics/optimization-pass-heatmap.png
+- /Users/nitishmalluru/HW/CSCE_434/artifacts/metrics/code-size-reduction.png
+- /Users/nitishmalluru/HW/CSCE_434/artifacts/metrics/instruction_counts.csv
+- /Users/nitishmalluru/HW/CSCE_434/artifacts/metrics/pass_activity.csv
