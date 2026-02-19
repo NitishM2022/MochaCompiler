@@ -1,43 +1,126 @@
-# Parse And Type Check
+# Parse, Type Analysis, and Front-End Semantics
 
-This stage converts source text into a validated typed AST and blocks invalid programs before IR lowering.
+This document explains how source text becomes a validated AST, how types are enforced, and how `interpret` mode executes that same AST.
 
-## What Runs
+Primary files:
 
-- CLI entrypoint: `compiler/src/mocha/CompilerTester.java`
-- Parser/orchestrator: `compiler/src/mocha/Compiler.java`
-- Type analysis: `compiler/src/types/TypeChecker.java`
+- `compiler/src/mocha/Compiler.java`
+- `compiler/src/types/TypeChecker.java`
+- `compiler/src/mocha/SymbolTable.java`
+- `compiler/src/types/*.java`
+- `compiler/src/mocha/Interpreter.java`
 
-## Execution Flow
+## Parser Construction Strategy
+
+`Compiler` is a recursive-descent parser with explicit FIRST-set checks (`have(NonTerminal)`) and fail-fast error control (`expect(...)` throws `QuitParseException`).
+
+Expression construction is precedence-layered and creates AST nodes directly at parse time:
+
+- `groupExpr`: literals, designators, calls, parenthesized relation, unary `!`
+- `powExpr`: `Power`
+- `multExpr`: `Multiplication` / `Division` / `Modulo` / `LogicalAnd`
+- `addExpr`: `Addition` / `Subtraction` / `LogicalOr`
+- `relExpr`: `Relation`
 
 ```mermaid
-sequenceDiagram
-    participant CLI as "CompilerTester"
-    participant P as "Compiler"
-    participant TC as "TypeChecker"
-    CLI->>P: "genAST()"
-    P->>P: "initSymbolTable(), recursive descent parse"
-    P-->>CLI: "AST + symbol table"
-    CLI->>TC: "check(ast)"
-    TC-->>CLI: "typed or error report"
-    CLI->>P: "genIR(ast) only if parse+type pass"
+flowchart TD
+    A["Token stream"] --> B["Primary forms: literal, designator, call, parenthesized expression"]
+    B --> C["Build power nodes"]
+    C --> D["Build multiplicative and logical-and nodes"]
+    D --> E["Build additive and logical-or nodes"]
+    E --> F["Build relation nodes"]
+    F --> G["Typed AST candidate"]
 ```
 
-## Internal Mechanics
+Designators and arrays are built structurally, not as text rewrites:
 
-- `CompilerTester` normalizes `-nr` to `[2,24]` before backend stages.
-- `Compiler.genAST()` initializes a fresh `SymbolTable`, parses `computation()`, then stores `parsedAST` for reuse.
-- Parse failures throw `QuitParseException` and accumulate messages in `errorBuffer`.
-- Type checking is a hard gate: `TypeChecker.check(ast)` must pass before IR generation.
+- `designator()` starts with `Designator(ident)`.
+- Each `[index]` wraps previous base as `ArrayIndex(base, index)`.
+- Nested `a[i][j]` becomes a left-nested chain, which later IR lowering uses to compute address steps dimension by dimension.
 
-## Key Contracts For IR Generation
+## Two-Pass Function Parsing And Symbol Resolution
 
-- Every identifier in AST resolves to symbol metadata.
-- Types for expressions and function signatures are established.
-- Invalid programs are rejected early with explicit parse/type reports.
+`computation()` parses functions twice to support forward references and mutual recursion.
 
-## Practical Insights
+```mermaid
+flowchart TD
+    P1["Pass 1: signature declaration"] --> D1["Build FuncType(params, return)"]
+    D1 --> D2["insertFunction(name, type)"]
+    D2 --> D3["skip body by brace counting"]
+    D3 --> P2["Reset scanner to saved token index"]
+    P2 --> B1["Pass 2: full body parse"]
+    B1 --> B2["Enter scope and insert formal parameters"]
+    B2 --> B3["Build FunctionBody AST"]
+```
 
-- Front-end and type-check are separated in the driver, which keeps type diagnostics independent from lowering logic.
-- The pipeline is intentionally fail-fast: later stages assume semantic correctness and avoid defensive rechecking.
-- `Compiler.genIR(ast)` directly invokes SSA generation (`genSSA`), so the first inspectable IR is already SSA-converted.
+Key behavior:
+
+- Pass 1 calls `tryDeclareFunction` and skips bodies with `skipFunctionBody()`.
+- Pass 2 rewinds scanner (`resetToToken(savedTokenIndex - 1)`) and parses real function bodies.
+- Symbol lookup supports overloading via `lookupFunction(name, paramTypes)` in `SymbolTable`.
+- Variable lookup is lexical-scope stack search from innermost to global scope.
+
+## Type System Mechanics
+
+`TypeChecker` is a full AST visitor. Every expression node gets:
+
+- `node.setType(...)`
+- `node.setLValue(...)`
+
+Operation legality is delegated to type objects (`IntType`, `FloatType`, `BoolType`, `ArrayType`, `FuncType`), for example:
+
+- `leftType.add(rightType)`
+- `destType.assign(sourceType)`
+- `baseType.index(indexType)`
+
+That keeps operator semantics centralized in `types/*`, not hardcoded per AST node.
+
+```mermaid
+flowchart TD
+    A["Visit AST node"] --> B["Visit children first"]
+    B --> C["Collect operand types"]
+    C --> D["Dispatch to type rule: add/sub/mul/div/compare/index/assign"]
+    D --> E{"ErrorType?"}
+    E -- "yes" --> F["Emit TypeError(line,col,message)"]
+    E -- "no" --> G["Set node type and lvalue flag"]
+```
+
+## Non-Trivial Checks Performed
+
+Beyond basic operator/type compatibility, the checker enforces several semantic contracts:
+
+- Array dimension validity at declaration (`size > 0`, recursively through nested arrays).
+- Compile-time bounds check when index is an integer literal (`arr[99]` against declared size).
+- Division-by-zero checks for literal `0` and `0.0`.
+- Power constraints for negative literal base/exponent.
+- Control conditions must be `bool` for `if`, `while`, `repeat`.
+- Function call resolution by exact overloaded signature; emits a precise mismatch error on failure.
+- Non-void function path coverage via `guaranteesReturn(...)` (requires all branches in `if` and at least one guaranteed-return path in statement sequence).
+
+## Interpreter Semantics (Front-End Execution Path)
+
+`Compiler.interpret(...)` executes AST directly through `Interpreter`:
+
+- Memory model is `Map<String,Object>`.
+- Arrays are flattened to `Object[]` and indexed via computed stride/offset.
+- Built-in IO is handled directly (`readInt`, `printFloat`, etc.).
+- `LogicalAnd` and `LogicalOr` currently evaluate both sides (no short-circuit).
+- User-defined function execution is intentionally minimal in interpreter mode (compile pipeline is the main path for full function/backend behavior).
+
+```mermaid
+flowchart TD
+    A["Array declaration with dimensions"] --> B["Compute total elements"]
+    B --> C["Allocate flat Object[]"]
+    C --> D["At access: evaluate all indices"]
+    D --> E["Compute stride-based flat offset"]
+    E --> F["Read or write data[offset]"]
+```
+
+## Stage Contract To Backend
+
+When this stage succeeds:
+
+- AST is structurally valid and symbol-resolved.
+- Expression/result types are attached to nodes.
+- Invalid programs are rejected before IR generation.
+- Function overload resolution and return-path checks are complete.

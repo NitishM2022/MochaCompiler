@@ -31,7 +31,6 @@ Generated outputs are written to `artifacts/`.
 - SSA elimination: `docs/architecture/ssa-elimination.md`
 - Register allocation: `docs/architecture/register-allocation.md`
 - Code generation: `docs/architecture/code-generation.md`
-- Limitations register: `docs/architecture/limitations.md`
 
 ## Artifacts
 
@@ -42,9 +41,7 @@ Generated outputs are written to `artifacts/`.
 
 ## Limitations
 
-- Call save/restore policy in codegen is function-level and not call-site precise.
-- Global synchronization around calls is conservative and can over-serialize memory traffic.
-- Spill rewrite logic depends on limited scratch-register scenarios and can fail on high-pressure forms.
-- Full suite currently has one known fixture/runtime failure (`test220`) due missing input token handling in `DLX.nextInput`.
-
-Details: `docs/architecture/limitations.md`.
+- Call save/restore policy in codegen is function-level, not call-site precise.
+- Global synchronization around calls is conservative and can add unnecessary memory traffic.
+- Spill rewrite logic depends on limited scratch-register scenarios under high pressure.
+- One fixture/runtime edge case remains (`test220`) around missing input token handling in `DLX.nextInput`.

@@ -1,48 +1,104 @@
-# SSA Elimination
+# SSA Elimination Internals
 
-This stage removes phi nodes and converts SSA merges into executable copy sequences on predecessor edges.
+This pass removes phi nodes by translating merge semantics into explicit edge-local copy code.
 
-File focus: `compiler/src/ir/regalloc/SSAElimination.java`
+Primary file: `compiler/src/ir/regalloc/SSAElimination.java`
 
-## Elimination Workflow
+## Problem Shape
 
-```mermaid
-flowchart TD
-    A["SSA CFG"] --> B["Split critical edges to phi blocks"]
-    B --> C["For each phi and predecessor, derive required move"]
-    C --> D["Resolve parallel copies"]
-    D --> E["Insert moves before branch and return terminators"]
-    E --> F["Clear phi lists"]
-```
+Each phi in block `B` has the form:
+
+- destination `d`
+- map `{ predecessor block -> incoming value }`
+
+At runtime, when control arrives from predecessor `P`, `d` must take exactly the value associated with `P`.
+
+SSA elimination converts that implicit rule into executable instructions inserted on predecessor paths.
 
 ## Critical Edge Splitting
 
-- Detect edges where predecessor has multiple successors and successor has multiple predecessors.
-- Insert a fresh bridge block with `Bra` to original successor.
-- Rewire predecessor/successor links.
-- Update branch TAC targets in predecessor.
-- Retarget phi argument maps from old predecessor to new bridge block.
+Phi-move insertion is unsafe on critical edges (pred has multiple succs and succ has multiple preds), so the pass splits those edges first.
+
+For each critical edge `pred -> succ` where `succ` has phis:
+
+1. Create bridge block `bridge` with `Bra bridge -> succ`.
+2. Rewire CFG:
+   - replace successor `succ` with `bridge` in `pred`
+   - set `bridge` predecessor to `pred`
+   - set `bridge` successor to `succ`
+   - replace predecessor `pred` with `bridge` in `succ`
+3. Retarget branch TAC in `pred` from `succ` to `bridge`.
+4. Rewrite each phi argument key from `pred` to `bridge`.
+
+```mermaid
+flowchart LR
+    P["Pred with multiple successors"] --> S["Phi block with multiple predecessors"]
+    P --> B["Inserted bridge block"]
+    B --> S
+```
+
+This guarantees each predecessor path has a unique insertion point for phi-related copies.
+
+## Phi To Move Extraction
+
+For each phi block `B` and each predecessor `P` of `B`:
+
+- Inspect every phi in `B`.
+- Read incoming value for `P`.
+- Create move if needed:
+  - variable source to variable destination when `src != dest`
+  - immediate/literal source to variable destination
+- Skip trivial self-copy.
+
+Result: a per-predecessor move set representing `P`-specific phi semantics.
 
 ## Parallel Copy Resolution
 
-- Collect predecessor-specific moves implied by phi arguments.
-- Emit safe moves first when destination is not used as source by other pending moves.
-- Detect cycles and break them with `Swap` TAC.
-- Skip trivial self-copies.
+Phi-derived moves are simultaneous logically, but machine instructions are sequential. The pass resolves this with dependency-aware ordering.
 
-## Placement Semantics
+Algorithm in `resolveParallelCopies`:
 
-- Moves are inserted before terminators (`Bra`, conditional branches, `Return`) so both branch paths see correct values.
-- After insertion, all phis are removed from block metadata.
+1. Remove no-op moves (`dest == src`).
+2. Find a safe move whose destination is not used as a source by any other pending move.
+3. Emit safe move and remove it from pending.
+4. If no safe move exists, a cycle exists. Break cycle with `Swap(dest, src)` and rewrite pending sources accordingly.
+5. Repeat until pending is empty.
 
-## Output Contract
+```mermaid
+flowchart TD
+    A["Pending moves"] --> B{"Safe move exists?"}
+    B -- "yes" --> C["Emit safe move and remove it"]
+    C --> A
+    B -- "no" --> D["Cycle detected"]
+    D --> E["Emit Swap for one edge"]
+    E --> F["Rewrite dependent sources"]
+    F --> A
+```
 
-- No phi nodes remain in CFG.
-- Value merges are represented by explicit executable instructions.
-- CFG structure is valid for liveness/interference analysis.
+This prevents clobbering in cycles like `a <- b, b <- a` without introducing extra virtual temporaries.
 
-## Practical Insights
+## Correct Insertion Point Semantics
 
-- `nextBlockNum` is static and high-valued to avoid block-id collisions across functions.
-- Correct insertion position is a semantic requirement; inserting after terminators would silently break value flow.
-- `Swap`-based cycle handling avoids allocating temporary virtuals during phi destruction.
+Moves are inserted before the first terminator in predecessor block:
+
+- `Bra`
+- conditional branches (`Beq/Bne/Blt/Ble/Bgt/Bge`)
+- `Return`
+
+Why this exact placement matters:
+
+- If moves were inserted after a branch, they would not execute.
+- If block has conditional branch and fallthrough/unconditional branch structure, insertion before the first branch guarantees both outgoing paths observe phi-consistent values.
+
+## Finalization And Invariants
+
+After insertion:
+
+- All phi lists are cleared.
+- CFG edges remain valid (including split bridges).
+- Value merges are represented entirely by executable TAC.
+
+Additional implementation notes:
+
+- `nextBlockNum` is static and starts high (`1000`) so newly inserted bridge block IDs remain globally unique across CFGs.
+- Branch retargeting handles all branch TAC classes, preventing stale control-flow links.
