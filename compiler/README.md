@@ -6,7 +6,7 @@ This folder contains the production pipeline from typed AST to DLX machine code.
 
 - `src/mocha`: front-end orchestration and CLI (`Compiler`, `CompilerTester`)
 - `src/ir`: IR generation, TAC model, CFG model, SSA, optimization, register allocation, codegen
-- `scripts`: analysis helpers for records/graphs/report generation
+- `scripts`: analysis helpers for records/graphs and execution workflows
 
 ## Execution Contract
 

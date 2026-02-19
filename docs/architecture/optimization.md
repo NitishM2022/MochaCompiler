@@ -1,158 +1,233 @@
-# Optimization
+# Optimization Internals
 
-This phase transforms SSA-form CFG/TAC by applying local algebraic rewrites, global dataflow substitutions, dead-code pruning, dominator-scoped redundancy removal, and whole-program orphan function cleanup.
-
-File focus:
+Implementation files:
 - `compiler/src/ir/optimizations/ConstantFolding.java`
 - `compiler/src/ir/optimizations/ConstantPropagation.java`
 - `compiler/src/ir/optimizations/CopyPropagation.java`
 - `compiler/src/ir/optimizations/DeadCodeElimination.java`
 - `compiler/src/ir/optimizations/CommonSubexpressionElimination.java`
 - `compiler/src/ir/optimizations/OrphanFunctionElimination.java`
+- shared helpers: `compiler/src/ir/optimizations/BaseOptimization.java`
 
-## Pass Interaction Model
-
-```mermaid
-flowchart TD
-    A["SSA CFG list"] --> B["OFE builds call graph and removes unreachable functions"]
-    B --> C["Per-function optimization passes"]
-    C --> D["CF rewrites constants and branches"]
-    D --> E["CP substitutes lattice-proven constants"]
-    E --> F["CPP substitutes copy-equivalent variables"]
-    F --> G["DCE marks/removes dead computations and unreachable blocks"]
-    G --> H["CSE replaces dominated duplicate expressions"]
-    H --> I["Updated SSA CFGs + transformation records"]
-```
+This document focuses on pass mechanics, transfer rules, mutation points, and algorithm coupling.
 
 ## Constant Folding (CF)
 
-`ConstantFolding.optimize` has three major steps:
+Entry: `ConstantFolding.optimize(cfg)`
+
+Pipeline in code:
 1. `foldArithmeticAndComparisons`
 2. `optimizeBranches`
 3. `eliminateUnreachableBlocks`
 
-### How CF Actually Rewrites
+### Rewrite Rules Actually Implemented
 
-- Algebraic simplifications first (e.g. `x+0`, `x*1`, `x*0`, `x-x`, `x|0`, `x&1` style identities).
-- Full constant evaluation next for `Add/Sub/Mul/Div/Mod/Pow`, boolean bit ops, and `Cmp` relation operators.
-- Unary `Not` with constant operand folds to `0/1`.
-- Folded results become `Mov dest, Immediate/Literal` while preserving float flags where relevant.
+- Algebraic identities (`x+0`, `x*1`, `x*0`, `x-x`, `x/1`, `x%1`, boolean `And`/`Or` identities).
+- Full constant evaluation for arithmetic/bitwise and comparisons.
+- Unary `Not` fold to `0/1` immediate.
+- Folded instructions replaced with `Mov(dest, Immediate/Literal)` preserving float flags when available.
 
-### Branch Canonicalization
+### Branch Surgery
 
-- For constant branch conditions, conditional branches are rewritten to either:
-  - unconditional `Bra target` when always taken, or
-  - branch removal when never taken.
-- After rewriting, successor/predecessor edges are patched and dead trailing instructions in block are removed.
-- Reachability sweep removes blocks disconnected from entry.
+For constant branch conditions:
+- rewrite to `Bra target` when always taken,
+- remove branch instruction when never taken,
+- patch successor/predecessor lists,
+- truncate dead trailing instructions in block,
+- run entry-reachability block deletion afterward.
+
+```mermaid
+flowchart TD
+    A["inspect branch TAC"] --> B["evaluate condition immediate"]
+    B --> C{"always taken?"}
+    C -- "yes" --> D["replace with Bra(target)"]
+    D --> E["remove non-target successors"]
+    E --> F["delete trailing dead instructions"]
+    C -- "no" --> G{"always not taken?"}
+    G -- "yes" --> H["remove branch TAC"]
+    H --> I["remove target successor edge"]
+    G -- "no" --> J["leave branch unchanged"]
+    F --> K["recompute reachability and prune blocks"]
+    I --> K
+    J --> K
+```
 
 ## Constant Propagation (CP)
 
-CP is a def-use worklist analysis with a three-point lattice per SSA variable:
-- `TOP`: unknown yet
-- `CONSTANT(v)`: proven literal/immediate value
-- `BOTTOM`: non-constant or conflicting value
+Entry: `ConstantPropagation.optimize(cfg)`
 
-```mermaid
-flowchart LR
-    A["Build def/use chains for TAC + phi"] --> B["Initialize lattice for each SSA variable"]
-    B --> C["Worklist evaluate defs"]
-    C --> D{"Lattice value changed?"}
-    D -- "yes" --> E["enqueue dependent defs"]
-    D -- "no" --> F["continue"]
-    E --> C
-    F --> G["Rewrite operands and phi args with constants"]
-```
+### Lattice And Def-Use Model
+
+Per-variable lattice (`LatticeValue`):
+- `TOP`
+- `CONSTANT(value)`
+- `BOTTOM`
+
+Data structures:
+- `defSite: Map<Variable, Object>` where object is TAC or Phi
+- `uses: Map<Variable, List<Object>>`
+- `lattice: Map<Variable, LatticeValue>`
 
 ### Transfer Semantics
 
-- `Mov` from immediate/literal yields `CONSTANT`.
-- `Mov` from variable copies constant only if source variable is already `CONSTANT`.
-- `Phi` meet keeps constant only if all non-`TOP` inputs agree; any conflict yields `BOTTOM`.
+- `Mov x, literal/immediate` => `x = CONSTANT(v)`
+- `Mov x, y` and `y = CONSTANT(v)` => `x = CONSTANT(v)`
+- `Phi` meet keeps `CONSTANT(v)` only if all non-TOP incoming values agree; conflicts produce `BOTTOM`; all-TOP stays `TOP`
 
-### Rewrite Phase
+### Worklist Engine
 
-- Replaces TAC operands and phi arguments where lattice says `CONSTANT`.
-- Leaves instructions in place; only operands mutate.
+```mermaid
+flowchart LR
+    A["build def/use + initialize lattice"] --> B["queue all defined vars"]
+    B --> C["pop var"]
+    C --> D["new = evaluate(defSite[var])"]
+    D --> E{"new != old?"}
+    E -- "yes" --> F["lattice[var]=new"]
+    F --> G["enqueue definitions of users(var)"]
+    G --> H{"queue empty?"}
+    E -- "no" --> H
+    H -- "no" --> C
+    H -- "yes" --> I["rewrite operands + phi args with constants"]
+```
+
+Mutation point:
+- only operands/phi args are rewritten (`instruction.setOperands`, `phi.setArgs`), instruction kinds remain unchanged.
 
 ## Copy Propagation (CPP)
 
-CPP mirrors CP's framework but uses copy-equivalence lattice values:
+Entry: `CopyPropagation.optimize(cfg)`
+
+CPP mirrors CP architecture but tracks variable equivalence instead of literal constants.
+
+### Lattice
+
 - `TOP`
-- `COPY(v)` meaning equivalent to variable `v`
+- `COPY(v)`
 - `BOTTOM`
 
-### How CPP Resolves Copies
+### Transfer
 
-- `Mov x, y` creates direct copy relation `x -> y`.
-- If `y` is already `COPY(z)`, CPP collapses chain to `x -> z`.
-- Constants intentionally map to `BOTTOM` (CPP handles only variable copies).
-- `Phi` meet keeps copy only when all non-`TOP` operands converge to same source variable.
+- `Mov x, y` => `x = COPY(y)`
+- if `y = COPY(z)`, collapse chain to `x = COPY(z)`
+- constants map to `BOTTOM` (CPP is variable-copy only)
+- phi meet keeps `COPY(v)` only when all non-TOP incoming copies agree
 
-### Cycle Safety
+### Cycle-Safe Replacement
 
-- Operand replacement follows copy chains recursively with visited-set cycle detection.
-- Cyclic copy graphs stop recursion and retain current variable to avoid infinite rewrite loops.
+Operand replacement recursively follows copy chains with a visited set.
+If a cycle appears (`x -> y -> x`), recursion stops and current variable is preserved.
+
+```mermaid
+flowchart TD
+    A["replace operand value"] --> B{"is variable?"}
+    B -- "no" --> C["return value"]
+    B -- "yes" --> D{"already visited?"}
+    D -- "yes" --> E["return current var"]
+    D -- "no" --> F{"lattice[var] is COPY(next)?"}
+    F -- "no" --> G["return var"]
+    F -- "yes" --> H["mark visited; recurse(next)"]
+    H --> I["unmark visited; return result"]
+```
 
 ## Dead Code Elimination (DCE)
 
-DCE is use-count-driven elimination with side-effect safety constraints.
+Entry: `DeadCodeElimination.optimize(cfg)`
 
-### Algorithm
+### Core Strategy
 
-- Build def/use chains for SSA variables (including phi uses).
-- Seed worklist with definitions whose results have no users.
-- Iteratively mark instructions `eliminated` if they are side-effect-free.
-- When an instruction is removed, decrement uses of its input defs; newly dead defs are enqueued.
+- Build def/use chains (`buildDefUseChains` from `BaseOptimization`).
+- Seed worklist with defs that have zero users and are side-effect-free.
+- Repeatedly eliminate and propagate deadness to their operand definitions.
+- Then run unreachable-block elimination from entry.
 
-### Side-Effect Gate
+Side-effect filter (`BaseOptimization.hasSideEffects`) blocks elimination of:
+- calls, stores, returns, branches, I/O, terminators.
 
-Instructions are never removed if they may affect observable state, including:
-- I/O (`Write*`)
-- calls/returns
-- stores (`Store`, `StoreGP`)
-- branches and terminators
-
-### CFG Cleanup
-
-After instruction elimination, DCE runs reachability pruning from entry and removes unreachable basic blocks.
+```mermaid
+flowchart TD
+    A["build defs + uses"] --> B["seed worklist with defs having no users"]
+    B --> C["pop dead candidate"]
+    C --> D{"already eliminated or side effects?"}
+    D -- "yes" --> E["skip"]
+    D -- "no" --> F["mark eliminated"]
+    F --> G["for each operand def: decrement user set"]
+    G --> H{"operand def now unused and eliminable?"}
+    H -- "yes" --> I["enqueue operand def"]
+    H -- "no" --> J["continue"]
+    E --> K{"worklist empty?"}
+    I --> K
+    J --> K
+    K -- "no" --> C
+    K -- "yes" --> L["prune unreachable blocks"]
+```
 
 ## Common Subexpression Elimination (CSE)
 
-CSE performs dominator-tree-scoped redundancy elimination over pure computation TAC.
+Entry: `CommonSubexpressionElimination.optimize(cfg)`
 
-### Core Mechanism
+Prerequisite:
+- `cfg.getDominatorAnalysis()` must exist (produced by SSA conversion).
 
-- Requires existing dominator analysis from SSA conversion.
-- DFS over dominator tree carries an `available expression -> variable` map.
-- For each pure computation instruction, compute expression signature.
-- If signature already available in dominating context, replace instruction with `Mov dest, existingVar`.
-- Otherwise, record current expression as available for dominated descendants.
+### Mechanism
 
-### Signature Strategy
+- DFS over dominator tree with an `available` map copied per recursion step.
+- For each pure computation TAC (excluding `Mov`):
+  - build expression signature (`BaseOptimization.getExpressionSignature`)
+  - if signature exists in dominating scope, replace with `Mov(dest, existingVar)`
+  - else record current destination as available for dominated blocks
 
-- Signature encodes instruction opcode and ordered operands.
-- Variables include symbol identity and SSA version to avoid aliasing shadowed names.
-- `Mov` is excluded from CSE to avoid oscillation with CP/CPP.
+Signature includes opcode + operand identity/SSA versions to prevent alias confusion across shadowed symbols.
+
+```mermaid
+flowchart LR
+    A["enter block with inherited available map"] --> B["copy map to local scope"]
+    B --> C["scan instructions"]
+    C --> D{"pure computation and not Mov?"}
+    D -- "no" --> E["next instruction"]
+    D -- "yes" --> F["sig = expression signature"]
+    F --> G{"sig in local map?"}
+    G -- "yes" --> H["replace with Mov(dest, local[sig])"]
+    G -- "no" --> I["local[sig] = dest"]
+    H --> E
+    I --> E
+    E --> J{"done block?"}
+    J -- "no" --> C
+    J -- "yes" --> K["recurse into dom-tree children with local map"]
+```
 
 ## Orphan Function Elimination (OFE)
 
-OFE is interprocedural and runs over the full CFG list.
+Entry: `OrphanFunctionElimination.eliminateOrphans(cfgs)`
 
-### How It Works
+### Whole-Program Algorithm
 
-- Build call graph: each function maps to directly called functions found in `Call` TAC.
-- Start BFS from `main`.
-- Any function not reachable from `main` is removed from CFG list.
-- Transformation log records eliminated function names.
+- Build call graph from every function CFG by collecting `Call` TAC targets.
+- BFS/queue reachability from `main`.
+- Remove CFGs whose function names are unreachable from `main`.
+- Log removed function list in transformation records.
 
-### Important Scope Boundary
+```mermaid
+flowchart TD
+    A["CFG list"] --> B["build call graph: caller -> callees"]
+    B --> C["BFS from main"]
+    C --> D["reachable function set"]
+    D --> E["remove cfg where function not in reachable"]
+    E --> F["emit elimination log"]
+```
 
-- OFE removes whole functions, not instructions or blocks.
-- It relies purely on static call edges present in TAC.
+## Coupling And Order Sensitivity
+
+Important interactions in this codebase:
+- CF branch rewrites change CFG edges, which changes reachability and future dataflow.
+- CP/CPP depend on SSA def-use quality; malformed phi args reduce effectiveness.
+- CSE requires dominator tree from SSA stage and uses SSA-version-sensitive signatures.
+- DCE relies on conservative side-effect classification from `BaseOptimization`.
+- OFE is function-graph-level and independent of block-level rewrite details.
 
 ## Output Contract
 
-- Output remains SSA-form for each retained function.
-- Passes mutate TAC/CFG in place and may mark instructions eliminated or remove unreachable blocks/functions.
-- Transformation trace is appended to `record_*.txt`, allowing artifact-backed verification.
+After optimization stage:
+- IR remains SSA form (phis still present).
+- Instructions may be replaced, operands rewritten, and some instructions marked eliminated.
+- Unreachable blocks/functions may be removed.
+- Record files (`record_*.txt`) capture transformation events at instruction granularity.

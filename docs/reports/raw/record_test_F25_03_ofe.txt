@@ -1,5 +1,0 @@
-Transformations:
---------------------------------------------------------------------------------
-1: OrphanElimination: Orphan function detected: nevercalled
-2: OrphanElimination: Eliminated 1 orphan function(s)
---------------------------------------------------------------------------------

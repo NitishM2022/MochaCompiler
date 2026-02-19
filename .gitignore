@@ -32,6 +32,9 @@ personal_tests/
 # Generated pipeline artifacts
 /graphs/
 
+# Historical report dumps (excluded from public-facing repo)
+/docs/reports/
+
 # Legacy workbench metadata
 /archive/historical-notes/workbench/nbproject/
 /archive/historical-notes/workbench/build.xml
