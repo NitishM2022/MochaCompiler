@@ -1,0 +1,38 @@
+Function: main
+Iteration #1
+2: CP: Constant propagated in: $t0_1 = 2 + 1
+10: CP: Constant propagated in: $t1_4 = 5 * 3
+Iteration #2
+2: CF: Folded constant: $t0_1 = 2 + 1 -> $t0_1 = #3
+10: CF: Folded constant: $t1_4 = 5 * 3 -> $t1_4 = #15
+Iteration #3
+3: CP: Constant propagated in: $t1_2 = #3 * 2
+11: CP: Constant propagated in: $t0_4 = #15 + 7
+Iteration #4
+3: CF: Folded constant: $t1_2 = #3 * 2 -> $t1_2 = #6
+11: CF: Folded constant: $t0_4 = #15 + 7 -> $t0_4 = #22
+Iteration #5
+4: CP: Constant propagated in: $t0_2 = #6 / 2
+12: CP: Constant propagated in: a_3 = #22
+13: CP: Constant propagated in: write #22
+Iteration #6
+4: CF: Folded constant: $t0_2 = #6 / 2 -> $t0_2 = #3
+Iteration #7
+5: CP: Constant propagated in: $t1_3 = #3 - 1
+Iteration #8
+5: CF: Folded constant: $t1_3 = #3 - 1 -> $t1_3 = #2
+Iteration #9
+6: CP: Constant propagated in: a_2 = #2
+7: CP: Constant propagated in: write #2
+Iteration #10
+2: DCE: Eliminated: $t0_1 = #3
+9: DCE: Eliminated: $t0_3 = 5
+4: DCE: Eliminated: $t0_2 = #3
+11: DCE: Eliminated: $t0_4 = #22
+15: DCE: Eliminated: a_1 = #0
+5: DCE: Eliminated: $t1_3 = #2
+6: DCE: Eliminated: a_2 = #2
+10: DCE: Eliminated: $t1_4 = #15
+1: DCE: Eliminated: $t1_1 = 2
+12: DCE: Eliminated: a_3 = #22
+3: DCE: Eliminated: $t1_2 = #6

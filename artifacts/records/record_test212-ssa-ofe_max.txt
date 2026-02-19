@@ -1,0 +1,26 @@
+OFE: Eliminated 3 orphan function(s): test1, test2, test3
+
+Function: main
+Iteration #1
+83: CPP: Copy propagated in: a_2 = $t4_1
+84: CPP: Copy propagated in: c_2 = $t4_1
+85: CPP: Copy propagated in: $t4_2 = $t4_1 + $t4_1
+87: CPP: Copy propagated in: e_2 = $t4_2
+88: CPP: Copy propagated in: d_3 = $t4_1
+89: CPP: Copy propagated in: f_2 = $t4_2
+90: CPP: Copy propagated in: write $t4_1
+Iteration #2
+83: DCE: Eliminated: a_2 = $t4_1
+91: DCE: Eliminated: a_1 = #0
+88: DCE: Eliminated: d_3 = $t4_1
+86: DCE: Eliminated: d_2 = $t4_2
+94: DCE: Eliminated: d_1 = #0
+92: DCE: Eliminated: b_1 = #0
+87: DCE: Eliminated: e_2 = $t4_2
+95: DCE: Eliminated: e_1 = #0
+82: DCE: Eliminated: b_2 = $t4_1
+89: DCE: Eliminated: f_2 = $t4_2
+96: DCE: Eliminated: f_1 = #0
+93: DCE: Eliminated: c_1 = #0
+84: DCE: Eliminated: c_2 = $t4_1
+85: DCE: Eliminated: $t4_2 = $t4_1 + $t4_1

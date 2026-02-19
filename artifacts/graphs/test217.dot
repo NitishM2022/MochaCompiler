@@ -1,0 +1,30 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {1: n_1 = [FP+12] | 2: max_1 = 0 | 3: i_1 = 0 | 4: goto BB3}"];
+bb3 [ shape = record , label = " <b > BB3 | {20: i_2 = phi [BB2: i_1, BB7: i_3] | 22: max_2 = phi [BB2: max_1, BB7: max_4] | 23: curr_1 = phi [BB2: curr_0, BB7: curr_2] | 24: $t0_1 = phi [BB2: $t0_0, BB7: $t0_5] | 5: $t0_2 = i_2 < n_1 | 6: if ($t0_2 == 0) goto BB5 | 7: goto BB4}"];
+bb4 [ shape = record , label = " <b > BB4 | {8: $t0_3 = read | 9: curr_2 = $t0_3 | 10: $t0_4 = curr_2 > max_2 | 11: if ($t0_4 == 0) goto BB7 | 12: goto BB6}"];
+bb5 [ shape = record , label = " <b > BB5 | {18: return max_2 | 19: end}"];
+bb6 [ shape = record , label = " <b > BB6 | {13: max_3 = curr_2 | 14: goto BB7}"];
+bb7 [ shape = record , label = " <b > BB7 | {21: max_4 = phi [BB4: max_2, BB6: max_3] | 15: $t0_5 = i_2 + #1 | 16: i_3 = $t0_5 | 17: goto BB3}"];
+bb2 : s -> bb3 : n [ label = " branch " ];
+bb3 : s -> bb5 : n [ label = " fall - through " ];
+bb3 : s -> bb4 : n [ label = " branch " ];
+bb4 : s -> bb6 : n [ label = " branch " ];
+bb4 : s -> bb7 : n [ label = " fall - through " ];
+bb6 : s -> bb7 : n [ label = " branch " ];
+bb7 : s -> bb3 : n [ label = " branch " ];
+bb2 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb3 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb3 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb6 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb7 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+
+digraph G {
+bb8 [ shape = record , label = " <b > BB8 | {29: input_1 = #0 | 30: myvar_1 = #0 | 20: $t0_1 = read | 21: input_2 = $t0_1 | 22: [GP-4] = input_2 | 23: $t0_2 = call maxFromInput(input_2) | 24: input_3 = [GP-4] | 25: myvar_2 = [GP-8] | 26: myvar_3 = $t0_2 | 27: write myvar_3 | 28: writeNL | 31: end}"];
+}
+

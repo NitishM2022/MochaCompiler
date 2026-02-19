@@ -1,0 +1,51 @@
+Function: arrayAccept
+Iteration #1
+67: CP: Constant propagated in phi: k_2 = phi [BB8: k_3, BB2: 0]
+64: CP: Constant propagated in phi: o_3 = phi [BB4: 0, BB7: o_4]
+66: CP: Constant propagated in phi: k_5 = phi [BB10: k_6, BB5: 0]
+Iteration #2
+67: CPP: Copy propagated in phi: k_2 = phi [BB8: $t0_7, BB2: 0]
+64: CPP: Copy propagated in phi: o_3 = phi [BB4: 0, BB7: $t0_6]
+66: CPP: Copy propagated in phi: k_5 = phi [BB10: $t1_9, BB5: 0]
+Iteration #3
+69: DCE: Eliminated: $t0_1 = phi [BB2: $t0_0, BB8: $t0_7]
+70: DCE: Eliminated: $t0_3 = phi [BB4: $t0_2, BB7: $t0_6]
+68: DCE: Eliminated: $t0_8 = phi [BB5: $t0_2, BB10: $t0_12]
+60: DCE: Eliminated: $t2_5 = phi [BB5: $t2_1, BB10: $t2_7]
+53: DCE: Eliminated: $t5_1 = phi [BB5: $t5_0, BB10: $t5_2]
+20: DCE: Eliminated: o_4 = $t0_6
+63: DCE: Eliminated: o_1 = phi [BB2: o_0, BB8: o_3]
+7: DCE: Eliminated: o_2 = 0
+50: DCE: Eliminated: k_6 = $t1_9
+57: DCE: Eliminated: $t3_4 = phi [BB5: $t3_1, BB10: $t3_8]
+2: DCE: Eliminated: k_1 = 0
+23: DCE: Eliminated: k_3 = $t0_7
+54: DCE: Eliminated: $t1_5 = phi [BB5: $t1_1, BB10: $t1_9]
+25: DCE: Eliminated: k_4 = 0
+65: DCE: Eliminated: $t4_1 = phi [BB5: $t4_0, BB10: $t4_4]
+Iteration #4
+34: CSE: Eliminated: $t0_11 = k_5 * #4 -> $t0_11 = $t0_10
+Iteration #5
+35: CPP: Copy propagated in: $t2_6 = &($t3_6 + $t0_10)
+Iteration #6
+34: DCE: Eliminated: $t0_11 = $t0_10
+
+Function: main
+Iteration #1
+79: CP: Constant propagated in phi: c_3 = phi [BB14: c_4, BB12: 0]
+59: CP: Constant propagated in: $t1_3 = 2 * c_3
+68: CP: Constant propagated in: [GP-108] = 2
+Iteration #2
+79: CPP: Copy propagated in phi: c_3 = phi [BB14: $t1_4, BB12: 0]
+Iteration #3
+77: DCE: Eliminated: $t3_1 = phi [BB12: $t3_0, BB14: $t3_2]
+65: DCE: Eliminated: c_4 = $t1_4
+54: DCE: Eliminated: c_2 = 0
+74: DCE: Eliminated: c_1 = #0
+53: DCE: Eliminated: j_2 = 2
+76: DCE: Eliminated: $t1_1 = phi [BB12: $t1_0, BB14: $t1_4]
+71: DCE: Eliminated: j_3 = [GP-108]
+80: DCE: Eliminated: $t0_1 = phi [BB12: $t0_0, BB14: $t0_2]
+73: DCE: Eliminated: j_1 = #0
+78: DCE: Eliminated: $t4_1 = phi [BB12: $t4_0, BB14: $t4_2]
+72: DCE: Eliminated: c_5 = [GP-112]

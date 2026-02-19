@@ -1,0 +1,38 @@
+Function: main
+Iteration #1
+2: CP: Constant propagated in: $t0_1 = 51 * 2
+3: CP: Constant propagated in: $t1_1 = $t0_1 + #0
+6: CP: Constant propagated in: $t0_2 = 51 + $t1_2
+7: CP: Constant propagated in: $t1_3 = $t0_2 + #0
+Iteration #2
+2: CF: Folded constant: $t0_1 = 51 * 2 -> $t0_1 = #102
+3: CF: Algebraic simplification: $t1_1 = $t0_1 + #0 -> $t1_1 = $t0_1
+7: CF: Algebraic simplification: $t1_3 = $t0_2 + #0 -> $t1_3 = $t0_2
+Iteration #3
+3: CP: Constant propagated in: $t1_1 = #102
+4: CP: Constant propagated in: y_3 = #102
+5: CP: Constant propagated in: $t1_2 = #102 * 2
+9: CP: Constant propagated in: write #102
+Iteration #4
+5: CF: Folded constant: $t1_2 = #102 * 2 -> $t1_2 = #204
+Iteration #5
+6: CP: Constant propagated in: $t0_2 = 51 + #204
+Iteration #6
+6: CF: Folded constant: $t0_2 = 51 + #204 -> $t0_2 = #255
+Iteration #7
+7: CP: Constant propagated in: $t1_3 = #255
+8: CP: Constant propagated in: x_3 = #255
+Iteration #8
+11: DCE: Eliminated: y_2 = #0
+1: DCE: Eliminated: x_2 = 51
+14: DCE: Eliminated: z_1 = #0
+4: DCE: Eliminated: y_3 = #102
+7: DCE: Eliminated: $t1_3 = #255
+8: DCE: Eliminated: x_3 = #255
+5: DCE: Eliminated: $t1_2 = #204
+13: DCE: Eliminated: y_1 = #0
+3: DCE: Eliminated: $t1_1 = #102
+10: DCE: Eliminated: z_2 = #0
+2: DCE: Eliminated: $t0_1 = #102
+12: DCE: Eliminated: x_1 = #0
+6: DCE: Eliminated: $t0_2 = #255

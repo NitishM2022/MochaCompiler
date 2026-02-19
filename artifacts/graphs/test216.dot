@@ -1,0 +1,77 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {1: a_1 = [FP+12] | 2: $t0_1 = a_1 % 4 | 3: $t1_1 = $t0_1 == 0 | 4: $t0_2 = !$t1_1 | 5: if ($t0_2 == 0) goto BB5 | 6: goto BB3}"];
+bb3 [ shape = record , label = " <b > BB3 | {7: $t0_3 = call dead_b(a_1) | 8: myNum_1 = [GP-4] | 9: $t1_2 = $t0_3 + 1 | 10: return $t1_2 | 11: goto BB4}"];
+bb4 [ shape = record , label = " <b > BB4 | {15: $t0_4 = phi [BB3: $t0_3, BB5: $t0_2] | 16: myNum_2 = phi [BB3: myNum_1, BB5: myNum_0] | 17: $t1_3 = phi [BB3: $t1_2, BB5: $t1_1] | 14: end}"];
+bb5 [ shape = record , label = " <b > BB5 | {12: return a_1 | 13: goto BB4}"];
+bb2 : s -> bb3 : n [ label = " branch " ];
+bb2 : s -> bb5 : n [ label = " fall - through " ];
+bb3 : s -> bb4 : n [ label = " branch " ];
+bb5 : s -> bb4 : n [ label = " branch " ];
+bb2 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+
+digraph G {
+bb6 [ shape = record , label = " <b > BB6 | {15: b_1 = [FP+12] | 16: $t2_1 = b_1 ^ 2 | 17: $t3_1 = call dead_a($t2_1) | 18: myNum_1 = [GP-4] | 19: return $t3_1 | 20: end}"];
+}
+
+digraph G {
+bb7 [ shape = record , label = " <b > BB7 | {21: a_1 = [FP+12] | 22: $t4_1 = a_1 <= 0 | 23: if ($t4_1 == 0) goto BB10 | 24: goto BB8}"];
+bb8 [ shape = record , label = " <b > BB8 | {25: return 0 | 26: goto BB9}"];
+bb9 [ shape = record , label = " <b > BB9 | {44: $t6_1 = phi [BB8: $t6_0, BB12: $t6_2] | 46: $t5_1 = phi [BB8: $t5_0, BB12: $t5_2] | 48: myNum_1 = phi [BB8: myNum_0, BB12: myNum_2] | 49: $t4_2 = phi [BB8: $t4_1, BB12: $t4_4] | 42: end}"];
+bb10 [ shape = record , label = " <b > BB10 | {27: $t4_3 = a_1 <= 2 | 28: if ($t4_3 == 0) goto BB13 | 29: goto BB11}"];
+bb11 [ shape = record , label = " <b > BB11 | {30: return 1 | 31: goto BB12}"];
+bb12 [ shape = record , label = " <b > BB12 | {43: $t6_2 = phi [BB11: $t6_0, BB13: $t6_3] | 45: $t5_2 = phi [BB11: $t5_0, BB13: $t5_3] | 47: myNum_2 = phi [BB11: myNum_0, BB13: myNum_4] | 50: $t4_4 = phi [BB11: $t4_3, BB13: $t4_7] | 41: goto BB9}"];
+bb13 [ shape = record , label = " <b > BB13 | {32: $t4_5 = a_1 - 1 | 33: $t5_3 = call dead_fibonacci($t4_5) | 34: myNum_3 = [GP-4] | 35: $t4_6 = a_1 - 2 | 36: $t6_3 = call dead_fibonacci($t4_6) | 37: myNum_4 = [GP-4] | 38: $t4_7 = $t5_3 + $t6_3 | 39: return $t4_7 | 40: goto BB12}"];
+bb7 : s -> bb8 : n [ label = " branch " ];
+bb7 : s -> bb10 : n [ label = " fall - through " ];
+bb8 : s -> bb9 : n [ label = " branch " ];
+bb10 : s -> bb11 : n [ label = " branch " ];
+bb10 : s -> bb13 : n [ label = " fall - through " ];
+bb11 : s -> bb12 : n [ label = " branch " ];
+bb12 : s -> bb9 : n [ label = " branch " ];
+bb13 : s -> bb12 : n [ label = " branch " ];
+bb7 : b -> bb8 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb7 : b -> bb9 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb7 : b -> bb10 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb10 : b -> bb11 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb10 : b -> bb12 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb10 : b -> bb13 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+
+digraph G {
+bb14 [ shape = record , label = " <b > BB14 | {43: a_1 = [FP+12] | 44: $t7_1 = a_1 + 1 | 45: $t8_1 = $t7_1 * 1 | 46: return $t8_1 | 47: end}"];
+}
+
+digraph G {
+bb15 [ shape = record , label = " <b > BB15 | {83: myNum_1 = #0 | 48: $t7_1 = read | 49: $t9_1 = $t7_1 * 1 | 50: myNum_2 = $t9_1 | 51: $t9_2 = myNum_2 + 0 | 52: $t7_2 = $t9_2 * 1 | 53: write $t7_2 | 54: $t10_1 = 2 | 55: $t9_3 = $t10_1 ^ 5 | 56: write $t9_3 | 57: $t10_2 = myNum_2 / 1 | 58: $t11_1 = $t10_2 > 5 | 59: if ($t11_1 == 0) goto BB17 | 60: goto BB16}"];
+bb16 [ shape = record , label = " <b > BB16 | {61: $t11_2 = myNum_2 * 1 | 62: $t10_3 = $t11_2 / 1 | 63: [GP-4] = myNum_2 | 64: $t11_3 = call increment($t10_3) | 65: myNum_3 = [GP-4] | 66: $t10_4 = $t11_3 * 1 | 67: $t12_1 = 0 | 68: $t11_4 = $t12_1 - myNum_3 | 69: $t12_2 = $t10_4 + $t11_4 | 70: write $t12_2 | 71: goto BB17}"];
+bb17 [ shape = record , label = " <b > BB17 | {85: $t11_5 = phi [BB15: $t11_1, BB16: $t11_4] | 87: $t12_3 = phi [BB15: $t12_0, BB16: $t12_2] | 88: myNum_4 = phi [BB15: myNum_2, BB16: myNum_3] | 90: $t10_5 = phi [BB15: $t10_2, BB16: $t10_4] | 72: $t11_6 = read | 73: $t10_6 = $t11_6 / 1 | 74: myNum_5 = $t10_6}"];
+bb18 [ shape = record , label = " <b > BB18 | {86: $t11_7 = phi [BB17: $t11_6, BB18: $t11_9] | 89: myNum_6 = phi [BB17: myNum_5, BB18: myNum_7] | 91: $t10_7 = phi [BB17: $t10_6, BB18: $t10_10] | 75: $t10_8 = myNum_6 - #1 | 76: myNum_7 = $t10_8 | 77: $t11_8 = 1 | 78: $t10_9 = $t11_8 * 1 | 79: $t11_9 = myNum_7 - $t10_9 | 80: $t10_10 = $t11_9 == 0 | 81: if ($t10_10 != 0) goto BB19 | 82: goto BB18}"];
+bb19 [ shape = record , label = " <b > BB19 | {84: end}"];
+bb15 : s -> bb16 : n [ label = " branch " ];
+bb15 : s -> bb17 : n [ label = " fall - through " ];
+bb16 : s -> bb17 : n [ label = " branch " ];
+bb17 : s -> bb18 : n [ label = " fall - through " ];
+bb18 : s -> bb18 : n [ label = " branch " ];
+bb18 : s -> bb19 : n [ label = " fall - through " ];
+bb15 : b -> bb16 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb15 : b -> bb17 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb17 : b -> bb18 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb18 : b -> bb19 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+

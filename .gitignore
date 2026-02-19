@@ -29,8 +29,7 @@ dist/
 personal_tests/
 *.out_tmp
 
-# Generated pipeline artifacts (kept out of VCS)
-/artifacts/
+# Generated pipeline artifacts
 /graphs/
 
 # Legacy workbench metadata

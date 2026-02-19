@@ -1,0 +1,43 @@
+Function: early_return
+Iteration #1
+3: CP: Constant propagated in: $t0_1 = 2 / #0
+5: CP: Constant propagated in: $t0_2 = 2 * #0
+Iteration #2
+5: CF: Algebraic simplification: $t0_2 = 2 * #0 -> $t0_2 = #0
+Iteration #3
+6: CP: Constant propagated in: return #0
+Iteration #4
+7: DCE: Eliminated: d_1 = #0
+5: DCE: Eliminated: $t0_2 = #0
+1: DCE: Eliminated: c_1 = 1
+4: DCE: Eliminated: unused_1 = $t0_1
+2: DCE: Eliminated: c_2 = 2
+3: DCE: Eliminated: $t0_1 = 2 / #0
+
+Function: unreachableIf
+Iteration #1
+16: CF: Branch always taken: if (false == 0) goto BB8 -> goto BB8
+22: CF: Branch never taken: if (true == 0) goto BB11
+28: CF: Branch never taken: if (true == 0) goto BB13
+32: CF: Branch always taken: if (false == 0) goto BB15 -> goto BB15
+CF: Eliminated unreachable block: BB6
+CF: Eliminated unreachable block: BB11
+CF: Eliminated unreachable block: BB14
+Iteration #2
+11: CP: Constant propagated in: $t1_1 = 2 == 1
+14: CP: Constant propagated in: d_2 = 1
+37: CP: Constant propagated in phi: d_3 = phi [BB4: 1, BB3: 2]
+Iteration #3
+11: CF: Folded constant: $t1_1 = 2 == 1 -> $t1_1 = #0
+Iteration #4
+12: CP: Constant propagated in: if (#0 == 0) goto BB5
+Iteration #5
+12: CF: Branch always taken: if (#0 == 0) goto BB5 -> goto BB5
+CF: Eliminated unreachable block: BB4
+Iteration #6
+11: DCE: Eliminated: $t1_1 = #0
+9: DCE: Eliminated: c_1 = 1
+37: DCE: Eliminated: d_3 = phi [BB4: 1, BB3: 2]
+10: DCE: Eliminated: d_1 = 2
+
+Function: main

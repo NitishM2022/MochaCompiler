@@ -1,0 +1,16 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {11: a_1 = [GP-4] | 1: x_1 = [FP+12] | 2: $t0_1 = call bar(x_1) | 3: a_2 = [GP-4] | 4: b_1 = [GP-8] | 5: c_1 = [GP-12] | 6: d_1 = [GP-16] | 7: $t1_1 = x_1 + $t0_1 | 8: a_3 = $t1_1 | 9: [GP-4] = a_3 | 10: return a_3 | 12: [GP-4] = a_3 | 13: end}"];
+}
+
+digraph G {
+bb3 [ shape = record , label = " <b > BB3 | {24: b_1 = [GP-8] | 14: y_1 = [FP+12] | 15: $t2_1 = call boo(y_1) | 16: a_1 = [GP-4] | 17: b_2 = [GP-8] | 18: c_1 = [GP-12] | 19: d_1 = [GP-16] | 20: $t3_1 = y_1 * $t2_1 | 21: b_3 = $t3_1 | 22: [GP-8] = b_3 | 23: return b_3 | 25: [GP-8] = b_3 | 26: end}"];
+}
+
+digraph G {
+bb4 [ shape = record , label = " <b > BB4 | {31: c_1 = [GP-12] | 27: z_1 = [FP+12] | 28: c_2 = z_1 | 29: [GP-12] = c_2 | 30: return c_2 | 32: [GP-12] = c_2 | 33: end}"];
+}
+
+digraph G {
+bb5 [ shape = record , label = " <b > BB5 | {56: a_1 = #0 | 57: b_1 = #0 | 58: c_1 = #0 | 59: d_1 = #0 | 34: $t4_1 = call foo(1) | 35: a_2 = [GP-4] | 36: b_2 = [GP-8] | 37: c_2 = [GP-12] | 38: d_2 = [GP-16] | 39: write $t4_1 | 40: $t5_1 = call bar(2) | 41: a_3 = [GP-4] | 42: b_3 = [GP-8] | 43: c_3 = [GP-12] | 44: d_3 = [GP-16] | 45: write $t5_1 | 46: $t6_1 = call boo(3) | 47: a_4 = [GP-4] | 48: b_4 = [GP-8] | 49: c_4 = [GP-12] | 50: d_4 = [GP-16] | 51: write $t6_1 | 52: $t7_1 = a_4 + b_4 | 53: $t8_1 = $t7_1 + c_4 | 54: d_5 = $t8_1 | 55: write d_5 | 60: end}"];
+}
+

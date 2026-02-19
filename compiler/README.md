@@ -34,7 +34,7 @@ This folder contains the production pipeline from typed AST to DLX machine code.
 - Register allocator colors to `R1..R24`; `R25..R27` are scratch/spill helpers.
 - Spill rewrite emits explicit `Load`/`Store` TAC around uses/defs.
 
-## Known Limitations (Module-Specific)
+## Limitations (Module-Specific)
 
 - `IRGenerator` currently mixes semantic checks, default-init policy, CFG construction, and lowering.
 - `CodeGenerator.generateCall` chooses save-set using callee-level register usage, not caller liveness at that site.

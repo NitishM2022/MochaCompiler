@@ -1,0 +1,25 @@
+OFE: Eliminated 2 orphan function(s): bar, foo_func
+
+Function: main
+Iteration #1
+30: CP: Constant propagated in: $t0_1 = #0 + 3
+Iteration #2
+30: CF: Algebraic simplification: $t0_1 = #0 + 3 -> $t0_1 = 3
+Iteration #3
+31: CP: Constant propagated in: foo_2 = 3
+32: CP: Constant propagated in: $t0_2 = 3 + 6
+34: CP: Constant propagated in: write 3
+Iteration #4
+32: CF: Folded constant: $t0_2 = 3 + 6 -> $t0_2 = #9
+Iteration #5
+33: CP: Constant propagated in: af_2 = #9
+35: CP: Constant propagated in: write #9
+Iteration #6
+33: DCE: Eliminated: af_2 = #9
+40: DCE: Eliminated: af_1 = #0
+32: DCE: Eliminated: $t0_2 = #9
+31: DCE: Eliminated: foo_2 = 3
+38: DCE: Eliminated: foo_1 = #0
+30: DCE: Eliminated: $t0_1 = 3
+39: DCE: Eliminated: too_1 = #0
+37: DCE: Eliminated: too_2 = #0

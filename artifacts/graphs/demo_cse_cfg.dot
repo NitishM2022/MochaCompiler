@@ -1,0 +1,4 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {1: a_1 = [GP-4] | 2: b_1 = [GP-8] | 3: c_1 = [GP-12] | 4: d_1 = [GP-16] | 5: a_2 = 2 | 6: b_2 = 3 | 7: $t0_1 = a_2 + b_2 | 8: c_2 = $t0_1 | 9: $t0_2 = a_2 + b_2 | 10: d_2 = $t0_2 | 11: write c_2 | 12: write d_2 | 13: end}"];
+}
+

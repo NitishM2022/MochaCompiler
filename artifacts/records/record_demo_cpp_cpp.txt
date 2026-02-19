@@ -1,0 +1,3 @@
+Function: main
+6: CPP: Copy propagated in: c_2 = a_2
+7: CPP: Copy propagated in: write a_2

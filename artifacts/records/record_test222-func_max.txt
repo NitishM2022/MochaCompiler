@@ -1,0 +1,29 @@
+Function: fibonacci
+Iteration #1
+28: DCE: Eliminated: $t1_1 = phi [BB3: $t1_0, BB7: $t1_2]
+32: DCE: Eliminated: $t2_1 = phi [BB3: $t2_0, BB7: $t2_2]
+30: DCE: Eliminated: a_1 = phi [BB3: a_0, BB7: a_2]
+14: DCE: Eliminated: a_3 = [GP-4]
+15: DCE: Eliminated: b_3 = [GP-8]
+34: DCE: Eliminated: b_1 = phi [BB3: b_0, BB7: b_2]
+26: DCE: Eliminated: $t0_2 = phi [BB3: $t0_1, BB7: $t0_4]
+27: DCE: Eliminated: $t1_2 = phi [BB6: $t1_0, BB8: $t1_3]
+31: DCE: Eliminated: $t2_2 = phi [BB6: $t2_0, BB8: $t2_3]
+29: DCE: Eliminated: a_2 = phi [BB6: a_0, BB8: a_4]
+33: DCE: Eliminated: b_2 = phi [BB6: b_0, BB8: b_4]
+25: DCE: Eliminated: $t0_4 = phi [BB6: $t0_3, BB8: $t0_7]
+18: DCE: Eliminated: a_4 = [GP-4]
+19: DCE: Eliminated: b_4 = [GP-8]
+
+Function: main
+Iteration #1
+29: CPP: Copy propagated in: [GP-4] = $t2_1
+34: CPP: Copy propagated in: $t2_3 = a_4 + $t2_2
+Iteration #2
+36: DCE: Eliminated: a_1 = #0
+26: DCE: Eliminated: a_2 = [GP-4]
+28: DCE: Eliminated: a_3 = $t2_1
+33: DCE: Eliminated: b_4 = $t2_2
+32: DCE: Eliminated: b_3 = [GP-8]
+27: DCE: Eliminated: b_2 = [GP-8]
+37: DCE: Eliminated: b_1 = #0

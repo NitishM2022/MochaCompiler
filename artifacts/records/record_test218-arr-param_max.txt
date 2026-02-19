@@ -1,0 +1,49 @@
+Function: intSumIter
+Iteration #1
+24: CP: Constant propagated in phi: i_2 = phi [BB4: #0, BB6: i_3]
+25: CP: Constant propagated in phi: sum_2 = phi [BB4: #0, BB6: sum_3]
+Iteration #2
+24: CPP: Copy propagated in phi: i_2 = phi [BB4: #0, BB6: $t2_3]
+25: CPP: Copy propagated in phi: sum_2 = phi [BB4: #0, BB6: $t1_3]
+Iteration #3
+22: DCE: Eliminated: sum_1 = #0
+26: DCE: Eliminated: $t1_1 = phi [BB4: $t1_0, BB6: $t1_3]
+27: DCE: Eliminated: $t0_2 = phi [BB4: $t0_1, BB6: $t0_4]
+16: DCE: Eliminated: sum_3 = $t1_3
+21: DCE: Eliminated: i_1 = #0
+18: DCE: Eliminated: i_3 = $t2_3
+28: DCE: Eliminated: $t2_1 = phi [BB4: $t2_0, BB6: $t2_3]
+
+Function: intSumRecur
+Iteration #1
+42: DCE: Eliminated: num_elems_1 = [GP-4]
+Iteration #2
+31: CSE: Eliminated: $t3_2 = elems_1 == 0 -> $t3_2 = $t3_1
+40: CSE: Eliminated: $t5_2 = elems_1 - 1 -> $t5_2 = $t3_3
+Iteration #3
+32: CPP: Copy propagated in: if ($t3_1 == 0) goto BB12
+41: CPP: Copy propagated in: $t4_2 = call intSumRecur(vals_1, $t3_3)
+Iteration #4
+40: DCE: Eliminated: $t5_2 = $t3_3
+31: DCE: Eliminated: $t3_2 = $t3_1
+
+Function: main
+Iteration #1
+73: CP: Constant propagated in phi: num_elems_3 = phi [BB15: num_elems_4, BB13: 0]
+Iteration #2
+73: CPP: Copy propagated in phi: num_elems_3 = phi [BB15: $t4_4, BB13: 0]
+Iteration #3
+68: DCE: Eliminated: num_elems_6 = [GP-4]
+77: DCE: Eliminated: $t4_1 = phi [BB13: $t4_0, BB15: $t4_4]
+75: DCE: Eliminated: $t3_1 = phi [BB13: $t3_0, BB15: $t3_2]
+76: DCE: Eliminated: $t6_1 = phi [BB13: $t6_0, BB15: $t6_2]
+74: DCE: Eliminated: $t7_1 = phi [BB13: $t7_0, BB15: $t7_2]
+57: DCE: Eliminated: num_elems_4 = $t4_4
+71: DCE: Eliminated: num_elems_1 = #0
+46: DCE: Eliminated: num_elems_2 = 0
+Iteration #4
+65: CSE: Eliminated: $t4_6 = &(GP-68 + #4) -> $t4_6 = $t4_5
+Iteration #5
+67: CPP: Copy propagated in: $t3_3 = call intSumRecur($t4_5, num_elems_5)
+Iteration #6
+65: DCE: Eliminated: $t4_6 = $t4_5

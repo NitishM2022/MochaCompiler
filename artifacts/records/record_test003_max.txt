@@ -1,0 +1,82 @@
+Function: main
+Iteration #1
+29: CF: Algebraic simplification: $t0_7 = false && f_2 -> $t0_7 = #0
+31: CF: Algebraic simplification: $t0_8 = true || e_3 -> $t0_8 = #1
+Iteration #2
+5: CP: Constant propagated in: $t0_1 = 2 + 4
+8: CP: Constant propagated in: $t0_2 = 12 - 7
+10: CP: Constant propagated in: $t0_3 = 5 * 8
+13: CP: Constant propagated in: $t0_4 = 3 / a_3
+20: CP: Constant propagated in: $t0_5 = 12 % b_3
+23: CP: Constant propagated in: $t0_6 = 3 ^ a_4
+30: CP: Constant propagated in: e_3 = #0
+32: CP: Constant propagated in: f_3 = #1
+34: CP: Constant propagated in: $t0_9 = 7 < c_3
+37: CP: Constant propagated in: writeB #1
+Iteration #3
+5: CF: Folded constant: $t0_1 = 2 + 4 -> $t0_1 = #6
+8: CF: Folded constant: $t0_2 = 12 - 7 -> $t0_2 = #5
+10: CF: Folded constant: $t0_3 = 5 * 8 -> $t0_3 = #40
+Iteration #4
+6: CP: Constant propagated in: a_3 = #6
+9: CP: Constant propagated in: b_3 = #5
+11: CP: Constant propagated in: c_3 = #40
+13: CP: Constant propagated in: $t0_4 = 3 / #6
+15: CP: Constant propagated in: write #6
+16: CP: Constant propagated in: write #5
+17: CP: Constant propagated in: write #40
+20: CP: Constant propagated in: $t0_5 = 12 % #5
+34: CP: Constant propagated in: $t0_9 = 7 < #40
+Iteration #5
+13: CF: Folded constant: $t0_4 = 3 / #6 -> $t0_4 = #0
+20: CF: Folded constant: $t0_5 = 12 % #5 -> $t0_5 = #2
+34: CF: Folded constant: $t0_9 = 7 < #40 -> $t0_9 = #1
+Iteration #6
+14: CP: Constant propagated in: d_3 = #0
+18: CP: Constant propagated in: write #0
+21: CP: Constant propagated in: a_4 = #2
+23: CP: Constant propagated in: $t0_6 = 3 ^ #2
+25: CP: Constant propagated in: write #2
+35: CP: Constant propagated in: e_4 = #1
+36: CP: Constant propagated in: writeB #1
+Iteration #7
+23: CF: Folded constant: $t0_6 = 3 ^ #2 -> $t0_6 = #9
+Iteration #8
+24: CP: Constant propagated in: b_4 = #9
+26: CP: Constant propagated in: write #9
+Iteration #9
+2: DCE: Eliminated: b_2 = 2
+41: DCE: Eliminated: d_1 = #0
+9: DCE: Eliminated: b_3 = #5
+39: DCE: Eliminated: b_1 = #0
+13: DCE: Eliminated: $t0_4 = #0
+10: DCE: Eliminated: $t0_3 = #40
+4: DCE: Eliminated: d_2 = 5
+8: DCE: Eliminated: $t0_2 = #5
+5: DCE: Eliminated: $t0_1 = #6
+14: DCE: Eliminated: d_3 = #0
+12: DCE: Eliminated: $t1_2 = 3
+19: DCE: Eliminated: $t1_3 = 12
+22: DCE: Eliminated: $t1_4 = 3
+33: DCE: Eliminated: $t1_5 = 7
+7: DCE: Eliminated: $t1_1 = 12
+40: DCE: Eliminated: c_1 = #0
+3: DCE: Eliminated: c_2 = 7
+11: DCE: Eliminated: c_3 = #40
+31: DCE: Eliminated: $t0_8 = #1
+29: DCE: Eliminated: $t0_7 = #0
+23: DCE: Eliminated: $t0_6 = #9
+20: DCE: Eliminated: $t0_5 = #2
+24: DCE: Eliminated: b_4 = #9
+34: DCE: Eliminated: $t0_9 = #1
+27: DCE: Eliminated: e_2 = true
+30: DCE: Eliminated: e_3 = #0
+35: DCE: Eliminated: e_4 = #1
+42: DCE: Eliminated: e_1 = #0
+43: DCE: Eliminated: f_1 = #0
+28: DCE: Eliminated: f_2 = false
+32: DCE: Eliminated: f_3 = #1
+1: DCE: Eliminated: a_2 = 4
+38: DCE: Eliminated: a_1 = #0
+21: DCE: Eliminated: a_4 = #2
+6: DCE: Eliminated: a_3 = #6

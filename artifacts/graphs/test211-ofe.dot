@@ -1,0 +1,8 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {1: n_1 = [FP+12] | 2: write n_1 | 3: return n_1 | 4: end}"];
+}
+
+digraph G {
+bb3 [ shape = record , label = " <b > BB3 | {16: a_1 = #0 | 17: b_1 = #0 | 18: c_1 = #0 | 5: a_2 = 3 | 6: b_2 = 5 | 7: $t0_1 = a_2 * b_2 | 8: [GP-4] = a_2 | 9: [GP-8] = b_2 | 10: $t1_1 = call foo($t0_1) | 11: a_3 = [GP-4] | 12: b_3 = [GP-8] | 13: c_2 = [GP-12] | 14: d_1 = [GP-16] | 15: c_3 = $t1_1 | 19: end}"];
+}
+

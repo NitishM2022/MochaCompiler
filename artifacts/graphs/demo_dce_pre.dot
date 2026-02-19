@@ -1,0 +1,4 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {5: x_1 = #0 | 6: y_1 = #0 | 1: x_2 = 5 | 2: y_2 = 10 | 3: x_3 = 3 | 4: write x_3 | 7: end}"];
+}
+

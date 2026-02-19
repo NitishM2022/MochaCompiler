@@ -1,0 +1,9 @@
+Function: foo
+
+Function: main
+Iteration #1
+10: CP: Constant propagated in: [GP-4] = 1
+Iteration #2
+9: DCE: Eliminated: a_2 = 1
+13: DCE: Eliminated: a_1 = #0
+12: DCE: Eliminated: a_3 = [GP-4]

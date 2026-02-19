@@ -1,0 +1,2 @@
+WARNING: Variable 'i' may be used before initialization
+WARNING: Variable 'sum' may be used before initialization

@@ -1,0 +1,41 @@
+Function: main
+Iteration #1
+4: CP: Constant propagated in: $t0_1 = 2 > 1
+7: CP: Constant propagated in: $t0_2 = 2 > 3
+15: CP: Constant propagated in: $t0_4 = 1 > 3
+10: CP: Constant propagated in: max_2 = 2
+30: CP: Constant propagated in phi: max_3 = phi [BB8: 3, BB6: 2]
+12: CP: Constant propagated in: max_4 = 3
+18: CP: Constant propagated in: max_6 = 1
+31: CP: Constant propagated in phi: max_7 = phi [BB9: 1, BB11: 3]
+20: CP: Constant propagated in: max_8 = 3
+Iteration #2
+4: CF: Folded constant: $t0_1 = 2 > 1 -> $t0_1 = #1
+7: CF: Folded constant: $t0_2 = 2 > 3 -> $t0_2 = #0
+15: CF: Folded constant: $t0_4 = 1 > 3 -> $t0_4 = #0
+Iteration #3
+5: CP: Constant propagated in: if (#1 == 0) goto BB5
+8: CP: Constant propagated in: if (#0 == 0) goto BB8
+29: CP: Constant propagated in phi: $t0_3 = phi [BB7: #0, BB10: #0]
+16: CP: Constant propagated in: if (#0 == 0) goto BB11
+Iteration #4
+5: CF: Branch never taken: if (#1 == 0) goto BB5
+8: CF: Branch always taken: if (#0 == 0) goto BB8 -> goto BB8
+16: CF: Branch always taken: if (#0 == 0) goto BB11 -> goto BB11
+CF: Eliminated unreachable block: BB5
+CF: Eliminated unreachable block: BB6
+CF: Eliminated unreachable block: BB9
+CF: Eliminated unreachable block: BB10
+CF: Eliminated unreachable block: BB11
+Iteration #5
+2: DCE: Eliminated: b_2 = 1
+3: DCE: Eliminated: c_2 = 3
+26: DCE: Eliminated: c_1 = #0
+25: DCE: Eliminated: b_1 = #0
+4: DCE: Eliminated: $t0_1 = #1
+29: DCE: Eliminated: $t0_3 = phi [BB7: #0, BB10: #0]
+7: DCE: Eliminated: $t0_2 = #0
+1: DCE: Eliminated: a_2 = 2
+12: DCE: Eliminated: max_4 = 3
+24: DCE: Eliminated: a_1 = #0
+27: DCE: Eliminated: max_1 = #0

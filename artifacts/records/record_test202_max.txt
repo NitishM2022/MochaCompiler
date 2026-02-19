@@ -1,0 +1,25 @@
+Function: main
+Iteration #1
+1: CP: Constant propagated in: b_2 = #0
+2: CP: Constant propagated in: c_2 = #0
+3: CP: Constant propagated in: d_2 = #0
+4: CP: Constant propagated in: $t0_1 = #0 + 1
+6: CP: Constant propagated in: write #0
+7: CP: Constant propagated in: write #0
+8: CP: Constant propagated in: write #0
+Iteration #2
+4: CF: Algebraic simplification: $t0_1 = #0 + 1 -> $t0_1 = 1
+Iteration #3
+5: CP: Constant propagated in: d_3 = 1
+9: CP: Constant propagated in: write 1
+Iteration #4
+11: DCE: Eliminated: a_1 = #0
+4: DCE: Eliminated: $t0_1 = 1
+5: DCE: Eliminated: d_3 = 1
+13: DCE: Eliminated: c_1 = #0
+14: DCE: Eliminated: d_1 = #0
+3: DCE: Eliminated: d_2 = #0
+2: DCE: Eliminated: c_2 = #0
+10: DCE: Eliminated: a_2 = #0
+1: DCE: Eliminated: b_2 = #0
+12: DCE: Eliminated: b_1 = #0

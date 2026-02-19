@@ -1,0 +1,139 @@
+Function: main
+Iteration #1
+6: CF: Algebraic simplification: $t0_3 = a_2 - a_2 -> $t0_3 = #0
+8: CF: Algebraic simplification: $t0_4 = a_2 / 1 -> $t0_4 = a_2
+10: CF: Algebraic simplification: $t0_5 = a_2 + 0 -> $t0_5 = a_2
+12: CF: Algebraic simplification: $t0_6 = a_2 + 0 -> $t0_6 = a_2
+14: CF: Algebraic simplification: $t0_7 = a_2 - 0 -> $t0_7 = a_2
+61: CF: Algebraic simplification: $t0_20 = e_2 && false -> $t0_20 = #0
+64: CF: Algebraic simplification: $t0_21 = e_3 || true -> $t0_21 = #1
+Iteration #2
+2: CP: Constant propagated in: $t0_1 = 5 % 5
+4: CP: Constant propagated in: $t0_2 = 5 / 5
+7: CP: Constant propagated in: b_4 = #0
+8: CP: Constant propagated in: $t0_4 = 5
+9: CP: Constant propagated in: b_5 = 5
+10: CP: Constant propagated in: $t0_5 = 5
+11: CP: Constant propagated in: b_6 = 5
+12: CP: Constant propagated in: $t0_6 = 5
+13: CP: Constant propagated in: b_7 = 5
+14: CP: Constant propagated in: $t0_7 = 5
+15: CP: Constant propagated in: b_8 = 5
+17: CP: Constant propagated in: $t0_8 = 5.0 + 0.0
+19: CP: Constant propagated in: $t0_9 = 5.0 - 0.0
+21: CP: Constant propagated in: $t0_10 = 5.0 * 1.0
+23: CP: Constant propagated in: $t0_11 = 5.0 / 1.0
+25: CP: Constant propagated in: $t0_12 = 5.0 * 0.0
+28: CP: Constant propagated in: $t0_13 = 0.0 / 5.0
+30: CP: Constant propagated in: $t0_14 = 5 < 5
+74: CP: Constant propagated in phi: c_3 = phi [BB3: 5, BB2: #0]
+35: CP: Constant propagated in: $t0_15 = 5 > 5
+75: CP: Constant propagated in phi: c_5 = phi [BB5: 6, BB4: c_3]
+40: CP: Constant propagated in: $t0_16 = 5 >= 5
+77: CP: Constant propagated in phi: c_7 = phi [BB6: c_5, BB7: 7]
+45: CP: Constant propagated in: $t0_17 = 5 <= 5
+79: CP: Constant propagated in phi: c_9 = phi [BB8: c_7, BB9: 8]
+50: CP: Constant propagated in: $t0_18 = 5 == 5
+76: CP: Constant propagated in phi: c_11 = phi [BB10: c_9, BB11: 9]
+55: CP: Constant propagated in: $t0_19 = 5 != 5
+78: CP: Constant propagated in phi: c_13 = phi [BB12: c_11, BB13: 10]
+62: CP: Constant propagated in: f_2 = #0
+65: CP: Constant propagated in: f_3 = #1
+Iteration #3
+2: CF: Folded constant: $t0_1 = 5 % 5 -> $t0_1 = #0
+4: CF: Folded constant: $t0_2 = 5 / 5 -> $t0_2 = #1
+17: CF: Folded constant: $t0_8 = 5.0 + 0.0 -> $t0_8 = #5.0
+19: CF: Folded constant: $t0_9 = 5.0 - 0.0 -> $t0_9 = #5.0
+21: CF: Folded constant: $t0_10 = 5.0 * 1.0 -> $t0_10 = #5.0
+23: CF: Folded constant: $t0_11 = 5.0 / 1.0 -> $t0_11 = #5.0
+25: CF: Folded constant: $t0_12 = 5.0 * 0.0 -> $t0_12 = #0.0
+28: CF: Folded constant: $t0_13 = 0.0 / 5.0 -> $t0_13 = #0.0
+30: CF: Folded constant: $t0_14 = 5 < 5 -> $t0_14 = #0
+35: CF: Folded constant: $t0_15 = 5 > 5 -> $t0_15 = #0
+40: CF: Folded constant: $t0_16 = 5 >= 5 -> $t0_16 = #1
+45: CF: Folded constant: $t0_17 = 5 <= 5 -> $t0_17 = #1
+50: CF: Folded constant: $t0_18 = 5 == 5 -> $t0_18 = #1
+55: CF: Folded constant: $t0_19 = 5 != 5 -> $t0_19 = #0
+Iteration #4
+3: CP: Constant propagated in: b_2 = #0
+5: CP: Constant propagated in: b_3 = #1
+18: CP: Constant propagated in: h_2 = #5.0
+20: CP: Constant propagated in: h_3 = #5.0
+22: CP: Constant propagated in: h_4 = #5.0
+24: CP: Constant propagated in: h_5 = #5.0
+26: CP: Constant propagated in: h_6 = #0.0
+29: CP: Constant propagated in: h_7 = #0.0
+31: CP: Constant propagated in: if (#0 == 0) goto BB4
+36: CP: Constant propagated in: if (#0 == 0) goto BB6
+41: CP: Constant propagated in: if (#1 == 0) goto BB8
+46: CP: Constant propagated in: if (#1 == 0) goto BB10
+51: CP: Constant propagated in: if (#1 == 0) goto BB12
+56: CP: Constant propagated in: if (#0 == 0) goto BB14
+Iteration #5
+31: CF: Branch always taken: if (#0 == 0) goto BB4 -> goto BB4
+36: CF: Branch always taken: if (#0 == 0) goto BB6 -> goto BB6
+41: CF: Branch never taken: if (#1 == 0) goto BB8
+46: CF: Branch never taken: if (#1 == 0) goto BB10
+51: CF: Branch never taken: if (#1 == 0) goto BB12
+56: CF: Branch always taken: if (#0 == 0) goto BB14 -> goto BB14
+CF: Eliminated unreachable block: BB3
+CF: Eliminated unreachable block: BB5
+CF: Eliminated unreachable block: BB13
+Iteration #6
+62: DCE: Eliminated: f_2 = #0
+65: DCE: Eliminated: f_3 = #1
+15: DCE: Eliminated: b_8 = 5
+71: DCE: Eliminated: g_1 = #0.0
+70: DCE: Eliminated: f_1 = #0
+16: DCE: Eliminated: g_2 = 5.0
+69: DCE: Eliminated: e_1 = #0
+63: DCE: Eliminated: e_3 = false
+60: DCE: Eliminated: e_2 = true
+53: DCE: Eliminated: c_10 = 9
+48: DCE: Eliminated: c_8 = 8
+43: DCE: Eliminated: c_6 = 7
+78: DCE: Eliminated: c_13 = phi [BB12: c_11, BB13: 10]
+7: DCE: Eliminated: b_4 = #0
+9: DCE: Eliminated: b_5 = 5
+11: DCE: Eliminated: b_6 = 5
+13: DCE: Eliminated: b_7 = 5
+67: DCE: Eliminated: b_1 = #0
+3: DCE: Eliminated: b_2 = #0
+5: DCE: Eliminated: b_3 = #1
+68: DCE: Eliminated: c_1 = #0
+2: DCE: Eliminated: $t0_1 = #0
+72: DCE: Eliminated: h_1 = #0.0
+14: DCE: Eliminated: $t0_7 = 5
+12: DCE: Eliminated: $t0_6 = 5
+19: DCE: Eliminated: $t0_9 = #5.0
+17: DCE: Eliminated: $t0_8 = #5.0
+6: DCE: Eliminated: $t0_3 = #0
+24: DCE: Eliminated: h_5 = #5.0
+4: DCE: Eliminated: $t0_2 = #1
+22: DCE: Eliminated: h_4 = #5.0
+10: DCE: Eliminated: $t0_5 = 5
+20: DCE: Eliminated: h_3 = #5.0
+8: DCE: Eliminated: $t0_4 = 5
+18: DCE: Eliminated: h_2 = #5.0
+66: DCE: Eliminated: a_1 = #0
+29: DCE: Eliminated: h_7 = #0.0
+26: DCE: Eliminated: h_6 = #0.0
+1: DCE: Eliminated: a_2 = 5
+35: DCE: Eliminated: $t0_15 = #0
+30: DCE: Eliminated: $t0_14 = #0
+45: DCE: Eliminated: $t0_17 = #1
+40: DCE: Eliminated: $t0_16 = #1
+23: DCE: Eliminated: $t0_11 = #5.0
+21: DCE: Eliminated: $t0_10 = #5.0
+28: DCE: Eliminated: $t0_13 = #0.0
+25: DCE: Eliminated: $t0_12 = #0.0
+27: DCE: Eliminated: $t1_1 = 0.0
+55: DCE: Eliminated: $t0_19 = #0
+50: DCE: Eliminated: $t0_18 = #1
+64: DCE: Eliminated: $t0_21 = #1
+61: DCE: Eliminated: $t0_20 = #0
+76: DCE: Eliminated: c_11 = phi [BB10: c_9, BB11: 9]
+79: DCE: Eliminated: c_9 = phi [BB8: c_7, BB9: 8]
+77: DCE: Eliminated: c_7 = phi [BB6: c_5, BB7: 7]
+75: DCE: Eliminated: c_5 = phi [BB5: 6, BB4: c_3]
+74: DCE: Eliminated: c_3 = phi [BB3: 5, BB2: #0]

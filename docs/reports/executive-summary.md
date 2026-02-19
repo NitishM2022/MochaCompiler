@@ -16,6 +16,6 @@ A compiler pipeline with parser/type-checker front-end, SSA-based IR middle-end,
 - Regression/validation slices: `docs/reports/raw/PA4_MASTER_TEST_REPORT.md`
 
 ## Repository Outcomes
-- Source and tests promoted to top-level engineering structure.
+- Source and tests promoted to a clean engineering structure.
 - Historical materials preserved under `archive/`.
 - Generated outputs isolated under `artifacts/`.

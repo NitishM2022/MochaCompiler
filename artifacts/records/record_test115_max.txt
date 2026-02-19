@@ -1,0 +1,44 @@
+Function: main
+Iteration #1
+2: CP: Constant propagated in: q_2 = 2
+4: CP: Constant propagated in: $t0_1 = 3 < 3
+32: CP: Constant propagated in phi: t_3 = phi [BB7: t_2, BB2: #0]
+34: CP: Constant propagated in phi: af_4 = phi [BB7: af_2, BB2: #0]
+36: CP: Constant propagated in phi: q_5 = phi [BB7: q_3, BB2: 2]
+38: CP: Constant propagated in phi: f_5 = phi [BB7: f_3, BB2: 2]
+39: CP: Constant propagated in phi: $t1_4 = phi [BB7: 10, BB2: 3]
+33: CP: Constant propagated in phi: af_2 = phi [BB3: #0, BB6: af_3]
+35: CP: Constant propagated in phi: q_3 = phi [BB3: 2, BB6: q_4]
+37: CP: Constant propagated in phi: f_3 = phi [BB3: 2, BB6: f_4]
+40: CP: Constant propagated in phi: $t1_2 = phi [BB3: 3, BB6: 10]
+9: CP: Constant propagated in: $t0_3 = 10 > 6
+Iteration #2
+4: CF: Folded constant: $t0_1 = 3 < 3 -> $t0_1 = #0
+9: CF: Folded constant: $t0_3 = 10 > 6 -> $t0_3 = #1
+Iteration #3
+5: CP: Constant propagated in: if (#0 == 0) goto BB4
+30: CP: Constant propagated in phi: $t0_7 = phi [BB7: $t0_6, BB2: #0]
+31: CP: Constant propagated in phi: $t0_2 = phi [BB3: #0, BB6: $t0_5]
+10: CP: Constant propagated in: if (#1 == 0) goto BB7
+Iteration #4
+5: CF: Branch always taken: if (#0 == 0) goto BB4 -> goto BB4
+10: CF: Branch never taken: if (#1 == 0) goto BB7
+CF: Eliminated unreachable block: BB3
+CF: Eliminated unreachable block: BB5
+CF: Eliminated unreachable block: BB6
+CF: Eliminated unreachable block: BB7
+Iteration #5
+24: CPP: Copy propagated in: write $t1_5
+Iteration #6
+4: DCE: Eliminated: $t0_1 = #0
+28: DCE: Eliminated: t_1 = #0
+3: DCE: Eliminated: $t1_1 = 3
+30: DCE: Eliminated: $t0_7 = phi [BB7: $t0_6, BB2: #0]
+27: DCE: Eliminated: af_1 = #0
+2: DCE: Eliminated: q_2 = 2
+25: DCE: Eliminated: q_1 = #0
+26: DCE: Eliminated: f_1 = #0
+1: DCE: Eliminated: f_2 = 2
+23: DCE: Eliminated: af_5 = $t1_5
+39: DCE: Eliminated: $t1_4 = phi [BB7: 10, BB2: 3]
+34: DCE: Eliminated: af_4 = phi [BB7: af_2, BB2: #0]

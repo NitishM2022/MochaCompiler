@@ -1,0 +1,28 @@
+OFE: Eliminated 1 orphan function(s): nevercalled
+
+Function: main
+Iteration #1
+6: CP: Constant propagated in: $t0_1 = 1 + 2
+8: CP: Constant propagated in: $t0_2 = 1 + 2
+11: CP: Constant propagated in: $t0_3 = 2 + 2
+Iteration #2
+6: CF: Folded constant: $t0_1 = 1 + 2 -> $t0_1 = #3
+8: CF: Folded constant: $t0_2 = 1 + 2 -> $t0_2 = #3
+11: CF: Folded constant: $t0_3 = 2 + 2 -> $t0_3 = #4
+Iteration #3
+7: CP: Constant propagated in: y_2 = #3
+9: CP: Constant propagated in: z_2 = #3
+12: CP: Constant propagated in: w_2 = #4
+Iteration #4
+6: DCE: Eliminated: $t0_1 = #3
+9: DCE: Eliminated: z_2 = #3
+14: DCE: Eliminated: y_1 = #0
+15: DCE: Eliminated: z_1 = #0
+11: DCE: Eliminated: $t0_3 = #4
+7: DCE: Eliminated: y_2 = #3
+8: DCE: Eliminated: $t0_2 = #3
+12: DCE: Eliminated: w_2 = #4
+16: DCE: Eliminated: w_1 = #0
+10: DCE: Eliminated: x_3 = 2
+5: DCE: Eliminated: x_2 = 1
+13: DCE: Eliminated: x_1 = #0

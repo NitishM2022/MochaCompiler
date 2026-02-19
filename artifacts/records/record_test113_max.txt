@@ -1,0 +1,76 @@
+Function: main
+Iteration #1
+2: CP: Constant propagated in: $t0_1 = 7 + 2
+4: CP: Constant propagated in: $t0_2 = 7 + b_2
+10: CP: Constant propagated in: $t0_5 = 7 + b_3
+Iteration #2
+2: CF: Folded constant: $t0_1 = 7 + 2 -> $t0_1 = #9
+Iteration #3
+3: CP: Constant propagated in: b_2 = #9
+4: CP: Constant propagated in: $t0_2 = 7 + #9
+6: CP: Constant propagated in: $t0_3 = c_2 + #9
+8: CP: Constant propagated in: $t0_4 = c_2 + #9
+Iteration #4
+4: CF: Folded constant: $t0_2 = 7 + #9 -> $t0_2 = #16
+Iteration #5
+5: CP: Constant propagated in: c_2 = #16
+6: CP: Constant propagated in: $t0_3 = #16 + #9
+8: CP: Constant propagated in: $t0_4 = #16 + #9
+12: CP: Constant propagated in: $t0_6 = #16 + d_2
+14: CP: Constant propagated in: $t0_7 = #16 + d_2
+Iteration #6
+6: CF: Folded constant: $t0_3 = #16 + #9 -> $t0_3 = #25
+8: CF: Folded constant: $t0_4 = #16 + #9 -> $t0_4 = #25
+Iteration #7
+7: CP: Constant propagated in: d_2 = #25
+9: CP: Constant propagated in: b_3 = #25
+10: CP: Constant propagated in: $t0_5 = 7 + #25
+12: CP: Constant propagated in: $t0_6 = #16 + #25
+14: CP: Constant propagated in: $t0_7 = #16 + #25
+16: CP: Constant propagated in: $t0_8 = a_3 + #25
+Iteration #8
+10: CF: Folded constant: $t0_5 = 7 + #25 -> $t0_5 = #32
+12: CF: Folded constant: $t0_6 = #16 + #25 -> $t0_6 = #41
+14: CF: Folded constant: $t0_7 = #16 + #25 -> $t0_7 = #41
+Iteration #9
+11: CP: Constant propagated in: a_3 = #32
+13: CP: Constant propagated in: e_2 = #41
+15: CP: Constant propagated in: f_2 = #41
+16: CP: Constant propagated in: $t0_8 = #32 + #25
+18: CP: Constant propagated in: $t0_9 = #41 + #41
+Iteration #10
+16: CF: Folded constant: $t0_8 = #32 + #25 -> $t0_8 = #57
+18: CF: Folded constant: $t0_9 = #41 + #41 -> $t0_9 = #82
+Iteration #11
+17: CP: Constant propagated in: g_2 = #57
+19: CP: Constant propagated in: h_2 = #82
+20: CP: Constant propagated in: write #57
+21: CP: Constant propagated in: write #82
+Iteration #12
+5: DCE: Eliminated: c_2 = #16
+26: DCE: Eliminated: e_1 = #0
+24: DCE: Eliminated: c_1 = #0
+13: DCE: Eliminated: e_2 = #41
+11: DCE: Eliminated: a_3 = #32
+1: DCE: Eliminated: a_2 = 7
+22: DCE: Eliminated: a_1 = #0
+28: DCE: Eliminated: g_1 = #0
+6: DCE: Eliminated: $t0_3 = #25
+8: DCE: Eliminated: $t0_4 = #25
+17: DCE: Eliminated: g_2 = #57
+2: DCE: Eliminated: $t0_1 = #9
+4: DCE: Eliminated: $t0_2 = #16
+25: DCE: Eliminated: d_1 = #0
+14: DCE: Eliminated: $t0_7 = #41
+7: DCE: Eliminated: d_2 = #25
+16: DCE: Eliminated: $t0_8 = #57
+27: DCE: Eliminated: f_1 = #0
+10: DCE: Eliminated: $t0_5 = #32
+12: DCE: Eliminated: $t0_6 = #41
+15: DCE: Eliminated: f_2 = #41
+18: DCE: Eliminated: $t0_9 = #82
+29: DCE: Eliminated: h_1 = #0
+19: DCE: Eliminated: h_2 = #82
+23: DCE: Eliminated: b_1 = #0
+3: DCE: Eliminated: b_2 = #9
+9: DCE: Eliminated: b_3 = #25

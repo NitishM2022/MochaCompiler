@@ -1,0 +1,47 @@
+Function: test
+Iteration #1
+3: CP: Constant propagated in: $t0_1 = 12 < 13
+6: CP: Constant propagated in: $t0_2 = 12 + 5
+8: CP: Constant propagated in: $t0_3 = 12 + 1
+22: CP: Constant propagated in phi: c_1 = phi [BB3: c_0, BB5: 2]
+24: CP: Constant propagated in phi: b_3 = phi [BB3: b_2, BB5: 13]
+11: CP: Constant propagated in: $t0_7 = 12 + 1
+Iteration #2
+3: CF: Folded constant: $t0_1 = 12 < 13 -> $t0_1 = #1
+6: CF: Folded constant: $t0_2 = 12 + 5 -> $t0_2 = #17
+8: CF: Folded constant: $t0_3 = 12 + 1 -> $t0_3 = #13
+11: CF: Folded constant: $t0_7 = 12 + 1 -> $t0_7 = #13
+Iteration #3
+4: CP: Constant propagated in: if (#1 == 0) goto BB5
+7: CP: Constant propagated in: b_2 = #17
+9: CP: Constant propagated in: a_2 = #13
+23: CP: Constant propagated in phi: a_3 = phi [BB3: #13, BB5: #13]
+24: CP: Constant propagated in phi: b_3 = phi [BB3: #17, BB5: 13]
+25: CP: Constant propagated in phi: $t0_4 = phi [BB3: #13, BB5: #13]
+17: CP: Constant propagated in: $t0_6 = #13 + 1
+12: CP: Constant propagated in: a_5 = #13
+Iteration #4
+17: CF: Folded constant: $t0_6 = #13 + 1 -> $t0_6 = #14
+4: CF: Branch never taken: if (#1 == 0) goto BB5
+CF: Eliminated unreachable block: BB5
+Iteration #5
+18: CP: Constant propagated in: a_4 = #14
+19: CP: Constant propagated in: write #14
+Iteration #6
+20: CPP: Copy propagated in: write $t0_5
+Iteration #7
+24: DCE: Eliminated: b_3 = phi [BB3: #17, BB5: 13]
+7: DCE: Eliminated: b_2 = #17
+6: DCE: Eliminated: $t0_2 = #17
+18: DCE: Eliminated: a_4 = #14
+3: DCE: Eliminated: $t0_1 = #1
+16: DCE: Eliminated: b_4 = $t0_5
+9: DCE: Eliminated: a_2 = #13
+23: DCE: Eliminated: a_3 = phi [BB3: #13, BB5: #13]
+2: DCE: Eliminated: b_1 = 13
+1: DCE: Eliminated: a_1 = 12
+25: DCE: Eliminated: $t0_4 = phi [BB3: #13, BB5: #13]
+8: DCE: Eliminated: $t0_3 = #13
+17: DCE: Eliminated: $t0_6 = #14
+
+Function: main

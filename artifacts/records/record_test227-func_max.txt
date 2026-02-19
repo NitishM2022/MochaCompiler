@@ -1,0 +1,15 @@
+Function: dec
+Iteration #1
+12: CPP: Copy propagated in phi: b_2 = phi [BB2: b_1, BB3: $t0_3]
+14: CPP: Copy propagated in phi: a_2 = phi [BB2: a_1, BB3: $t0_2]
+7: CPP: Copy propagated in: $t0_4 = $t0_3 == 0
+10: CPP: Copy propagated in: return $t0_2
+Iteration #2
+4: DCE: Eliminated: a_3 = $t0_2
+6: DCE: Eliminated: b_3 = $t0_3
+13: DCE: Eliminated: $t0_1 = phi [BB2: $t0_0, BB3: $t0_4]
+
+Function: main
+Iteration #1
+13: DCE: Eliminated: a_1 = [GP-4]
+14: DCE: Eliminated: b_1 = [GP-8]

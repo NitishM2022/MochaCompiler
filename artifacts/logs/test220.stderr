@@ -1,0 +1,6 @@
+Exception in thread "main" java.lang.NullPointerException: Cannot invoke "String.length()" because "str" is null
+	at java.base/java.util.StringTokenizer.<init>(StringTokenizer.java:199)
+	at java.base/java.util.StringTokenizer.<init>(StringTokenizer.java:236)
+	at mocha.DLX.nextInput(DLX.java:369)
+	at mocha.DLX.execute(DLX.java:317)
+	at mocha.CompilerTester.main(CompilerTester.java:181)

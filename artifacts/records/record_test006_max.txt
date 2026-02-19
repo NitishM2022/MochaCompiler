@@ -1,0 +1,85 @@
+Function: foo
+Iteration #1
+7: CP: Constant propagated in: $t0_3 = x_2 + 5
+Iteration #2
+12: CPP: Copy propagated in phi: x_2 = phi [BB2: x_1, BB4: $t0_3]
+Iteration #3
+8: DCE: Eliminated: x_3 = $t0_3
+2: DCE: Eliminated: y_1 = 5
+13: DCE: Eliminated: $t0_1 = phi [BB2: $t0_0, BB4: $t0_3]
+
+Function: bar
+Iteration #1
+18: CF: Algebraic simplification: $t2_2 = y_1 && true -> $t2_2 = y_1
+Iteration #2
+25: CPP: Copy propagated in phi: y_2 = phi [BB9: $t4_2, BB7: y_1]
+27: CPP: Copy propagated in phi: $t2_1 = phi [BB9: y_1, BB7: $t2_0]
+20: CPP: Copy propagated in: $t4_2 = y_1 || $t3_2
+Iteration #3
+26: DCE: Eliminated: $t3_1 = phi [BB7: $t3_0, BB9: $t3_2]
+18: DCE: Eliminated: $t2_2 = y_1
+29: DCE: Eliminated: $t1_2 = phi [BB7: $t1_1, BB9: $t1_0]
+21: DCE: Eliminated: y_3 = $t4_2
+25: DCE: Eliminated: y_2 = phi [BB9: $t4_2, BB7: y_1]
+28: DCE: Eliminated: $t4_1 = phi [BB7: $t4_0, BB9: $t4_2]
+27: DCE: Eliminated: $t2_1 = phi [BB9: y_1, BB7: $t2_0]
+20: DCE: Eliminated: $t4_2 = y_1 || $t3_2
+19: DCE: Eliminated: $t3_2 = y_1 == y_1
+
+Function: fizz
+Iteration #1
+35: CP: Constant propagated in phi: z_2 = phi [BB11: z_3, BB10: 5]
+Iteration #2
+35: CPP: Copy propagated in phi: z_2 = phi [BB11: $t5_2, BB10: 5]
+30: CPP: Copy propagated in: $t5_3 = $t5_2 == 0
+Iteration #3
+34: DCE: Eliminated: $t5_1 = phi [BB10: $t5_0, BB11: $t5_3]
+29: DCE: Eliminated: z_3 = $t5_2
+25: DCE: Eliminated: z_1 = 5
+
+Function: main
+Iteration #1
+36: CP: Constant propagated in: [GP-4] = -10
+37: CP: Constant propagated in: [GP-8] = false
+38: CP: Constant propagated in: $t5_1 = call foo(-10)
+Iteration #2
+86: DCE: Eliminated: a_1 = #0
+34: DCE: Eliminated: a_2 = -10
+87: DCE: Eliminated: b_1 = #0
+35: DCE: Eliminated: b_2 = false
+Iteration #3
+44: CSE: Eliminated: $t5_2 = &(GP-20 + #4) -> $t5_2 = $t6_1
+55: CSE: Eliminated: $t5_4 = &(GP-32 + #4) -> $t5_4 = $t6_3
+67: CSE: Eliminated: $t5_6 = &(GP-20 + #4) -> $t5_6 = $t6_1
+72: CSE: Eliminated: $t6_6 = &(GP-20 + #4) -> $t6_6 = $t6_1
+77: CSE: Eliminated: $t5_8 = &(GP-32 + #4) -> $t5_8 = $t6_3
+82: CSE: Eliminated: $t6_8 = &(GP-32 + #4) -> $t6_8 = $t6_3
+Iteration #4
+45: CPP: Copy propagated in: $t6_2 = &($t6_1 + #4)
+56: CPP: Copy propagated in: $t6_4 = &($t6_3 + #4)
+68: CPP: Copy propagated in: $t6_5 = &($t6_1 + #0)
+73: CPP: Copy propagated in: $t5_7 = &($t6_1 + #4)
+78: CPP: Copy propagated in: $t6_7 = &($t6_3 + #0)
+83: CPP: Copy propagated in: $t5_9 = &($t6_3 + #4)
+Iteration #5
+72: DCE: Eliminated: $t6_6 = $t6_1
+82: DCE: Eliminated: $t6_8 = $t6_3
+67: DCE: Eliminated: $t5_6 = $t6_1
+55: DCE: Eliminated: $t5_4 = $t6_3
+44: DCE: Eliminated: $t5_2 = $t6_1
+77: DCE: Eliminated: $t5_8 = $t6_3
+Iteration #6
+68: CSE: Eliminated: $t6_5 = &($t6_1 + #0) -> $t6_5 = $t7_1
+73: CSE: Eliminated: $t5_7 = &($t6_1 + #4) -> $t5_7 = $t6_2
+78: CSE: Eliminated: $t6_7 = &($t6_3 + #0) -> $t6_7 = $t7_2
+83: CSE: Eliminated: $t5_9 = &($t6_3 + #4) -> $t5_9 = $t6_4
+Iteration #7
+69: CPP: Copy propagated in: $t7_3 = *$t7_1
+74: CPP: Copy propagated in: $t8_1 = *$t6_2
+79: CPP: Copy propagated in: $t9_1 = *$t7_2
+84: CPP: Copy propagated in: $t10_1 = *$t6_4
+Iteration #8
+68: DCE: Eliminated: $t6_5 = $t7_1
+78: DCE: Eliminated: $t6_7 = $t7_2
+83: DCE: Eliminated: $t5_9 = $t6_4
+73: DCE: Eliminated: $t5_7 = $t6_2

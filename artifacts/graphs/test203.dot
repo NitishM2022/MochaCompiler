@@ -1,0 +1,30 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {25: i_1 = #0 | 26: j_1 = #0 | 27: cp_1 = #0 | 28: b_1 = #0 | 1: i_2 = 0 | 2: j_2 = 0 | 3: cp_2 = 30 | 4: goto BB3}"];
+bb3 [ shape = record , label = " <b > BB3 | {31: j_3 = phi [BB2: j_2, BB8: j_4] | 32: i_3 = phi [BB2: i_2, BB8: i_4] | 34: $t0_1 = phi [BB2: $t0_0, BB8: $t0_7] | 36: b_2 = phi [BB2: b_1, BB8: b_6] | 5: $t0_2 = i_3 < 10 | 6: if ($t0_2 == 0) goto BB5 | 7: goto BB4}"];
+bb4 [ shape = record , label = " <b > BB4 | {8: b_3 = 10 | 9: goto BB6}"];
+bb5 [ shape = record , label = " <b > BB5 | {22: $t0_8 = b_2 + cp_2 | 23: b_7 = $t0_8 | 24: write b_7 | 29: end}"];
+bb6 [ shape = record , label = " <b > BB6 | {30: j_4 = phi [BB4: j_3, BB7: j_5] | 33: $t0_3 = phi [BB4: $t0_2, BB7: $t0_6] | 35: b_4 = phi [BB4: b_3, BB7: b_5] | 10: $t0_4 = j_4 < 10 | 11: if ($t0_4 == 0) goto BB8 | 12: goto BB7}"];
+bb7 [ shape = record , label = " <b > BB7 | {13: $t0_5 = b_4 + 1 | 14: b_5 = $t0_5 | 15: $t0_6 = j_4 + 1 | 16: j_5 = $t0_6 | 17: goto BB6}"];
+bb8 [ shape = record , label = " <b > BB8 | {18: b_6 = 10 | 19: $t0_7 = i_3 + 1 | 20: i_4 = $t0_7 | 21: goto BB3}"];
+bb2 : s -> bb3 : n [ label = " branch " ];
+bb3 : s -> bb5 : n [ label = " fall - through " ];
+bb3 : s -> bb4 : n [ label = " branch " ];
+bb4 : s -> bb6 : n [ label = " branch " ];
+bb6 : s -> bb8 : n [ label = " fall - through " ];
+bb6 : s -> bb7 : n [ label = " branch " ];
+bb7 : s -> bb6 : n [ label = " branch " ];
+bb8 : s -> bb3 : n [ label = " branch " ];
+bb2 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb3 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb3 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb6 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb6 : b -> bb7 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb6 : b -> bb8 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+

@@ -30,12 +30,12 @@ run_case() {
 
 pushd "$ROOT" >/dev/null
 mkdir -p graphs
-run_case "tests/fixtures/mocha/demo_cp.mocha" "demo_cp_pre"
-run_case "tests/fixtures/mocha/demo_cp.mocha" "demo_cp_post_cp" -o cp
-run_case "tests/fixtures/mocha/demo_cf.mocha" "demo_cf_pre"
-run_case "tests/fixtures/mocha/demo_cf.mocha" "demo_cf_post_cf" -o cf
-run_case "tests/fixtures/mocha/demo_dce.mocha" "demo_dce_pre"
-run_case "tests/fixtures/mocha/demo_dce.mocha" "demo_dce_post_dce" -o dce
+run_case "tests/demo_cp.mocha" "demo_cp_pre"
+run_case "tests/demo_cp.mocha" "demo_cp_post_cp" -o cp
+run_case "tests/demo_cf.mocha" "demo_cf_pre"
+run_case "tests/demo_cf.mocha" "demo_cf_post_cf" -o cf
+run_case "tests/demo_dce.mocha" "demo_dce_pre"
+run_case "tests/demo_dce.mocha" "demo_dce_post_dce" -o dce
 rmdir graphs 2>/dev/null || true
 popd >/dev/null
 

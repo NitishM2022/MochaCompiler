@@ -11,8 +11,8 @@ mkdir -p "$ART/logs" "$ART/records" "$ART/graphs" "$ART/asm"
 
 pushd "$ROOT" >/dev/null
 java -cp "$CLS:$JAR" mocha.CompilerTester \
-  -s tests/regression/test000.txt \
-  -i tests/regression/dummy.in \
+  -s tests/test000.txt \
+  -i tests/dummy.in \
   -o cf -o cp \
   > "$ART/logs/smoke.stdout" \
   2> "$ART/logs/smoke.stderr"

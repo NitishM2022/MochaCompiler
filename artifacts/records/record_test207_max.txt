@@ -1,0 +1,134 @@
+Function: without_loop
+Iteration #1
+1: CP: Constant propagated in: $t0_1 = #0 + #0
+3: CP: Constant propagated in: $t0_2 = #0 + #0
+8: CP: Constant propagated in: $t0_4 = #0 + #0
+10: CP: Constant propagated in: $t0_5 = b_1 + #0
+19: CP: Constant propagated in: $t1_2 = #0 + #0
+22: CP: Constant propagated in: $t1_3 = b_1 * #0
+25: CP: Constant propagated in: $t0_9 = b_1 * #0
+Iteration #2
+1: CF: Algebraic simplification: $t0_1 = #0 + #0 -> $t0_1 = #0
+3: CF: Algebraic simplification: $t0_2 = #0 + #0 -> $t0_2 = #0
+8: CF: Algebraic simplification: $t0_4 = #0 + #0 -> $t0_4 = #0
+10: CF: Algebraic simplification: $t0_5 = b_1 + #0 -> $t0_5 = b_1
+19: CF: Algebraic simplification: $t1_2 = #0 + #0 -> $t1_2 = #0
+22: CF: Algebraic simplification: $t1_3 = b_1 * #0 -> $t1_3 = #0
+25: CF: Algebraic simplification: $t0_9 = b_1 * #0 -> $t0_9 = #0
+Iteration #3
+2: CP: Constant propagated in: b_1 = #0
+4: CP: Constant propagated in: e_1 = #0
+5: CP: Constant propagated in: $t0_3 = #0 == #0
+9: CP: Constant propagated in: x_1 = #0
+10: CP: Constant propagated in: $t0_5 = #0
+11: CP: Constant propagated in: a_1 = #0
+36: CP: Constant propagated in phi: $t0_6 = phi [BB3: #0, BB5: $t0_11]
+37: CP: Constant propagated in phi: a_2 = phi [BB3: #0, BB5: a_0]
+38: CP: Constant propagated in phi: x_2 = phi [BB3: #0, BB5: x_0]
+16: CP: Constant propagated in: $t0_7 = a_2 + #0
+20: CP: Constant propagated in: y_2 = #0
+23: CP: Constant propagated in: $t0_8 = #0 / x_3
+26: CP: Constant propagated in: $t1_4 = #0 / e_2
+13: CP: Constant propagated in: $t0_11 = a_0 + #0
+Iteration #4
+5: CF: Folded constant: $t0_3 = #0 == #0 -> $t0_3 = #1
+16: CF: Algebraic simplification: $t0_7 = a_2 + #0 -> $t0_7 = a_2
+23: CF: Algebraic simplification: $t0_8 = #0 / x_3 -> $t0_8 = #0
+26: CF: Algebraic simplification: $t1_4 = #0 / e_2 -> $t1_4 = #0
+13: CF: Algebraic simplification: $t0_11 = a_0 + #0 -> $t0_11 = a_0
+Iteration #5
+6: CP: Constant propagated in: if (#1 == 0) goto BB5
+24: CP: Constant propagated in: x_4 = #0
+27: CP: Constant propagated in: y_3 = #0
+28: CP: Constant propagated in: $t1_5 = #0 + 3
+30: CP: Constant propagated in: $t0_10 = #0 + 7
+Iteration #6
+28: CF: Algebraic simplification: $t1_5 = #0 + 3 -> $t1_5 = 3
+30: CF: Algebraic simplification: $t0_10 = #0 + 7 -> $t0_10 = 7
+6: CF: Branch never taken: if (#1 == 0) goto BB5
+CF: Eliminated unreachable block: BB5
+Iteration #7
+29: CP: Constant propagated in: write 3
+31: CP: Constant propagated in: write 7
+Iteration #8
+17: CPP: Copy propagated in: $t1_1 = a_2 + 1
+21: CPP: Copy propagated in: e_2 = $t1_1
+Iteration #9
+19: DCE: Eliminated: $t1_2 = #0
+22: DCE: Eliminated: $t1_3 = #0
+26: DCE: Eliminated: $t1_4 = #0
+28: DCE: Eliminated: $t1_5 = 3
+32: DCE: Eliminated: d_1 = #0
+25: DCE: Eliminated: $t0_9 = #0
+30: DCE: Eliminated: $t0_10 = 7
+16: DCE: Eliminated: $t0_7 = a_2
+21: DCE: Eliminated: e_2 = $t1_1
+4: DCE: Eliminated: e_1 = #0
+23: DCE: Eliminated: $t0_8 = #0
+33: DCE: Eliminated: c_1 = #0
+11: DCE: Eliminated: a_1 = #0
+1: DCE: Eliminated: $t0_1 = #0
+3: DCE: Eliminated: $t0_2 = #0
+35: DCE: Eliminated: y_1 = phi [BB3: y_0, BB5: y_4]
+10: DCE: Eliminated: $t0_5 = #0
+36: DCE: Eliminated: $t0_6 = phi [BB3: #0, BB5: $t0_11]
+5: DCE: Eliminated: $t0_3 = #1
+20: DCE: Eliminated: y_2 = #0
+8: DCE: Eliminated: $t0_4 = #0
+27: DCE: Eliminated: y_3 = #0
+2: DCE: Eliminated: b_1 = #0
+24: DCE: Eliminated: x_4 = #0
+18: DCE: Eliminated: x_3 = $t1_1
+38: DCE: Eliminated: x_2 = phi [BB3: #0, BB5: x_0]
+9: DCE: Eliminated: x_1 = #0
+17: DCE: Eliminated: $t1_1 = a_2 + 1
+37: DCE: Eliminated: a_2 = phi [BB3: #0, BB5: a_0]
+
+Function: with_loop
+Iteration #1
+68: CP: Constant propagated in phi: z_2 = phi [BB11: z_6, BB6: #0]
+70: CP: Constant propagated in phi: w_2 = phi [BB11: w_6, BB6: #0]
+72: CP: Constant propagated in phi: y_2 = phi [BB11: y_4, BB6: #0]
+Iteration #2
+68: CPP: Copy propagated in phi: z_2 = phi [BB11: $t2_12, BB6: #0]
+70: CPP: Copy propagated in phi: w_2 = phi [BB11: $t2_10, BB6: #0]
+76: CPP: Copy propagated in phi: x_1 = phi [BB11: $t2_3, BB6: x_0]
+43: CPP: Copy propagated in: $t2_5 = $t2_3 == $t2_4
+46: CPP: Copy propagated in: $t2_6 = $t2_3 + $t2_4
+48: CPP: Copy propagated in: $t2_7 = z_2 + $t2_4
+69: CPP: Copy propagated in phi: z_4 = phi [BB12: z_2, BB10: $t2_7]
+71: CPP: Copy propagated in phi: w_4 = phi [BB12: w_2, BB10: $t2_6]
+73: CPP: Copy propagated in phi: y_4 = phi [BB12: $t2_13, BB10: $t2_4]
+54: CPP: Copy propagated in: $t2_9 = w_4 + $t2_3
+56: CPP: Copy propagated in: $t2_10 = $t2_9 + 1
+58: CPP: Copy propagated in: $t2_11 = $t2_3 + y_4
+60: CPP: Copy propagated in: $t2_12 = $t2_11 + 1
+51: CPP: Copy propagated in: $t2_13 = w_2 + $t2_3
+Iteration #3
+74: DCE: Eliminated: $t2_1 = phi [BB6: $t2_0, BB11: $t2_12]
+75: DCE: Eliminated: $t2_8 = phi [BB10: $t2_7, BB12: $t2_13]
+52: DCE: Eliminated: y_5 = $t2_13
+65: DCE: Eliminated: w_1 = #0
+40: DCE: Eliminated: x_2 = $t2_3
+76: DCE: Eliminated: x_1 = phi [BB11: $t2_3, BB6: x_0]
+66: DCE: Eliminated: y_1 = #0
+42: DCE: Eliminated: y_3 = $t2_4
+59: DCE: Eliminated: z_5 = $t2_11
+61: DCE: Eliminated: z_6 = $t2_12
+57: DCE: Eliminated: w_6 = $t2_10
+55: DCE: Eliminated: w_5 = $t2_9
+47: DCE: Eliminated: w_3 = $t2_6
+49: DCE: Eliminated: z_3 = $t2_7
+69: DCE: Eliminated: z_4 = phi [BB12: z_2, BB10: $t2_7]
+64: DCE: Eliminated: z_1 = #0
+48: DCE: Eliminated: $t2_7 = z_2 + $t2_4
+Iteration #4
+41: CSE: Eliminated: $t2_4 = y_2 + z_2 -> $t2_4 = $t2_3
+Iteration #5
+43: CPP: Copy propagated in: $t2_5 = $t2_3 == $t2_3
+46: CPP: Copy propagated in: $t2_6 = $t2_3 + $t2_3
+73: CPP: Copy propagated in phi: y_4 = phi [BB12: $t2_13, BB10: $t2_3]
+Iteration #6
+41: DCE: Eliminated: $t2_4 = $t2_3
+
+Function: main

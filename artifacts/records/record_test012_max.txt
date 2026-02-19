@@ -1,0 +1,20 @@
+Function: add
+
+Function: main
+Iteration #1
+10: CP: Constant propagated in: [GP-8] = 1.15
+11: CP: Constant propagated in: $t1_2 = call add(f1_2, 1.15)
+Iteration #2
+9: CPP: Copy propagated in: [GP-4] = $t1_1
+11: CPP: Copy propagated in: $t1_2 = call add($t1_1, 1.15)
+16: CPP: Copy propagated in: writeF $t1_2
+17: CPP: Copy propagated in: $t1_3 = $t1_2 - f1_3
+Iteration #3
+8: DCE: Eliminated: f2_2 = 1.15
+13: DCE: Eliminated: f2_3 = [GP-8]
+15: DCE: Eliminated: f3_3 = $t1_2
+14: DCE: Eliminated: f3_2 = [GP-12]
+21: DCE: Eliminated: f3_1 = #0.0
+7: DCE: Eliminated: f1_2 = $t1_1
+19: DCE: Eliminated: f1_1 = #0.0
+20: DCE: Eliminated: f2_1 = #0.0

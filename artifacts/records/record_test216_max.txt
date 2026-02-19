@@ -1,0 +1,72 @@
+OFE: Eliminated 3 orphan function(s): dead_a, dead_b, dead_fibonacci
+
+Function: increment
+Iteration #1
+45: CF: Algebraic simplification: $t8_1 = $t7_1 * 1 -> $t8_1 = $t7_1
+Iteration #2
+46: CPP: Copy propagated in: return $t7_1
+Iteration #3
+45: DCE: Eliminated: $t8_1 = $t7_1
+
+Function: main
+Iteration #1
+49: CF: Algebraic simplification: $t9_1 = $t7_1 * 1 -> $t9_1 = $t7_1
+51: CF: Algebraic simplification: $t9_2 = myNum_2 + 0 -> $t9_2 = myNum_2
+52: CF: Algebraic simplification: $t7_2 = $t9_2 * 1 -> $t7_2 = $t9_2
+57: CF: Algebraic simplification: $t10_2 = myNum_2 / 1 -> $t10_2 = myNum_2
+61: CF: Algebraic simplification: $t11_2 = myNum_2 * 1 -> $t11_2 = myNum_2
+62: CF: Algebraic simplification: $t10_3 = $t11_2 / 1 -> $t10_3 = $t11_2
+66: CF: Algebraic simplification: $t10_4 = $t11_3 * 1 -> $t10_4 = $t11_3
+73: CF: Algebraic simplification: $t10_6 = $t11_6 / 1 -> $t10_6 = $t11_6
+78: CF: Algebraic simplification: $t10_9 = $t11_8 * 1 -> $t10_9 = $t11_8
+Iteration #2
+55: CP: Constant propagated in: $t9_3 = 2 ^ 5
+68: CP: Constant propagated in: $t11_4 = 0 - myNum_3
+78: CP: Constant propagated in: $t10_9 = 1
+79: CP: Constant propagated in: $t11_9 = myNum_7 - 1
+Iteration #3
+55: CF: Folded constant: $t9_3 = 2 ^ 5 -> $t9_3 = #32
+Iteration #4
+56: CP: Constant propagated in: write #32
+Iteration #5
+50: CPP: Copy propagated in: myNum_2 = $t7_1
+51: CPP: Copy propagated in: $t9_2 = $t7_1
+52: CPP: Copy propagated in: $t7_2 = $t7_1
+53: CPP: Copy propagated in: write $t7_1
+57: CPP: Copy propagated in: $t10_2 = $t7_1
+58: CPP: Copy propagated in: $t11_1 = $t7_1 > 5
+61: CPP: Copy propagated in: $t11_2 = $t7_1
+62: CPP: Copy propagated in: $t10_3 = $t7_1
+63: CPP: Copy propagated in: [GP-4] = $t7_1
+64: CPP: Copy propagated in: $t11_3 = call increment($t7_1)
+69: CPP: Copy propagated in: $t12_2 = $t11_3 + $t11_4
+88: CPP: Copy propagated in phi: myNum_4 = phi [BB16: myNum_3, BB15: $t7_1]
+90: CPP: Copy propagated in phi: $t10_5 = phi [BB16: $t11_3, BB15: $t7_1]
+74: CPP: Copy propagated in: myNum_5 = $t11_6
+89: CPP: Copy propagated in phi: myNum_6 = phi [BB17: $t11_6, BB18: $t10_8]
+91: CPP: Copy propagated in phi: $t10_7 = phi [BB17: $t11_6, BB18: $t10_10]
+79: CPP: Copy propagated in: $t11_9 = $t10_8 - 1
+Iteration #6
+77: DCE: Eliminated: $t11_8 = 1
+50: DCE: Eliminated: myNum_2 = $t7_1
+83: DCE: Eliminated: myNum_1 = #0
+78: DCE: Eliminated: $t10_9 = 1
+73: DCE: Eliminated: $t10_6 = $t11_6
+61: DCE: Eliminated: $t11_2 = $t7_1
+91: DCE: Eliminated: $t10_7 = phi [BB17: $t11_6, BB18: $t10_10]
+66: DCE: Eliminated: $t10_4 = $t11_3
+85: DCE: Eliminated: $t11_5 = phi [BB15: $t11_1, BB16: $t11_4]
+90: DCE: Eliminated: $t10_5 = phi [BB16: $t11_3, BB15: $t7_1]
+57: DCE: Eliminated: $t10_2 = $t7_1
+86: DCE: Eliminated: $t11_7 = phi [BB17: $t11_6, BB18: $t11_9]
+52: DCE: Eliminated: $t7_2 = $t7_1
+62: DCE: Eliminated: $t10_3 = $t7_1
+67: DCE: Eliminated: $t12_1 = 0
+76: DCE: Eliminated: myNum_7 = $t10_8
+87: DCE: Eliminated: $t12_3 = phi [BB15: $t12_0, BB16: $t12_2]
+88: DCE: Eliminated: myNum_4 = phi [BB16: myNum_3, BB15: $t7_1]
+74: DCE: Eliminated: myNum_5 = $t11_6
+51: DCE: Eliminated: $t9_2 = $t7_1
+49: DCE: Eliminated: $t9_1 = $t7_1
+54: DCE: Eliminated: $t10_1 = 2
+55: DCE: Eliminated: $t9_3 = #32

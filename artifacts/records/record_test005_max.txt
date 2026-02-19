@@ -1,0 +1,23 @@
+Function: foo
+Iteration #1
+7: CPP: Copy propagated in: $t0_3 = $t0_1 + $t0_2
+Iteration #2
+4: DCE: Eliminated: x_2 = $t0_1
+6: DCE: Eliminated: y_2 = $t0_2
+
+Function: main
+Iteration #1
+14: CP: Constant propagated in: [GP-12] = 2
+15: CP: Constant propagated in: $t1_2 = call foo(a_2, 2)
+Iteration #2
+13: CPP: Copy propagated in: [GP-4] = $t1_1
+15: CPP: Copy propagated in: $t1_2 = call foo($t1_1, 2)
+20: CPP: Copy propagated in: write $t1_2
+Iteration #3
+24: DCE: Eliminated: b_1 = #0
+11: DCE: Eliminated: a_2 = $t1_1
+19: DCE: Eliminated: b_3 = $t1_2
+23: DCE: Eliminated: a_1 = #0
+17: DCE: Eliminated: b_2 = [GP-8]
+25: DCE: Eliminated: c_1 = #0
+12: DCE: Eliminated: c_2 = 2

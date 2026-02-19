@@ -1,0 +1,53 @@
+Function: foo
+Iteration #1
+9: CPP: Copy propagated in: [GP-4] = $t1_1
+10: CPP: Copy propagated in: return $t1_1
+12: CPP: Copy propagated in: [GP-4] = $t1_1
+Iteration #2
+11: DCE: Eliminated: a_1 = [GP-4]
+8: DCE: Eliminated: a_3 = $t1_1
+3: DCE: Eliminated: a_2 = [GP-4]
+5: DCE: Eliminated: c_1 = [GP-12]
+6: DCE: Eliminated: d_1 = [GP-16]
+4: DCE: Eliminated: b_1 = [GP-8]
+
+Function: bar
+Iteration #1
+22: CPP: Copy propagated in: [GP-8] = $t3_1
+23: CPP: Copy propagated in: return $t3_1
+25: CPP: Copy propagated in: [GP-8] = $t3_1
+Iteration #2
+16: DCE: Eliminated: a_1 = [GP-4]
+18: DCE: Eliminated: c_1 = [GP-12]
+19: DCE: Eliminated: d_1 = [GP-16]
+24: DCE: Eliminated: b_1 = [GP-8]
+17: DCE: Eliminated: b_2 = [GP-8]
+21: DCE: Eliminated: b_3 = $t3_1
+
+Function: boo
+Iteration #1
+29: CPP: Copy propagated in: [GP-12] = z_1
+30: CPP: Copy propagated in: return z_1
+32: CPP: Copy propagated in: [GP-12] = z_1
+Iteration #2
+31: DCE: Eliminated: c_1 = [GP-12]
+28: DCE: Eliminated: c_2 = z_1
+
+Function: main
+Iteration #1
+55: CPP: Copy propagated in: write $t8_1
+Iteration #2
+54: DCE: Eliminated: d_5 = $t8_1
+57: DCE: Eliminated: b_1 = #0
+36: DCE: Eliminated: b_2 = [GP-8]
+42: DCE: Eliminated: b_3 = [GP-8]
+56: DCE: Eliminated: a_1 = #0
+41: DCE: Eliminated: a_3 = [GP-4]
+35: DCE: Eliminated: a_2 = [GP-4]
+58: DCE: Eliminated: c_1 = #0
+37: DCE: Eliminated: c_2 = [GP-12]
+50: DCE: Eliminated: d_4 = [GP-16]
+43: DCE: Eliminated: c_3 = [GP-12]
+44: DCE: Eliminated: d_3 = [GP-16]
+38: DCE: Eliminated: d_2 = [GP-16]
+59: DCE: Eliminated: d_1 = #0

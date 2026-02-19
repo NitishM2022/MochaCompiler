@@ -1,0 +1,111 @@
+Function: main
+Iteration #1
+10: CF: Algebraic simplification: $t0_5 = y_2 * 1 -> $t0_5 = y_2
+14: CF: Algebraic simplification: $t0_7 = y_2 * 0 -> $t0_7 = #0
+16: CF: Algebraic simplification: $t0_8 = y_2 ^ 0 -> $t0_8 = #1
+21: CF: Algebraic simplification: $t0_10 = y_2 - y_2 -> $t0_10 = #0
+25: CF: Algebraic simplification: $t0_12 = y_2 + 0 -> $t0_12 = y_2
+34: CF: Algebraic simplification: $t0_16 = b_2 && false -> $t0_16 = #0
+36: CF: Algebraic simplification: $t0_17 = b_2 || true -> $t0_17 = #1
+Iteration #2
+2: CP: Constant propagated in: $t0_1 = 2 * 2
+4: CP: Constant propagated in: $t0_2 = 2 * 2
+6: CP: Constant propagated in: $t0_3 = 2 * 2
+10: CP: Constant propagated in: $t0_5 = 2
+11: CP: Constant propagated in: x_5 = 2
+12: CP: Constant propagated in: $t0_6 = 2 * #0
+15: CP: Constant propagated in: x_7 = #0
+17: CP: Constant propagated in: x_8 = #1
+19: CP: Constant propagated in: $t0_9 = 0 / 2
+22: CP: Constant propagated in: x_10 = #0
+23: CP: Constant propagated in: $t0_11 = 2 / 2
+25: CP: Constant propagated in: $t0_12 = 2
+26: CP: Constant propagated in: x_12 = 2
+27: CP: Constant propagated in: $t0_13 = 2 + 1
+29: CP: Constant propagated in: $t0_14 = 2 + y_3
+35: CP: Constant propagated in: a_2 = #0
+37: CP: Constant propagated in: a_3 = #1
+38: CP: Constant propagated in: write 2
+41: CP: Constant propagated in: writeB #1
+42: CP: Constant propagated in: writeB false
+Iteration #3
+2: CF: Folded constant: $t0_1 = 2 * 2 -> $t0_1 = #4
+4: CF: Folded constant: $t0_2 = 2 * 2 -> $t0_2 = #4
+6: CF: Folded constant: $t0_3 = 2 * 2 -> $t0_3 = #4
+12: CF: Algebraic simplification: $t0_6 = 2 * #0 -> $t0_6 = #0
+19: CF: Algebraic simplification: $t0_9 = 0 / 2 -> $t0_9 = #0
+23: CF: Folded constant: $t0_11 = 2 / 2 -> $t0_11 = #1
+27: CF: Folded constant: $t0_13 = 2 + 1 -> $t0_13 = #3
+Iteration #4
+3: CP: Constant propagated in: x_2 = #4
+5: CP: Constant propagated in: x_3 = #4
+7: CP: Constant propagated in: $t1_1 = #4 + #4
+8: CP: Constant propagated in: $t0_4 = $t1_1 + #4
+13: CP: Constant propagated in: x_6 = #0
+20: CP: Constant propagated in: x_9 = #0
+24: CP: Constant propagated in: x_11 = #1
+28: CP: Constant propagated in: y_3 = #3
+29: CP: Constant propagated in: $t0_14 = 2 + #3
+31: CP: Constant propagated in: $t0_15 = $t1_3 - #3
+39: CP: Constant propagated in: write #3
+Iteration #5
+7: CF: Folded constant: $t1_1 = #4 + #4 -> $t1_1 = #8
+29: CF: Folded constant: $t0_14 = 2 + #3 -> $t0_14 = #5
+Iteration #6
+8: CP: Constant propagated in: $t0_4 = #8 + #4
+30: CP: Constant propagated in: $t1_3 = #5 * 2
+Iteration #7
+8: CF: Folded constant: $t0_4 = #8 + #4 -> $t0_4 = #12
+30: CF: Folded constant: $t1_3 = #5 * 2 -> $t1_3 = #10
+Iteration #8
+9: CP: Constant propagated in: x_4 = #12
+31: CP: Constant propagated in: $t0_15 = #10 - #3
+Iteration #9
+31: CF: Folded constant: $t0_15 = #10 - #3 -> $t0_15 = #7
+Iteration #10
+32: CP: Constant propagated in: z_3 = #7
+40: CP: Constant propagated in: write #7
+Iteration #11
+1: DCE: Eliminated: y_2 = 2
+28: DCE: Eliminated: y_3 = #3
+45: DCE: Eliminated: y_1 = #0
+32: DCE: Eliminated: z_3 = #7
+46: DCE: Eliminated: z_1 = #0
+48: DCE: Eliminated: b_1 = #0
+43: DCE: Eliminated: z_2 = #0
+33: DCE: Eliminated: b_2 = false
+4: DCE: Eliminated: $t0_2 = #4
+2: DCE: Eliminated: $t0_1 = #4
+26: DCE: Eliminated: x_12 = 2
+24: DCE: Eliminated: x_11 = #1
+36: DCE: Eliminated: $t0_17 = #1
+22: DCE: Eliminated: x_10 = #0
+34: DCE: Eliminated: $t0_16 = #0
+20: DCE: Eliminated: x_9 = #0
+31: DCE: Eliminated: $t0_15 = #7
+17: DCE: Eliminated: x_8 = #1
+29: DCE: Eliminated: $t0_14 = #5
+15: DCE: Eliminated: x_7 = #0
+27: DCE: Eliminated: $t0_13 = #3
+13: DCE: Eliminated: x_6 = #0
+25: DCE: Eliminated: $t0_12 = 2
+11: DCE: Eliminated: x_5 = 2
+23: DCE: Eliminated: $t0_11 = #1
+21: DCE: Eliminated: $t0_10 = #0
+19: DCE: Eliminated: $t0_9 = #0
+16: DCE: Eliminated: $t0_8 = #1
+14: DCE: Eliminated: $t0_7 = #0
+12: DCE: Eliminated: $t0_6 = #0
+10: DCE: Eliminated: $t0_5 = 2
+8: DCE: Eliminated: $t0_4 = #12
+6: DCE: Eliminated: $t0_3 = #4
+47: DCE: Eliminated: a_1 = #0
+35: DCE: Eliminated: a_2 = #0
+37: DCE: Eliminated: a_3 = #1
+9: DCE: Eliminated: x_4 = #12
+30: DCE: Eliminated: $t1_3 = #10
+5: DCE: Eliminated: x_3 = #4
+3: DCE: Eliminated: x_2 = #4
+7: DCE: Eliminated: $t1_1 = #8
+44: DCE: Eliminated: x_1 = #0
+18: DCE: Eliminated: $t1_2 = 0

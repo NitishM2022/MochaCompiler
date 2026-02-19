@@ -1,0 +1,17 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {24: a_1 = #0.0 | 25: b_1 = #0.0 | 26: c_1 = #0.0 | 27: d_1 = #0.0 | 28: e_1 = #0.0 | 1: a_2 = 5.7 | 2: b_2 = 6.1 | 3: $t0_1 = a_2 + b_2 | 4: c_2 = $t0_1 | 5: $t0_2 = a_2 + b_2 | 6: b_3 = $t0_2 | 7: e_2 = c_2 | 8: goto BB3}"];
+bb3 [ shape = record , label = " <b > BB3 | {30: d_2 = phi [BB2: d_1, BB4: d_3] | 31: a_3 = phi [BB2: a_2, BB4: a_4] | 32: $t0_3 = phi [BB2: $t0_2, BB4: $t0_6] | 9: $t0_4 = a_3 > 5.1 | 10: if ($t0_4 == 0) goto BB5 | 11: goto BB4}"];
+bb4 [ shape = record , label = " <b > BB4 | {12: $t0_5 = a_3 + b_3 | 13: d_3 = $t0_5 | 14: $t0_6 = a_3 - 0.5 | 15: a_4 = $t0_6 | 16: goto BB3}"];
+bb5 [ shape = record , label = " <b > BB5 | {17: $t0_7 = a_3 + b_3 | 18: c_3 = $t0_7 | 19: $t0_8 = a_3 + b_3 | 20: d_4 = $t0_8 | 21: e_3 = c_3 | 22: writeF a_3 | 23: writeF b_3 | 29: end}"];
+bb2 : s -> bb3 : n [ label = " branch " ];
+bb3 : s -> bb5 : n [ label = " fall - through " ];
+bb3 : s -> bb4 : n [ label = " branch " ];
+bb4 : s -> bb3 : n [ label = " branch " ];
+bb2 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb3 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb3 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+

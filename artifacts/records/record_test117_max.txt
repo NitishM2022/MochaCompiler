@@ -1,0 +1,33 @@
+Function: test
+Iteration #1
+7: CPP: Copy propagated in: $t0_1 = ii_1 < iii_1
+38: CPP: Copy propagated in phi: a_4 = phi [BB2: i_1, BB7: a_2]
+41: CPP: Copy propagated in phi: b_5 = phi [BB2: ii_1, BB7: b_2]
+27: CPP: Copy propagated in: $t0_8 = iii_1 + 1
+29: CPP: Copy propagated in: write $t0_8
+37: CPP: Copy propagated in phi: a_2 = phi [BB3: i_1, BB10: $t1_3]
+40: CPP: Copy propagated in phi: b_2 = phi [BB3: ii_1, BB10: b_3]
+12: CPP: Copy propagated in: $t1_2 = $t0_3 < iii_1
+39: CPP: Copy propagated in phi: b_3 = phi [BB6: b_2, BB9: $t0_6]
+19: CPP: Copy propagated in: $t0_5 = $t1_5 < iii_1
+Iteration #2
+35: DCE: Eliminated: $t1_1 = phi [BB3: $t1_0, BB10: $t1_5]
+36: DCE: Eliminated: $t1_6 = phi [BB2: $t1_0, BB7: $t1_2]
+28: DCE: Eliminated: b_6 = $t0_8
+34: DCE: Eliminated: $t1_4 = phi [BB6: $t1_3, BB9: $t1_5]
+6: DCE: Eliminated: c_1 = iii_1
+4: DCE: Eliminated: a_1 = i_1
+5: DCE: Eliminated: b_1 = ii_1
+16: DCE: Eliminated: a_3 = $t1_3
+38: DCE: Eliminated: a_4 = phi [BB2: i_1, BB7: a_2]
+41: DCE: Eliminated: b_5 = phi [BB2: ii_1, BB7: b_2]
+23: DCE: Eliminated: b_4 = $t0_6
+33: DCE: Eliminated: $t0_7 = phi [BB2: $t0_1, BB7: $t0_3]
+32: DCE: Eliminated: $t0_2 = phi [BB3: $t0_1, BB10: $t0_5]
+31: DCE: Eliminated: $t0_4 = phi [BB6: $t0_3, BB9: $t0_6]
+
+Function: main
+Iteration #1
+34: DCE: Eliminated: c_1 = [GP-12]
+32: DCE: Eliminated: a_1 = [GP-4]
+33: DCE: Eliminated: b_1 = [GP-8]

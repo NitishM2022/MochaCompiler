@@ -1,0 +1,65 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {1: vals_1 = [FP+12] | 2: elems_1 = [FP+16] | 21: i_1 = #0 | 22: sum_1 = #0 | 3: $t0_1 = elems_1 < 0 | 4: if ($t0_1 == 0) goto BB4 | 5: goto BB3}"];
+bb3 [ shape = record , label = " <b > BB3 | {6: return -1 | 7: goto BB4}"];
+bb4 [ shape = record , label = " <b > BB4 | {8: goto BB5}"];
+bb5 [ shape = record , label = " <b > BB5 | {24: i_2 = phi [BB4: i_1, BB6: i_3] | 25: sum_2 = phi [BB4: sum_1, BB6: sum_3] | 26: $t1_1 = phi [BB4: $t1_0, BB6: $t1_3] | 27: $t0_2 = phi [BB4: $t0_1, BB6: $t0_4] | 28: $t2_1 = phi [BB4: $t2_0, BB6: $t2_3] | 9: $t0_3 = i_2 < elems_1 | 10: if ($t0_3 == 0) goto BB7 | 11: goto BB6}"];
+bb6 [ shape = record , label = " <b > BB6 | {12: $t0_4 = i_2 * #4 | 13: $t1_2 = &(vals_1 + $t0_4) | 14: $t2_2 = *$t1_2 | 15: $t1_3 = sum_2 + $t2_2 | 16: sum_3 = $t1_3 | 17: $t2_3 = i_2 + #1 | 18: i_3 = $t2_3 | 19: goto BB5}"];
+bb7 [ shape = record , label = " <b > BB7 | {20: return sum_2 | 23: end}"];
+bb2 : s -> bb3 : n [ label = " branch " ];
+bb2 : s -> bb4 : n [ label = " fall - through " ];
+bb3 : s -> bb4 : n [ label = " branch " ];
+bb4 : s -> bb5 : n [ label = " branch " ];
+bb5 : s -> bb7 : n [ label = " fall - through " ];
+bb5 : s -> bb6 : n [ label = " branch " ];
+bb6 : s -> bb5 : n [ label = " branch " ];
+bb2 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb5 : b -> bb6 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb5 : b -> bb7 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+
+digraph G {
+bb8 [ shape = record , label = " <b > BB8 | {24: vals_1 = [FP+12] | 25: elems_1 = [FP+16] | 26: $t3_1 = elems_1 < 0 | 27: if ($t3_1 == 0) goto BB10 | 28: goto BB9}"];
+bb9 [ shape = record , label = " <b > BB9 | {29: return -1 | 30: goto BB10}"];
+bb10 [ shape = record , label = " <b > BB10 | {31: $t3_2 = elems_1 == 0 | 32: if ($t3_2 == 0) goto BB12 | 33: goto BB11}"];
+bb11 [ shape = record , label = " <b > BB11 | {34: return 0 | 35: goto BB12}"];
+bb12 [ shape = record , label = " <b > BB12 | {36: $t3_3 = elems_1 - 1 | 37: $t4_1 = $t3_3 * #4 | 38: $t5_1 = &(vals_1 + $t4_1) | 39: $t6_1 = *$t5_1 | 40: $t5_2 = elems_1 - 1 | 41: $t4_2 = call intSumRecur(vals_1, $t5_2) | 42: num_elems_1 = [GP-4] | 43: $t5_3 = $t6_1 + $t4_2 | 44: return $t5_3 | 45: end}"];
+bb8 : s -> bb9 : n [ label = " branch " ];
+bb8 : s -> bb10 : n [ label = " fall - through " ];
+bb9 : s -> bb10 : n [ label = " branch " ];
+bb10 : s -> bb11 : n [ label = " branch " ];
+bb10 : s -> bb12 : n [ label = " fall - through " ];
+bb11 : s -> bb12 : n [ label = " branch " ];
+bb8 : b -> bb9 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb8 : b -> bb10 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb10 : b -> bb11 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb10 : b -> bb12 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+
+digraph G {
+bb13 [ shape = record , label = " <b > BB13 | {71: num_elems_1 = #0 | 46: num_elems_2 = 0 | 47: goto BB14}"];
+bb14 [ shape = record , label = " <b > BB14 | {73: num_elems_3 = phi [BB13: num_elems_2, BB15: num_elems_4] | 74: $t7_1 = phi [BB13: $t7_0, BB15: $t7_2] | 75: $t3_1 = phi [BB13: $t3_0, BB15: $t3_2] | 76: $t6_1 = phi [BB13: $t6_0, BB15: $t6_2] | 77: $t4_1 = phi [BB13: $t4_0, BB15: $t4_4] | 48: $t4_2 = num_elems_3 < 15 | 49: if ($t4_2 == 0) goto BB16 | 50: goto BB15}"];
+bb15 [ shape = record , label = " <b > BB15 | {51: $t4_3 = read | 52: $t6_2 = &(GP-68 + #4) | 53: $t3_2 = num_elems_3 * #4 | 54: $t7_2 = &($t6_2 + $t3_2) | 55: *$t7_2 = $t4_3 | 56: $t4_4 = num_elems_3 + #1 | 57: num_elems_4 = $t4_4 | 58: goto BB14}"];
+bb16 [ shape = record , label = " <b > BB16 | {59: $t4_5 = &(GP-68 + #4) | 60: [GP-4] = num_elems_3 | 61: $t6_3 = call intSumIter($t4_5, num_elems_3) | 62: num_elems_5 = [GP-4] | 63: write $t6_3 | 64: writeNL | 65: $t4_6 = &(GP-68 + #4) | 66: [GP-4] = num_elems_5 | 67: $t3_3 = call intSumRecur($t4_6, num_elems_5) | 68: num_elems_6 = [GP-4] | 69: write $t3_3 | 70: writeNL | 72: end}"];
+bb13 : s -> bb14 : n [ label = " branch " ];
+bb14 : s -> bb16 : n [ label = " fall - through " ];
+bb14 : s -> bb15 : n [ label = " branch " ];
+bb15 : s -> bb14 : n [ label = " branch " ];
+bb13 : b -> bb14 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb14 : b -> bb15 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb14 : b -> bb16 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+

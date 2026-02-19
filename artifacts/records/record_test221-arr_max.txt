@@ -1,0 +1,51 @@
+Function: init_and_print
+Iteration #1
+43: CP: Constant propagated in phi: i_2 = phi [BB2: 0, BB7: i_3]
+34: CP: Constant propagated in phi: j_3 = phi [BB4: 0, BB6: j_4]
+Iteration #2
+33: CPP: Copy propagated in phi: j_1 = phi [BB2: j_0, BB7: $t3_6]
+43: CPP: Copy propagated in phi: i_2 = phi [BB2: 0, BB7: $t3_8]
+34: CPP: Copy propagated in phi: j_3 = phi [BB4: 0, BB6: $t3_6]
+25: CPP: Copy propagated in: $t3_7 = $t3_6 >= y_1
+Iteration #3
+40: DCE: Eliminated: $t2_2 = phi [BB4: $t2_1, BB6: $t2_5]
+42: DCE: Eliminated: $t3_2 = phi [BB4: $t3_1, BB6: $t3_7]
+36: DCE: Eliminated: $t0_3 = phi [BB4: $t0_2, BB6: $t0_6]
+35: DCE: Eliminated: $t0_1 = phi [BB2: $t0_0, BB7: $t0_6]
+33: DCE: Eliminated: j_1 = phi [BB2: j_0, BB7: $t3_6]
+24: DCE: Eliminated: j_4 = $t3_6
+38: DCE: Eliminated: $t1_2 = phi [BB4: $t1_1, BB6: $t1_5]
+8: DCE: Eliminated: j_2 = 0
+29: DCE: Eliminated: i_3 = $t3_8
+3: DCE: Eliminated: i_1 = 0
+39: DCE: Eliminated: $t2_1 = phi [BB2: $t2_0, BB7: $t2_5]
+41: DCE: Eliminated: $t3_1 = phi [BB2: $t3_0, BB7: $t3_8]
+37: DCE: Eliminated: $t1_1 = phi [BB2: $t1_0, BB7: $t1_5]
+Iteration #4
+16: CSE: Eliminated: $t0_5 = &(GP-412 + #4) -> $t0_5 = $t1_3
+17: CSE: Eliminated: $t3_4 = i_2 * #40 -> $t3_4 = $t2_3
+19: CSE: Eliminated: $t0_6 = j_3 * #4 -> $t0_6 = $t1_4
+Iteration #5
+18: CPP: Copy propagated in: $t1_5 = &($t1_3 + $t2_3)
+20: CPP: Copy propagated in: $t3_5 = &($t1_5 + $t1_4)
+Iteration #6
+17: DCE: Eliminated: $t3_4 = $t2_3
+19: DCE: Eliminated: $t0_6 = $t1_4
+16: DCE: Eliminated: $t0_5 = $t1_3
+Iteration #7
+18: CSE: Eliminated: $t1_5 = &($t1_3 + $t2_3) -> $t1_5 = $t3_3
+Iteration #8
+20: CPP: Copy propagated in: $t3_5 = &($t3_3 + $t1_4)
+Iteration #9
+18: DCE: Eliminated: $t1_5 = $t3_3
+Iteration #10
+20: CSE: Eliminated: $t3_5 = &($t3_3 + $t1_4) -> $t3_5 = $t2_4
+Iteration #11
+21: CPP: Copy propagated in: $t2_5 = *$t2_4
+Iteration #12
+20: DCE: Eliminated: $t3_5 = $t2_4
+
+Function: main
+Iteration #1
+35: DCE: Eliminated: n2_1 = [GP-8]
+34: DCE: Eliminated: n1_1 = [GP-4]

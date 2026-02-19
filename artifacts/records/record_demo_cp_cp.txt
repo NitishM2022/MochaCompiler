@@ -1,0 +1,2 @@
+Function: main
+2: CP: Constant propagated in: $t0_1 = 5 + 3

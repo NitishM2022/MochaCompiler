@@ -1,0 +1,4 @@
+Function: main
+2: CF: Algebraic simplification: $t0_1 = $t1_1 * 1 -> $t0_1 = $t1_1
+4: CF: Algebraic simplification: $t0_2 = x_2 + 0 -> $t0_2 = x_2
+6: CF: Algebraic simplification: $t0_3 = x_3 - x_3 -> $t0_3 = #0

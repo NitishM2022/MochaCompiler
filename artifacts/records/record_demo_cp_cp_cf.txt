@@ -1,0 +1,3 @@
+Function: main
+4: CP: Constant propagated in: $t0_1 = 5 + 3
+4: CF: Folded constant: $t0_1 = 5 + 3 -> $t0_1 = #8

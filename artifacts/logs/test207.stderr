@@ -1,0 +1,5 @@
+WARNING: Variable 'd' may be used before initialization
+WARNING: Variable 'c' may be used before initialization
+WARNING: Variable 'w' may be used before initialization
+WARNING: Variable 'z' may be used before initialization
+WARNING: Variable 'y' may be used before initialization

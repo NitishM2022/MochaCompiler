@@ -1,0 +1,21 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {13: x_1 = [GP-4] | 1: y_1 = [FP+12] | 2: z_1 = 5 | 3: $t0_1 = z_1 + y_1 | 4: $t1_1 = x_1 < $t0_1 | 5: if ($t1_1 == 0) goto BB5 | 6: goto BB3}"];
+bb3 [ shape = record , label = " <b > BB3 | {7: [GP-4] = x_1 | 8: return true | 9: goto BB4}"];
+bb4 [ shape = record , label = " <b > BB4 | {14: [GP-4] = x_1 | 15: end}"];
+bb5 [ shape = record , label = " <b > BB5 | {10: [GP-4] = x_1 | 11: return false | 12: goto BB4}"];
+bb2 : s -> bb3 : n [ label = " branch " ];
+bb2 : s -> bb5 : n [ label = " fall - through " ];
+bb3 : s -> bb4 : n [ label = " branch " ];
+bb5 : s -> bb4 : n [ label = " branch " ];
+bb2 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+
+digraph G {
+bb6 [ shape = record , label = " <b > BB6 | {36: x_1 = #0 | 37: y_1 = #0 | 38: z_1 = #0 | 16: x_2 = 14 | 17: y_2 = 5 | 18: z_2 = 10 | 19: [GP-4] = x_2 | 20: [GP-8] = y_2 | 21: [GP-12] = z_2 | 22: $t1_1 = call foo(y_2) | 23: x_3 = [GP-4] | 24: y_3 = [GP-8] | 25: z_3 = [GP-12] | 26: writeB $t1_1 | 27: x_4 = 9 | 28: [GP-4] = x_4 | 29: [GP-8] = y_3 | 30: [GP-12] = z_3 | 31: $t0_1 = call foo(y_3) | 32: x_5 = [GP-4] | 33: y_4 = [GP-8] | 34: z_4 = [GP-12] | 35: writeB $t0_1 | 39: end}"];
+}
+

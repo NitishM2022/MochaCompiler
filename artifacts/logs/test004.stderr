@@ -1,0 +1,3 @@
+WARNING: Variable 'u' may be used before initialization
+WARNING: Variable 'y' may be used before initialization
+WARNING: Variable 'b' may be used before initialization

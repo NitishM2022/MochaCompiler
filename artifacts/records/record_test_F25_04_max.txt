@@ -1,0 +1,11 @@
+Function: main
+Iteration #1
+2: CP: Constant propagated in: write 2
+12: CP: Constant propagated in phi: x_3 = phi [BB2: 2, BB4: x_4]
+Iteration #2
+12: CPP: Copy propagated in phi: x_3 = phi [BB2: 2, BB4: $t0_3]
+Iteration #3
+13: DCE: Eliminated: $t0_1 = phi [BB2: $t0_0, BB4: $t0_3]
+8: DCE: Eliminated: x_4 = $t0_3
+1: DCE: Eliminated: x_2 = 2
+10: DCE: Eliminated: x_1 = #0

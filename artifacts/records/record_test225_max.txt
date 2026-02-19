@@ -1,0 +1,24 @@
+Function: foo
+Iteration #1
+17: DCE: Eliminated: $t0_2 = phi [BB3: $t0_1, BB5: $t0_4]
+16: DCE: Eliminated: x_1 = phi [BB3: x_0, BB5: x_2]
+15: DCE: Eliminated: sum_1 = phi [BB3: sum_0, BB5: sum_2]
+18: DCE: Eliminated: $t1_1 = phi [BB3: $t1_0, BB5: $t1_2]
+9: DCE: Eliminated: x_2 = [GP-4]
+10: DCE: Eliminated: sum_2 = [GP-8]
+
+Function: main
+Iteration #1
+36: CP: Constant propagated in phi: sum_3 = phi [BB8: sum_5, BB6: 0]
+Iteration #2
+36: CPP: Copy propagated in phi: sum_3 = phi [BB8: $t2_2, BB6: 0]
+38: CPP: Copy propagated in phi: x_3 = phi [BB8: $t1_5, BB6: $t1_1]
+Iteration #3
+16: DCE: Eliminated: x_2 = $t1_1
+30: DCE: Eliminated: x_5 = $t1_5
+33: DCE: Eliminated: x_1 = #0
+34: DCE: Eliminated: sum_1 = #0
+39: DCE: Eliminated: $t1_2 = phi [BB6: $t1_1, BB8: $t1_5]
+28: DCE: Eliminated: sum_5 = $t2_2
+17: DCE: Eliminated: sum_2 = 0
+37: DCE: Eliminated: $t2_1 = phi [BB6: $t2_0, BB8: $t2_2]

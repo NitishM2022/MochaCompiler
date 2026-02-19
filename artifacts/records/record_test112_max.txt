@@ -1,0 +1,86 @@
+Function: main
+Iteration #1
+23: CF: Algebraic simplification: $t0_8 = a_0_2 - a_0_2 -> $t0_8 = #0
+Iteration #2
+2: CP: Constant propagated in: $t0_1 = 5 + 2
+8: CP: Constant propagated in: $t0_3 = 3 - 3
+16: CP: Constant propagated in: $t0_6 = 5 + 2
+20: CP: Constant propagated in: $t0_7 = 5 + -5
+24: CP: Constant propagated in: $t1_7 = #0 + 1
+Iteration #3
+2: CF: Folded constant: $t0_1 = 5 + 2 -> $t0_1 = #7
+8: CF: Folded constant: $t0_3 = 3 - 3 -> $t0_3 = #0
+16: CF: Folded constant: $t0_6 = 5 + 2 -> $t0_6 = #7
+20: CF: Folded constant: $t0_7 = 5 + -5 -> $t0_7 = #0
+24: CF: Algebraic simplification: $t1_7 = #0 + 1 -> $t1_7 = 1
+Iteration #4
+3: CP: Constant propagated in: a_2 = #7
+4: CP: Constant propagated in: $t0_2 = #7 * -10
+9: CP: Constant propagated in: intVar_2 = #0
+10: CP: Constant propagated in: intVar_3 = #7
+17: CP: Constant propagated in: $t1_4 = #7 + #7
+21: CP: Constant propagated in: $t1_6 = a_3 - #0
+25: CP: Constant propagated in: $t0_9 = a_4 * 1
+35: CP: Constant propagated in: write #7
+Iteration #5
+4: CF: Folded constant: $t0_2 = #7 * -10 -> $t0_2 = #-70
+17: CF: Folded constant: $t1_4 = #7 + #7 -> $t1_4 = #14
+21: CF: Algebraic simplification: $t1_6 = a_3 - #0 -> $t1_6 = a_3
+25: CF: Algebraic simplification: $t0_9 = a_4 * 1 -> $t0_9 = a_4
+Iteration #6
+5: CP: Constant propagated in: A_2 = #-70
+6: CP: Constant propagated in: a_0_2 = #-70
+11: CP: Constant propagated in: $t0_4 = #-70 + #1
+18: CP: Constant propagated in: a_3 = #14
+21: CP: Constant propagated in: $t1_6 = #14
+22: CP: Constant propagated in: a_4 = #14
+25: CP: Constant propagated in: $t0_9 = #14
+26: CP: Constant propagated in: a_5 = #14
+27: CP: Constant propagated in: $t1_8 = #14 / #14
+31: CP: Constant propagated in: write #-70
+Iteration #7
+11: CF: Folded constant: $t0_4 = #-70 + #1 -> $t0_4 = #-69
+27: CF: Folded constant: $t1_8 = #14 / #14 -> $t1_8 = #1
+Iteration #8
+12: CP: Constant propagated in: A_3 = #-69
+13: CP: Constant propagated in: $t0_5 = #-69 - #1
+28: CP: Constant propagated in: a_6 = #1
+29: CP: Constant propagated in: write #1
+Iteration #9
+13: CF: Folded constant: $t0_5 = #-69 - #1 -> $t0_5 = #-70
+Iteration #10
+14: CP: Constant propagated in: A_4 = #-70
+33: CP: Constant propagated in: write #-70
+Iteration #11
+3: DCE: Eliminated: a_2 = #7
+38: DCE: Eliminated: A_1 = #0
+18: DCE: Eliminated: a_3 = #14
+37: DCE: Eliminated: a_1 = #0
+14: DCE: Eliminated: A_4 = #-70
+5: DCE: Eliminated: A_2 = #-70
+12: DCE: Eliminated: A_3 = #-69
+39: DCE: Eliminated: a_0_1 = #0
+6: DCE: Eliminated: a_0_2 = #-70
+40: DCE: Eliminated: intVar_1 = #0
+9: DCE: Eliminated: intVar_2 = #0
+10: DCE: Eliminated: intVar_3 = #7
+16: DCE: Eliminated: $t0_6 = #7
+28: DCE: Eliminated: a_6 = #1
+20: DCE: Eliminated: $t0_7 = #0
+22: DCE: Eliminated: a_4 = #14
+23: DCE: Eliminated: $t0_8 = #0
+25: DCE: Eliminated: $t0_9 = #14
+26: DCE: Eliminated: a_5 = #14
+4: DCE: Eliminated: $t0_2 = #-70
+8: DCE: Eliminated: $t0_3 = #0
+11: DCE: Eliminated: $t0_4 = #-69
+13: DCE: Eliminated: $t0_5 = #-70
+2: DCE: Eliminated: $t0_1 = #7
+17: DCE: Eliminated: $t1_4 = #14
+15: DCE: Eliminated: $t1_3 = 5
+7: DCE: Eliminated: $t1_2 = 3
+1: DCE: Eliminated: $t1_1 = 5
+27: DCE: Eliminated: $t1_8 = #1
+24: DCE: Eliminated: $t1_7 = 1
+21: DCE: Eliminated: $t1_6 = #14
+19: DCE: Eliminated: $t1_5 = 5

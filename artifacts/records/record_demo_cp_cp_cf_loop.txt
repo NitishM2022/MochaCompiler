@@ -1,0 +1,8 @@
+Function: main
+Iteration #1
+4: CP: Constant propagated in: $t0_1 = 5 + 3
+Iteration #2
+4: CF: Folded constant: $t0_1 = 5 + 3 -> $t0_1 = #8
+Iteration #3
+5: CP: Constant propagated in: y_2 = #8
+6: CP: Constant propagated in: write #8

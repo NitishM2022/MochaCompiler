@@ -1,0 +1,102 @@
+Function: main
+Iteration #1
+75: CP: Constant propagated in phi: c_2 = phi [BB2: #0, BB11: c_3]
+76: CP: Constant propagated in phi: p_2 = phi [BB2: #0, BB11: p_7]
+82: CP: Constant propagated in phi: a_2 = phi [BB2: #0, BB11: a_3]
+83: CP: Constant propagated in phi: j_2 = phi [BB2: #0, BB11: j_3]
+84: CP: Constant propagated in phi: f_2 = phi [BB2: #0, BB11: f_7]
+87: CP: Constant propagated in phi: s_3 = phi [BB2: 0, BB11: s_4]
+88: CP: Constant propagated in phi: i_3 = phi [BB2: 0, BB11: i_4]
+89: CP: Constant propagated in phi: m_2 = phi [BB2: #0, BB11: 5]
+90: CP: Constant propagated in phi: b_2 = phi [BB2: #0, BB11: b_3]
+5: CP: Constant propagated in: $t0_2 = i_3 <= 5
+9: CP: Constant propagated in: m_3 = 5
+10: CP: Constant propagated in: p_3 = 5
+46: CP: Constant propagated in: $t0_16 = 4 + 2
+78: CP: Constant propagated in phi: p_4 = phi [BB4: 5, BB7: p_5]
+86: CP: Constant propagated in phi: f_4 = phi [BB4: 1, BB7: f_5]
+22: CP: Constant propagated in: $t0_7 = 5 - j_3
+85: CP: Constant propagated in phi: f_7 = phi [BB8: 1, BB10: f_8]
+Iteration #2
+46: CF: Folded constant: $t0_16 = 4 + 2 -> $t0_16 = #6
+Iteration #3
+47: CP: Constant propagated in: u_2 = #6
+52: CP: Constant propagated in: $t0_19 = #6 + t_2
+Iteration #4
+75: CPP: Copy propagated in phi: c_2 = phi [BB2: #0, BB11: $t0_12]
+82: CPP: Copy propagated in phi: a_2 = phi [BB2: #0, BB11: f_4]
+83: CPP: Copy propagated in phi: j_2 = phi [BB2: #0, BB11: i_3]
+87: CPP: Copy propagated in phi: s_3 = phi [BB2: 0, BB11: $t0_13]
+88: CPP: Copy propagated in phi: i_3 = phi [BB2: 0, BB11: $t0_14]
+90: CPP: Copy propagated in phi: b_2 = phi [BB2: #0, BB11: f_7]
+44: CPP: Copy propagated in: $t0_15 = s_3 + s_3
+50: CPP: Copy propagated in: $t0_18 = $t0_17 + $t0_15
+52: CPP: Copy propagated in: $t0_19 = #6 + $t0_18
+55: CPP: Copy propagated in: write $t0_19
+78: CPP: Copy propagated in phi: p_4 = phi [BB4: 5, BB7: $t0_6]
+86: CPP: Copy propagated in phi: f_4 = phi [BB4: 1, BB7: $t0_5]
+22: CPP: Copy propagated in: $t0_7 = 5 - i_3
+77: CPP: Copy propagated in phi: p_7 = phi [BB8: $t0_7, BB10: $t0_11]
+85: CPP: Copy propagated in phi: f_7 = phi [BB8: 1, BB10: $t0_10]
+35: CPP: Copy propagated in: $t0_12 = f_4 + f_7
+37: CPP: Copy propagated in: $t0_13 = s_3 + $t0_12
+Iteration #5
+47: DCE: Eliminated: u_2 = #6
+72: DCE: Eliminated: u_1 = #0
+63: DCE: Eliminated: j_1 = #0
+83: DCE: Eliminated: j_2 = phi [BB2: #0, BB11: i_3]
+8: DCE: Eliminated: j_3 = i_3
+58: DCE: Eliminated: y_1 = #0
+42: DCE: Eliminated: y_2 = s_3
+38: DCE: Eliminated: s_4 = $t0_13
+60: DCE: Eliminated: n_1 = #0
+2: DCE: Eliminated: s_2 = 0
+61: DCE: Eliminated: s_1 = #0
+66: DCE: Eliminated: f_1 = #0
+1: DCE: Eliminated: n_2 = 5
+11: DCE: Eliminated: f_3 = 1
+69: DCE: Eliminated: c_1 = #0
+84: DCE: Eliminated: f_2 = phi [BB2: #0, BB11: f_7]
+17: DCE: Eliminated: f_5 = $t0_5
+24: DCE: Eliminated: f_6 = 1
+75: DCE: Eliminated: c_2 = phi [BB2: #0, BB11: $t0_12]
+30: DCE: Eliminated: f_8 = $t0_10
+36: DCE: Eliminated: c_3 = $t0_12
+3: DCE: Eliminated: i_2 = 0
+62: DCE: Eliminated: i_1 = #0
+40: DCE: Eliminated: i_4 = $t0_14
+67: DCE: Eliminated: a_1 = #0
+82: DCE: Eliminated: a_2 = phi [BB2: #0, BB11: f_4]
+21: DCE: Eliminated: a_3 = f_4
+34: DCE: Eliminated: b_3 = f_7
+90: DCE: Eliminated: b_2 = phi [BB2: #0, BB11: f_7]
+68: DCE: Eliminated: b_1 = #0
+45: DCE: Eliminated: v_2 = $t0_15
+71: DCE: Eliminated: v_1 = #0
+59: DCE: Eliminated: z_1 = #0
+70: DCE: Eliminated: r_1 = #0
+9: DCE: Eliminated: m_3 = 5
+64: DCE: Eliminated: m_1 = #0
+89: DCE: Eliminated: m_2 = phi [BB2: #0, BB11: 5]
+43: DCE: Eliminated: z_2 = 4
+53: DCE: Eliminated: x_2 = $t0_19
+57: DCE: Eliminated: x_1 = #0
+49: DCE: Eliminated: r_2 = $t0_17
+73: DCE: Eliminated: t_1 = #0
+51: DCE: Eliminated: t_2 = $t0_18
+46: DCE: Eliminated: $t0_16 = #6
+79: DCE: Eliminated: $t0_1 = phi [BB2: $t0_0, BB11: $t0_14]
+81: DCE: Eliminated: $t0_3 = phi [BB4: $t0_2, BB7: $t0_6]
+80: DCE: Eliminated: $t0_8 = phi [BB8: $t0_7, BB10: $t0_11]
+65: DCE: Eliminated: p_1 = #0
+76: DCE: Eliminated: p_2 = phi [BB2: #0, BB11: p_7]
+19: DCE: Eliminated: p_5 = $t0_6
+23: DCE: Eliminated: p_6 = $t0_7
+10: DCE: Eliminated: p_3 = 5
+32: DCE: Eliminated: p_8 = $t0_11
+Iteration #6
+48: CSE: Eliminated: $t0_17 = s_3 + s_3 -> $t0_17 = $t0_15
+Iteration #7
+50: CPP: Copy propagated in: $t0_18 = $t0_15 + $t0_15
+Iteration #8
+48: DCE: Eliminated: $t0_17 = $t0_15

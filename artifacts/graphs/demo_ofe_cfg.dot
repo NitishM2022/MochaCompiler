@@ -1,0 +1,8 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {1: return 42 | 2: end}"];
+}
+
+digraph G {
+bb3 [ shape = record , label = " <b > BB3 | {3: write 10 | 4: end}"];
+}
+

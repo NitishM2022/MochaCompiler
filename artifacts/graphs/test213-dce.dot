@@ -1,0 +1,12 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {2: i_1 = [GP-4] | 1: i_2 = 4 | 3: [GP-4] = i_2 | 4: end}"];
+}
+
+digraph G {
+bb3 [ shape = record , label = " <b > BB3 | {6: j_1 = [GP-8] | 5: j_2 = 1 | 7: [GP-8] = j_2 | 8: end}"];
+}
+
+digraph G {
+bb4 [ shape = record , label = " <b > BB4 | {29: i_1 = #0 | 30: j_1 = #0 | 9: i_2 = 1 | 10: j_2 = 0 | 11: i_3 = j_2 | 12: [GP-4] = i_3 | 13: [GP-8] = j_2 | 14: $t0_1 = call foo() | 15: i_4 = [GP-4] | 16: j_3 = [GP-8] | 17: [GP-4] = i_4 | 18: [GP-8] = j_3 | 19: $t0_2 = call baz() | 20: i_5 = [GP-4] | 21: j_4 = [GP-8] | 22: j_5 = i_5 | 23: [GP-4] = i_5 | 24: [GP-8] = j_5 | 25: $t0_3 = call foo() | 26: i_6 = [GP-4] | 27: j_6 = [GP-8] | 28: write i_6 | 31: end}"];
+}
+

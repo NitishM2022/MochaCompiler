@@ -1,0 +1,23 @@
+Function: foo
+
+Function: main
+Iteration #1
+7: CP: Constant propagated in: $t0_1 = 3 * 5
+8: CP: Constant propagated in: [GP-4] = 3
+9: CP: Constant propagated in: [GP-8] = 5
+Iteration #2
+7: CF: Folded constant: $t0_1 = 3 * 5 -> $t0_1 = #15
+Iteration #3
+10: CP: Constant propagated in: $t1_1 = call foo(#15)
+Iteration #4
+6: DCE: Eliminated: b_2 = 5
+11: DCE: Eliminated: a_3 = [GP-4]
+5: DCE: Eliminated: a_2 = 3
+12: DCE: Eliminated: b_3 = [GP-8]
+17: DCE: Eliminated: b_1 = #0
+14: DCE: Eliminated: d_1 = [GP-16]
+16: DCE: Eliminated: a_1 = #0
+18: DCE: Eliminated: c_1 = #0
+7: DCE: Eliminated: $t0_1 = #15
+15: DCE: Eliminated: c_3 = $t1_1
+13: DCE: Eliminated: c_2 = [GP-12]

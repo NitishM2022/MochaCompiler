@@ -1,0 +1,27 @@
+Function: main
+Iteration #1
+2: CP: Constant propagated in: $t0_1 = 1.0 * 2.0
+Iteration #2
+2: CF: Folded constant: $t0_1 = 1.0 * 2.0 -> $t0_1 = #2.0
+Iteration #3
+3: CP: Constant propagated in: $t1_2 = #2.0 - 0.5
+Iteration #4
+3: CF: Folded constant: $t1_2 = #2.0 - 0.5 -> $t1_2 = #1.5
+Iteration #5
+4: CP: Constant propagated in: x_2 = #1.5
+5: CP: Constant propagated in: writeF #1.5
+7: CP: Constant propagated in: $t1_3 = #1.5 / 0.25
+Iteration #6
+7: CF: Folded constant: $t1_3 = #1.5 / 0.25 -> $t1_3 = #6.0
+Iteration #7
+8: CP: Constant propagated in: y_2 = #6.0
+9: CP: Constant propagated in: writeF #6.0
+Iteration #8
+11: DCE: Eliminated: x_1 = #0.0
+4: DCE: Eliminated: x_2 = #1.5
+2: DCE: Eliminated: $t0_1 = #2.0
+1: DCE: Eliminated: $t1_1 = 1.0
+12: DCE: Eliminated: y_1 = #0.0
+7: DCE: Eliminated: $t1_3 = #6.0
+3: DCE: Eliminated: $t1_2 = #1.5
+8: DCE: Eliminated: y_2 = #6.0

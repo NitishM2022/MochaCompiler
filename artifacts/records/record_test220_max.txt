@@ -1,0 +1,116 @@
+Function: main
+Iteration #1
+18: CP: Constant propagated in: $t0_2 = a_3 == 1
+21: CP: Constant propagated in: $t0_3 = 2 == 2
+82: CP: Constant propagated in phi: j_3 = phi [BB7: 9, BB5: j_4]
+88: CP: Constant propagated in phi: g_6 = phi [BB7: g_5, BB5: 7]
+42: CP: Constant propagated in: $t0_9 = 9 == 9
+24: CP: Constant propagated in: $t0_4 = 6 == 6
+87: CP: Constant propagated in phi: g_5 = phi [BB8: 7, BB10: g_4]
+34: CP: Constant propagated in: write 9
+27: CP: Constant propagated in: $t0_5 = 7 + 7
+86: CP: Constant propagated in phi: g_4 = phi [BB9: g_3, BB11: 7]
+31: CP: Constant propagated in: write 8
+45: CP: Constant propagated in: $t0_10 = 1 != 12
+85: CP: Constant propagated in phi: h_6 = phi [BB14: 8, BB16: h_5]
+95: CP: Constant propagated in phi: o_3 = phi [BB14: o_4, BB16: 15]
+48: CP: Constant propagated in: $t0_11 = 14 != 15
+84: CP: Constant propagated in phi: h_5 = phi [BB19: h_4, BB17: 8]
+58: CP: Constant propagated in: write 9
+51: CP: Constant propagated in: $t0_12 = 8 + 8
+83: CP: Constant propagated in phi: h_4 = phi [BB20: 8, BB18: h_3]
+Iteration #2
+21: CF: Folded constant: $t0_3 = 2 == 2 -> $t0_3 = #1
+42: CF: Folded constant: $t0_9 = 9 == 9 -> $t0_9 = #1
+24: CF: Folded constant: $t0_4 = 6 == 6 -> $t0_4 = #1
+27: CF: Folded constant: $t0_5 = 7 + 7 -> $t0_5 = #14
+45: CF: Folded constant: $t0_10 = 1 != 12 -> $t0_10 = #1
+48: CF: Folded constant: $t0_11 = 14 != 15 -> $t0_11 = #1
+51: CF: Folded constant: $t0_12 = 8 + 8 -> $t0_12 = #16
+Iteration #3
+22: CP: Constant propagated in: if (#1 == 0) goto BB8
+43: CP: Constant propagated in: if (#1 == 0) goto BB14
+25: CP: Constant propagated in: if (#1 == 0) goto BB11
+89: CP: Constant propagated in phi: $t0_7 = phi [BB8: #1, BB10: $t0_6]
+28: CP: Constant propagated in: g_3 = #14
+29: CP: Constant propagated in: write #14
+86: CP: Constant propagated in phi: g_4 = phi [BB9: #14, BB11: 7]
+92: CP: Constant propagated in phi: $t0_6 = phi [BB9: #14, BB11: #1]
+46: CP: Constant propagated in: if (#1 == 0) goto BB17
+49: CP: Constant propagated in: if (#1 == 0) goto BB20
+93: CP: Constant propagated in phi: $t0_14 = phi [BB19: $t0_13, BB17: #1]
+52: CP: Constant propagated in: h_3 = #16
+53: CP: Constant propagated in: write #16
+83: CP: Constant propagated in phi: h_4 = phi [BB20: 8, BB18: #16]
+94: CP: Constant propagated in phi: $t0_13 = phi [BB20: #1, BB18: #16]
+Iteration #4
+22: CF: Branch never taken: if (#1 == 0) goto BB8
+43: CF: Branch never taken: if (#1 == 0) goto BB14
+25: CF: Branch never taken: if (#1 == 0) goto BB11
+46: CF: Branch never taken: if (#1 == 0) goto BB17
+49: CF: Branch never taken: if (#1 == 0) goto BB20
+CF: Eliminated unreachable block: BB8
+CF: Eliminated unreachable block: BB11
+CF: Eliminated unreachable block: BB14
+CF: Eliminated unreachable block: BB17
+CF: Eliminated unreachable block: BB20
+Iteration #5
+18: CPP: Copy propagated in: $t0_2 = $t0_1 == 1
+82: CPP: Copy propagated in phi: j_3 = phi [BB7: 9, BB5: $t0_17]
+39: CPP: Copy propagated in: write $t0_17
+Iteration #6
+8: DCE: Eliminated: h_2 = 8
+75: DCE: Eliminated: j_1 = #0
+52: DCE: Eliminated: h_3 = #16
+73: DCE: Eliminated: h_1 = #0
+2: DCE: Eliminated: b_2 = 1
+38: DCE: Eliminated: j_4 = $t0_17
+10: DCE: Eliminated: j_2 = 9
+67: DCE: Eliminated: b_1 = #0
+82: DCE: Eliminated: j_3 = phi [BB7: 9, BB5: $t0_17]
+80: DCE: Eliminated: o_1 = #0
+15: DCE: Eliminated: o_2 = 15
+95: DCE: Eliminated: o_3 = phi [BB14: o_4, BB16: 15]
+77: DCE: Eliminated: l_1 = #0
+12: DCE: Eliminated: l_2 = 1
+74: DCE: Eliminated: i_1 = #0
+24: DCE: Eliminated: $t0_4 = #1
+9: DCE: Eliminated: i_2 = 9
+27: DCE: Eliminated: $t0_5 = #14
+21: DCE: Eliminated: $t0_3 = #1
+91: DCE: Eliminated: $t0_8 = phi [BB7: $t0_7, BB5: $t0_17]
+42: DCE: Eliminated: $t0_9 = #1
+70: DCE: Eliminated: e_1 = #0
+5: DCE: Eliminated: e_2 = 6
+51: DCE: Eliminated: $t0_12 = #16
+45: DCE: Eliminated: $t0_10 = #1
+48: DCE: Eliminated: $t0_11 = #1
+85: DCE: Eliminated: h_6 = phi [BB14: 8, BB16: h_5]
+90: DCE: Eliminated: $t0_15 = phi [BB16: $t0_14, BB14: $t0_16]
+3: DCE: Eliminated: c_2 = 2
+68: DCE: Eliminated: c_1 = #0
+4: DCE: Eliminated: d_2 = 2
+69: DCE: Eliminated: d_1 = #0
+1: DCE: Eliminated: a_2 = 1
+66: DCE: Eliminated: a_1 = #0
+17: DCE: Eliminated: a_3 = $t0_1
+76: DCE: Eliminated: k_1 = #0
+11: DCE: Eliminated: k_2 = 9
+78: DCE: Eliminated: m_1 = #0
+13: DCE: Eliminated: m_2 = 12
+72: DCE: Eliminated: g_1 = #0
+6: DCE: Eliminated: f_2 = 6
+7: DCE: Eliminated: g_2 = 7
+71: DCE: Eliminated: f_1 = #0
+14: DCE: Eliminated: n_2 = 14
+79: DCE: Eliminated: n_1 = #0
+88: DCE: Eliminated: g_6 = phi [BB7: g_5, BB5: 7]
+28: DCE: Eliminated: g_3 = #14
+89: DCE: Eliminated: $t0_7 = phi [BB8: #1, BB10: $t0_6]
+84: DCE: Eliminated: h_5 = phi [BB19: h_4, BB17: 8]
+93: DCE: Eliminated: $t0_14 = phi [BB19: $t0_13, BB17: #1]
+87: DCE: Eliminated: g_5 = phi [BB8: 7, BB10: g_4]
+92: DCE: Eliminated: $t0_6 = phi [BB9: #14, BB11: #1]
+83: DCE: Eliminated: h_4 = phi [BB20: 8, BB18: #16]
+94: DCE: Eliminated: $t0_13 = phi [BB20: #1, BB18: #16]
+86: DCE: Eliminated: g_4 = phi [BB9: #14, BB11: 7]

@@ -1,0 +1,51 @@
+Function: foo
+Iteration #1
+7: CPP: Copy propagated in: $t0_3 = $t0_1 + $t0_2
+Iteration #2
+6: DCE: Eliminated: y_2 = $t0_2
+4: DCE: Eliminated: x_2 = $t0_1
+
+Function: foo
+Iteration #1
+16: CPP: Copy propagated in: $t1_3 = $t1_1 + $t1_2
+Iteration #2
+13: DCE: Eliminated: x_2 = $t1_1
+15: DCE: Eliminated: y_2 = $t1_2
+
+Function: main
+Iteration #1
+23: CP: Constant propagated in: [GP-12] = 2
+24: CP: Constant propagated in: $t2_2 = call foo(a_2, 2)
+40: CP: Constant propagated in: [GP-20] = 10.5
+41: CP: Constant propagated in: $t2_4 = call foo(d_3, 10.5)
+Iteration #2
+22: CPP: Copy propagated in: [GP-4] = $t2_1
+24: CPP: Copy propagated in: $t2_2 = call foo($t2_1, 2)
+32: CPP: Copy propagated in: write $t2_2
+37: CPP: Copy propagated in: [GP-8] = $t2_2
+39: CPP: Copy propagated in: [GP-16] = $t2_3
+41: CPP: Copy propagated in: $t2_4 = call foo($t2_3, 10.5)
+49: CPP: Copy propagated in: writeF $t2_4
+Iteration #3
+20: DCE: Eliminated: a_2 = $t2_1
+50: DCE: Eliminated: a_1 = #0
+52: DCE: Eliminated: c_1 = #0
+26: DCE: Eliminated: b_2 = [GP-8]
+51: DCE: Eliminated: b_1 = #0
+46: DCE: Eliminated: e_4 = [GP-20]
+48: DCE: Eliminated: f_4 = $t2_4
+30: DCE: Eliminated: f_2 = [GP-24]
+44: DCE: Eliminated: c_4 = [GP-12]
+47: DCE: Eliminated: f_3 = [GP-24]
+55: DCE: Eliminated: f_1 = #0.0
+21: DCE: Eliminated: c_2 = 2
+54: DCE: Eliminated: e_1 = #0.0
+42: DCE: Eliminated: a_4 = [GP-4]
+35: DCE: Eliminated: e_3 = 10.5
+29: DCE: Eliminated: e_2 = [GP-20]
+43: DCE: Eliminated: b_4 = [GP-8]
+31: DCE: Eliminated: b_3 = $t2_2
+34: DCE: Eliminated: d_3 = $t2_3
+45: DCE: Eliminated: d_4 = [GP-16]
+53: DCE: Eliminated: d_1 = #0.0
+28: DCE: Eliminated: d_2 = [GP-16]

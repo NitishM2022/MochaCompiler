@@ -1,0 +1,31 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {23: i_1 = #0 | 24: n_1 = #0 | 25: flag_1 = #0 | 1: $t0_1 = read | 2: n_2 = $t0_1 | 3: i_2 = 1 | 4: flag_2 = false | 5: $t0_2 = n_2 > 1 | 6: if ($t0_2 == 0) goto BB4 | 7: goto BB3}"];
+bb3 [ shape = record , label = " <b > BB3 | {\< empty \>}"];
+bb4 [ shape = record , label = " <b > BB4 | {28: $t0_7 = phi [BB2: $t0_2, BB6: $t0_6] | 30: $t1_4 = phi [BB2: $t1_0, BB6: $t1_3] | 32: i_5 = phi [BB2: i_2, BB6: i_4] | 35: flag_6 = phi [BB2: flag_2, BB6: flag_5] | 21: $t0_8 = !flag_6 | 22: writeB $t0_8 | 26: end}"];
+bb5 [ shape = record , label = " <b > BB5 | {27: $t0_3 = phi [BB3: $t0_2, BB8: $t0_6] | 29: $t1_1 = phi [BB3: $t1_0, BB8: $t1_3] | 31: i_3 = phi [BB3: i_2, BB8: i_4] | 34: flag_3 = phi [BB3: flag_2, BB8: flag_5] | 8: $t0_4 = i_3 + 1 | 9: i_4 = $t0_4 | 10: $t0_5 = n_2 % i_4 | 11: $t1_2 = $t0_5 == 0 | 12: if ($t1_2 == 0) goto BB8 | 13: goto BB7}"];
+bb6 [ shape = record , label = " <b > BB6 | {20: goto BB4}"];
+bb7 [ shape = record , label = " <b > BB7 | {14: flag_4 = true | 15: goto BB8}"];
+bb8 [ shape = record , label = " <b > BB8 | {33: flag_5 = phi [BB5: flag_3, BB7: flag_4] | 16: $t1_3 = n_2 - 1 | 17: $t0_6 = i_4 >= $t1_3 | 18: if ($t0_6 != 0) goto BB6 | 19: goto BB5}"];
+bb2 : s -> bb3 : n [ label = " branch " ];
+bb2 : s -> bb4 : n [ label = " fall - through " ];
+bb3 : s -> bb5 : n [ label = " fall - through " ];
+bb5 : s -> bb7 : n [ label = " branch " ];
+bb5 : s -> bb8 : n [ label = " fall - through " ];
+bb6 : s -> bb4 : n [ label = " branch " ];
+bb7 : s -> bb8 : n [ label = " branch " ];
+bb8 : s -> bb5 : n [ label = " branch " ];
+bb8 : s -> bb6 : n [ label = " fall - through " ];
+bb2 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb2 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb3 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb5 : b -> bb7 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb5 : b -> bb8 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb8 : b -> bb6 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+

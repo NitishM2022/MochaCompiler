@@ -1,0 +1,5 @@
+Function: main
+2: DCE: Eliminated: y_2 = 10
+6: DCE: Eliminated: y_1 = #0
+5: DCE: Eliminated: x_1 = #0
+1: DCE: Eliminated: x_2 = 5

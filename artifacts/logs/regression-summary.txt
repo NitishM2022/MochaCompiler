@@ -1,0 +1,60 @@
+PASS test000
+PASS test001
+PASS test002
+PASS test003
+PASS test004
+PASS test005
+PASS test006
+PASS test007
+PASS test008
+PASS test009
+PASS test010
+PASS test011
+PASS test012
+PASS test013
+PASS test014
+PASS test110
+PASS test111
+PASS test112
+PASS test113
+PASS test114
+PASS test115
+PASS test116
+PASS test117
+PASS test118
+PASS test119
+PASS test120
+PASS test202
+PASS test203
+PASS test204-ssa
+PASS test205-arr
+PASS test206-ofe
+PASS test207
+PASS test208-arr
+PASS test209-cf
+PASS test210
+PASS test211-ofe
+PASS test212-ssa-ofe
+PASS test213-dce
+PASS test214-cf
+PASS test215
+PASS test216
+PASS test217
+PASS test218-arr-param
+PASS test219
+FAIL test220
+Exception in thread "main" java.lang.NullPointerException: Cannot invoke "String.length()" because "str" is null
+	at java.base/java.util.StringTokenizer.<init>(StringTokenizer.java:199)
+	at java.base/java.util.StringTokenizer.<init>(StringTokenizer.java:236)
+	at mocha.DLX.nextInput(DLX.java:369)
+	at mocha.DLX.execute(DLX.java:317)
+	at mocha.CompilerTester.main(CompilerTester.java:181)
+PASS test221-arr
+PASS test222-func
+PASS test223-regAlloc
+PASS test224-arr-param
+PASS test225
+PASS test226
+PASS test227-func
+PASS test228
+Passed: 52  Failed: 1

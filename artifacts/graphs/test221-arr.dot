@@ -1,0 +1,30 @@
+digraph G {
+bb2 [ shape = record , label = " <b > BB2 | {1: x_1 = [FP+12] | 2: y_1 = [FP+16] | 3: i_1 = 0 | 4: goto BB3}"];
+bb3 [ shape = record , label = " <b > BB3 | {33: j_1 = phi [BB2: j_0, BB7: j_4] | 35: $t0_1 = phi [BB2: $t0_0, BB7: $t0_6] | 37: $t1_1 = phi [BB2: $t1_0, BB7: $t1_5] | 39: $t2_1 = phi [BB2: $t2_0, BB7: $t2_5] | 41: $t3_1 = phi [BB2: $t3_0, BB7: $t3_8] | 43: i_2 = phi [BB2: i_1, BB7: i_3] | 5: $t0_2 = i_2 < x_1 | 6: if ($t0_2 == 0) goto BB5 | 7: goto BB4}"];
+bb4 [ shape = record , label = " <b > BB4 | {8: j_2 = 0}"];
+bb5 [ shape = record , label = " <b > BB5 | {31: return | 32: end}"];
+bb6 [ shape = record , label = " <b > BB6 | {34: j_3 = phi [BB4: j_2, BB6: j_4] | 36: $t0_3 = phi [BB4: $t0_2, BB6: $t0_6] | 38: $t1_2 = phi [BB4: $t1_1, BB6: $t1_5] | 40: $t2_2 = phi [BB4: $t2_1, BB6: $t2_5] | 42: $t3_2 = phi [BB4: $t3_1, BB6: $t3_7] | 9: $t0_4 = i_2 + j_3 | 10: $t1_3 = &(GP-412 + #4) | 11: $t2_3 = i_2 * #40 | 12: $t3_3 = &($t1_3 + $t2_3) | 13: $t1_4 = j_3 * #4 | 14: $t2_4 = &($t3_3 + $t1_4) | 15: *$t2_4 = $t0_4 | 16: $t0_5 = &(GP-412 + #4) | 17: $t3_4 = i_2 * #40 | 18: $t1_5 = &($t0_5 + $t3_4) | 19: $t0_6 = j_3 * #4 | 20: $t3_5 = &($t1_5 + $t0_6) | 21: $t2_5 = *$t3_5 | 22: write $t2_5 | 23: $t3_6 = j_3 + #1 | 24: j_4 = $t3_6 | 25: $t3_7 = j_4 >= y_1 | 26: if ($t3_7 != 0) goto BB7 | 27: goto BB6}"];
+bb7 [ shape = record , label = " <b > BB7 | {28: $t3_8 = i_2 + #1 | 29: i_3 = $t3_8 | 30: goto BB3}"];
+bb2 : s -> bb3 : n [ label = " branch " ];
+bb3 : s -> bb5 : n [ label = " fall - through " ];
+bb3 : s -> bb4 : n [ label = " branch " ];
+bb4 : s -> bb6 : n [ label = " fall - through " ];
+bb6 : s -> bb6 : n [ label = " branch " ];
+bb6 : s -> bb7 : n [ label = " fall - through " ];
+bb7 : s -> bb3 : n [ label = " branch " ];
+bb2 : b -> bb3 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb3 : b -> bb4 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb3 : b -> bb5 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb4 : b -> bb6 : b [ color = blue , style = dotted ,
+label = " dom " ];
+bb6 : b -> bb7 : b [ color = blue , style = dotted ,
+label = " dom " ];
+}
+
+digraph G {
+bb8 [ shape = record , label = " <b > BB8 | {33: $t3_1 = call init_and_print(10, 10) | 34: n1_1 = [GP-4] | 35: n2_1 = [GP-8] | 36: end}"];
+}
+

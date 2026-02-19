@@ -1,0 +1,63 @@
+Function: main
+Iteration #1
+2: CP: Constant propagated in: $t0_1 = 1 + 1
+10: CP: Constant propagated in: $t0_5 = 1 > b_2
+Iteration #2
+2: CF: Folded constant: $t0_1 = 1 + 1 -> $t0_1 = #2
+Iteration #3
+3: CP: Constant propagated in: b_2 = #2
+4: CP: Constant propagated in: $t0_2 = #2 + 1
+10: CP: Constant propagated in: $t0_5 = 1 > #2
+21: CP: Constant propagated in: $t0_8 = #2 > e_2
+24: CP: Constant propagated in: write #2
+Iteration #4
+4: CF: Folded constant: $t0_2 = #2 + 1 -> $t0_2 = #3
+10: CF: Folded constant: $t0_5 = 1 > #2 -> $t0_5 = #0
+Iteration #5
+5: CP: Constant propagated in: c_2 = #3
+6: CP: Constant propagated in: $t0_3 = #3 + 1
+11: CP: Constant propagated in: if (#0 == 0) goto BB5
+13: CP: Constant propagated in: $t0_6 = #3 > d_2
+16: CP: Constant propagated in: write #3
+Iteration #6
+6: CF: Folded constant: $t0_3 = #3 + 1 -> $t0_3 = #4
+11: CF: Branch always taken: if (#0 == 0) goto BB5 -> goto BB5
+CF: Eliminated unreachable block: BB3
+CF: Eliminated unreachable block: BB6
+CF: Eliminated unreachable block: BB7
+CF: Eliminated unreachable block: BB8
+Iteration #7
+7: CP: Constant propagated in: d_2 = #4
+8: CP: Constant propagated in: $t0_4 = #4 * 2
+Iteration #8
+8: CF: Folded constant: $t0_4 = #4 * 2 -> $t0_4 = #8
+Iteration #9
+9: CP: Constant propagated in: e_2 = #8
+21: CP: Constant propagated in: $t0_8 = #2 > #8
+26: CP: Constant propagated in: write #8
+Iteration #10
+21: CF: Folded constant: $t0_8 = #2 > #8 -> $t0_8 = #0
+Iteration #11
+35: CP: Constant propagated in phi: $t0_7 = phi [BB10: #0, BB7: $t0_6]
+22: CP: Constant propagated in: if (#0 == 0) goto BB11
+Iteration #12
+22: CF: Branch always taken: if (#0 == 0) goto BB11 -> goto BB11
+CF: Eliminated unreachable block: BB9
+Iteration #13
+4: DCE: Eliminated: $t0_2 = #3
+6: DCE: Eliminated: $t0_3 = #4
+8: DCE: Eliminated: $t0_4 = #8
+10: DCE: Eliminated: $t0_5 = #0
+30: DCE: Eliminated: b_1 = #0
+3: DCE: Eliminated: b_2 = #2
+33: DCE: Eliminated: e_1 = #0
+2: DCE: Eliminated: $t0_1 = #2
+9: DCE: Eliminated: e_2 = #8
+29: DCE: Eliminated: a_1 = #0
+1: DCE: Eliminated: a_2 = 1
+35: DCE: Eliminated: $t0_7 = phi [BB10: #0, BB7: $t0_6]
+21: DCE: Eliminated: $t0_8 = #0
+31: DCE: Eliminated: c_1 = #0
+5: DCE: Eliminated: c_2 = #3
+7: DCE: Eliminated: d_2 = #4
+32: DCE: Eliminated: d_1 = #0
