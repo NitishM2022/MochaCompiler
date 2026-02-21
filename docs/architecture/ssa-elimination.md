@@ -1,5 +1,9 @@
 # SSA Elimination Internals
 
+## The Essence of SSA Elimination
+
+The essence of SSA Elimination is **translating hypothetical merges back into physical data movement**. While Phi nodes are mathematically beautiful for optimization, hardware doesn't understand them. This phase bridges the gap by injecting explicit `Mov` instructions onto the CFG edges. The true complexity is resolving "parallel copy" problems—when multiple Phi nodes in a block depend on each other's values in cycles (e.g., swapping two variables). The allocator must untangle these simultaneous logical copies into a safe, sequential execution order without clobbering data.
+
 This pass removes phi nodes by translating merge semantics into explicit edge-local copy code.
 
 Primary file: `compiler/src/ir/regalloc/SSAElimination.java`

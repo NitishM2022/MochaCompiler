@@ -1,5 +1,9 @@
 # Register Allocation
 
+## The Essence of Register Allocation
+
+The essence of Register Allocation is **mapping infinite virtual desires to finite physical reality**. The IR assumes it has unlimited variables, but the CPU only has 24 generic registers. This phase uses graph coloring to pack as many non-overlapping variables as possible into hardware. The complexity bubbles up when coloring fails: the allocator must choose a "spill candidate," gracefully evicting it to memory, rewriting all instructions that touch it, and restarting the entire coloring process until the graph fits the machine.
+
 This stage maps virtual variables to physical data registers, injecting spill code when coloring fails.
 
 File focus: `compiler/src/ir/regalloc/RegisterAllocator.java`

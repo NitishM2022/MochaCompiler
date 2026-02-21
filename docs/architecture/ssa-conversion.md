@@ -1,6 +1,11 @@
 # SSA Conversion
 
+## The Essence of SSA Conversion
+
+The essence of SSA Conversion is **exposing dataflow explicitly in the topology of the code**. By ensuring every variable is defined exactly once, it removes the concept of "reassigning" memory, turning imperative sequences into functional equations. The complexity lies in resolving control-flow merges (where different paths assign to the same variable) using Phi nodes, which requires deep graph theory (Dominator Trees and Dominance Frontiers) to place them optimally without flooding the IR with redundant copies.
+
 This document describes the exact SSA conversion path implemented in:
+
 - `compiler/src/ir/ssa/DominatorAnalysis.java`
 - `compiler/src/ir/ssa/SSAConverter.java`
 
@@ -9,12 +14,14 @@ The implementation is classical in structure, but some details are specific and 
 ## Entry Point And State
 
 `SSAConverter.convertToSSA()` does:
+
 1. build dominator analysis (`analyze()`)
 2. collect variable definition sites (`findVariableDefinitionsAndCollectSymbols()`)
 3. insert phi nodes (`insertPhiNodes()`)
 4. rename uses/defs (`renameVariables()`)
 
 Core state in `SSAConverter`:
+
 - `variableDefs: Map<Symbol, Set<BasicBlock>>`
 - `variableStacks: Map<Symbol, Stack<Variable>>`
 - `variableVersionCounters: Map<Symbol, Integer>`
@@ -23,10 +30,12 @@ Core state in `SSAConverter`:
 ## 1) Dominator Set Fixpoint
 
 `DominatorAnalysis.computeDominators()` initializes:
+
 - `Dom(entry) = {entry}`
 - `Dom(b != entry) = allBlocks`
 
 Then iterates until stable:
+
 - `Dom(b) = {b} U (intersection over predecessors p of Dom(p))`
 
 ```mermaid
@@ -51,6 +60,7 @@ flowchart TD
 `computeImmediateDominators()` searches strict dominators of each block and selects the closest one.
 
 Selection logic in this implementation:
+
 - candidate `d` is chosen if `d` is dominated by all other strict dominators of `b`.
 - entry has no IDOM.
 
@@ -59,6 +69,7 @@ This yields the dominator tree edges used later by renaming and CSE.
 ## 3) Dominance Frontier (DF) Construction
 
 `computeDominanceFrontiers()` does two things:
+
 - standard runner-walk from each predecessor up toward IDOM to accumulate join blocks in DF
 - explicit self-loop fix:
   - if block has itself as predecessor, add block to its own DF
@@ -84,6 +95,7 @@ flowchart LR
 ## 4) Phi Placement (Worklist Over DF)
 
 `insertPhiNodes(allVars)` is per-symbol worklist insertion:
+
 - seed worklist with all def blocks of symbol `s`
 - for each block `x` in worklist, visit `DF(x)`
 - if `(frontierBlock, s)` not yet phi-placed:
@@ -100,12 +112,14 @@ Renaming is where the dominator tree gets applied operationally.
 ### Stack Initialization
 
 For every symbol:
+
 - push initial version `v_0` to stack
 - set counter to `0`
 
 ### Per-Block Rename Order
 
 `renameBlock(block)` executes in this strict order:
+
 1. rename phi destinations in block (new versions, push)
 2. rename uses in regular instructions (replace each variable operand with stack top)
 3. rename instruction destinations (new versions, push)
@@ -140,6 +154,7 @@ The implementation records defs pushed in block-local order and pops reverse ord
 Destination rewriting is explicit by TAC subclass (`Add`, `Sub`, `Load*`, `Call`, `Cmp`, `Read*`, etc.).
 
 Implication:
+
 - introducing new TAC classes that define destinations requires updating this rename dispatch, or SSA renaming will become partial/incorrect.
 
 ## Determinism And Stability
@@ -147,6 +162,7 @@ Implication:
 `DominatorAnalysis.getDomTreeChildren()` sorts children by block number before DFS renaming.
 
 Why this matters:
+
 - deterministic SSA version assignment across runs
 - stable optimization/debug artifacts
 - easier diffing of generated IR and records
@@ -154,6 +170,7 @@ Why this matters:
 ## Output Guarantees
 
 After `convertToSSA()`:
+
 - each variable use references exactly one reaching SSA definition
 - merge points are represented by phi nodes with predecessor-keyed arguments
 - CFG topology is unchanged; only value naming and phi metadata are rewritten

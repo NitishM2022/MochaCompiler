@@ -1,5 +1,9 @@
 # IR Generation Internals
 
+## The Essence of IR Generation
+
+The essence of IR Generation is **linearization and layout realization**. It transforms nested, tree-like expressions into a flat sequence of atomic operations (Three-Address Code) and explicit control flow (CFG). This phase forces the compiler to answer hard physical questions: "exactly where in memory does this variable live?" and "exactly how many bytes does this array indexing jump?". The complexity arises from maintaining synchronized state—tracking the evaluation stack, calculating precise stack frame offsets, and generating strict branch instructions—while dismantling high-level constructs into low-level steps.
+
 This stage lowers typed AST into CFG + TAC while fixing concrete memory layout decisions (global offsets, frame offsets, parameter slots, temp slots).
 
 Primary file: `compiler/src/ir/IRGenerator.java`

@@ -1,5 +1,9 @@
 # Code Generation Internals
 
+## The Essence of Code Generation
+
+The essence of Code Generation is **absolute physical commitment**. It takes the heavily transformed, register-allocated IR and emits the exact binary or assembly words that the CPU executes. The chief complexity is the difference between sequential emission and spatial reality: branches and function calls need to jump to addresses that haven't been generated yet. Thus, codegen is fundamentally a two-pass process: blind emission with "placeholders," followed by a meticulous "fixup" pass that wires the spatial addresses together once the program's final layout is known.
+
 This stage lowers register-allocated TAC into DLX machine instructions and resolves unresolved control-transfer targets.
 
 Primary file: `compiler/src/ir/codegen/CodeGenerator.java`

@@ -1,5 +1,9 @@
 # Parse, Type Analysis, and Front-End Semantics
 
+## The Essence of Parsing and Typechecking
+
+The essence of this phase is **structural validation and semantic labeling**. It bridges the gap between raw text and meaningful computational intent. By rejecting invalid programs early and resolving all references (like variable shadowing and function overloading), it creates a clean, unambiguous foundation. The complexity lies in decoupling the _shape_ of the code (the AST) from the _rules_ of the language (the Type System), ensuring that later stages never have to guess what a variable represents or if an operation is legal.
+
 This document explains how source text becomes a validated AST, how types are enforced, and how `interpret` mode executes that same AST.
 
 Primary files:
