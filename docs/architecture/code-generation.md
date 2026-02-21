@@ -42,12 +42,32 @@ If there is a return value, it is stored to `FP+8`. Then epilogue runs:
 4. `RET RA`
 
 ```mermaid
-flowchart TB
-    A["Caller pushes args and return slot"] --> B["Callee entry pushes RA and FP"]
-    B --> C["FP anchored at new frame base"]
-    C --> D["Locals and spills live at negative FP offsets"]
-    D --> E["Return value written at FP+8"]
-    E --> F["SP restored to FP, then FP and RA popped"]
+sequenceDiagram
+    participant Caller
+    participant Callee (Prologue)
+    participant Callee (Body)
+    participant Callee (Epilogue)
+
+    Note over Caller: Call Preparation
+    Caller->>Stack: ADDI SP, SP, -4 (Return Slot)
+
+    Note over Callee (Prologue): Entry Emission
+    Callee (Prologue)->>Stack: PSH RA, SP, -4
+    Callee (Prologue)->>Stack: PSH FP, SP, -4
+    Callee (Prologue)->>FP: ADD FP, 0, SP (Frame Anchor)
+    Callee (Prologue)->>Stack: ADDI SP, SP, -frameSize (Reserve Locals)
+
+    Callee (Body)->>Callee (Body): Execute Instructions...
+
+    alt If Returning Value
+        Callee (Body)->>Stack: Store Value to FP+8
+    end
+
+    Note over Callee (Epilogue): Exit Emission
+    Callee (Epilogue)->>SP: ADD SP, FP, 0 (Release Locals)
+    Callee (Epilogue)->>FP: POP FP, SP, 4 (Restore Caller FP)
+    Callee (Epilogue)->>RA: POP RA, SP, 4 (Restore Caller RA)
+    Callee (Epilogue)->>Caller: RET RA
 ```
 
 ## Call Lowering: Exact Stack Behavior
@@ -66,14 +86,29 @@ flowchart TB
 Special handling prevents overwriting call result when destination register was also in saved set.
 
 ```mermaid
-flowchart TD
-    A["Before call"] --> B["Push saved caller registers"]
-    B --> C["Push args from last to first"]
-    C --> D["Push return slot placeholder"]
-    D --> E["Emit JSR placeholder and fixup record"]
-    E --> F["After return read result from SP"]
-    F --> G["Pop return slot and args"]
-    G --> H["Restore saved registers with destination-register guard"]
+stateDiagram-v2
+    state "Call Preparation" as CallPrep {
+        [*] --> SaveRegs : iterate live caller-save regs
+        SaveRegs --> PushArgs : iterate arguments reverse
+        PushArgs --> PushRet : ADDI SP, SP, -4
+    }
+
+    state "Control Transfer (Two-Pass)" as Transfer {
+        PushRet --> JsrPlaceholder : Emit JSR 0
+        JsrPlaceholder --> FixupQueue : Record {pc, targetFn}
+    }
+
+    state "Return Handling" as ReturnPhase {
+        FixupQueue --> LoadResult : If dest valid, LDW dest, SP, 0
+        LoadResult --> PopArgs : ADDI SP, SP, 4 + 4*argCount
+        PopArgs --> RestoreRegs : pop saved caller-save regs
+        RestoreRegs --> [*]
+    }
+
+    note right of JsrPlaceholder
+        Instruction literal "0" will be
+        patched during applyFixups()
+    end note
 ```
 
 ## CFG Emission Order And Fallthrough Control
@@ -105,11 +140,21 @@ Branches are emitted before absolute target instruction addresses are known.
 - Reassemble instruction word with final offset.
 
 ```mermaid
-flowchart TD
-    A["Emit branch with zero offset"] --> B["Record branch fixup using target block ID"]
-    B --> C["After full emission resolve target block PC"]
-    C --> D["Compute offset targetPC minus branchPC"]
-    D --> E["Patch encoded branch instruction"]
+sequenceDiagram
+    participant CodeGen as CodeGenerator
+    participant Fixup as BranchFixup Record
+    participant Program as int[] (DLX Memory)
+
+    Note over CodeGen,Program: Phase 1: Emission
+    CodeGen->>Program: append( BEQ R_cond, 0 )
+    CodeGen->>Fixup: create(branchPC, targetBlockID, conditionReg, opcode)
+
+    Note over CodeGen,Program: Phase 2: applyFixups()
+    CodeGen->>CodeGen: blockPCMap.get(targetBlockID) -> targetPC
+    CodeGen->>Fixup: offset = targetPC - branchPC
+    CodeGen->>Program: read encoded integer at branchPC
+    CodeGen->>CodeGen: pack(opcode, condReg, offset) -> reassembledInt
+    CodeGen->>Program: write reassembledInt at branchPC
 ```
 
 This is the critical mechanism that decouples CFG traversal order from final branch correctness.

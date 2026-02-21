@@ -20,13 +20,24 @@ Primary file: `compiler/src/ir/IRGenerator.java`
 - `usedGlobalsInFunction`: gates global load/store insertion around calls and function entry.
 
 ```mermaid
-flowchart TD
-    A["Typed AST"] --> B["Visitor dispatch"]
-    B --> C["valueStack push/pop semantics"]
-    C --> D["Emit TAC into current basic block"]
-    D --> E["Update CFG edges and block successors"]
-    D --> F["Mutate layout state fpOffset/gpOffset/paramOffset"]
-    D --> G["Mutate initialization and global-usage sets"]
+sequenceDiagram
+    participant IR as IRGenerator (Stateful)
+    participant AST as BinaryExpr(Add)
+    participant Stack as valueStack
+    participant CFG as currentBasicBlock
+
+    IR->>AST: visit(Add)
+    IR->>AST: getLeft()
+    IR->>IR: visit(Left) -> emits TAC, pushes Value
+    IR->>AST: getRight()
+    IR->>IR: visit(Right) -> emits TAC, pushes Value
+
+    IR->>Stack: pop() -> rightValue
+    IR->>Stack: pop() -> leftValue
+
+    IR->>IR: allocateTemp() -> resultTemp (Assigns fpOffset)
+    IR->>CFG: append( Add(resultTemp, leftValue, rightValue) )
+    IR->>Stack: push(resultTemp)
 ```
 
 ## Storage Layout Decisions
@@ -54,12 +65,26 @@ For each function:
 
 ```mermaid
 flowchart TB
-    A["Higher addresses"] --> B["FP+12, FP+16, ... parameters"]
-    B --> C["FP+8 return value slot"]
-    C --> D["FP+4 saved FP"]
-    D --> E["FP+0 saved RA"]
-    E --> F["FP-4, FP-8, ... locals and temps"]
-    F --> G["Lower addresses"]
+    subgraph Frame [Function Activation Record]
+        direction TB
+        P["FP + 12 ... (Parameters)"]
+        R["FP + 8  (Return Value Slot)"]
+        SFP["FP + 4  (Saved Caller FP)"]
+        SRA["FP + 0  (Saved Caller RA)"]
+        L["FP - 4 ... (Locals & Reserved Temps)"]
+    end
+
+    P ~~~ R
+    R ~~~ SFP
+    SFP ~~~ SRA
+    SRA ~~~ L
+
+    style Frame fill:transparent,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style P fill:#d4edda,stroke:#28a745
+    style R fill:#fff3cd,stroke:#ffc107
+    style SFP fill:#cce5ff,stroke:#007bff
+    style SRA fill:#cce5ff,stroke:#007bff
+    style L fill:#f8d7da,stroke:#dc3545
 ```
 
 ## Expression Lowering Rules
@@ -103,14 +128,32 @@ For `ArrayIndex(base, index)`:
 5. If final access, emit `Load` from `elementAddr` and push value.
 
 ```mermaid
-flowchart TD
-    A["Base address"] --> B["Index value"]
-    B --> C["Scale by element or subarray size"]
-    A --> D["Address add"]
-    C --> D
-    D --> E{"Intermediate dimension?"}
-    E -- "yes" --> F["Propagate address to next indexing step"]
-    E -- "no" --> G["Emit Load for scalar value"]
+stateDiagram-v2
+    state "Compute Index Offset" as Offset {
+        [*] --> checkType
+        checkType --> isArray : base is array-of-arrays
+        checkType --> isScalar : base is scalar array
+        isArray --> scaleSub : elementSize = allocSize
+        isScalar --> scaleFour : elementSize = 4
+
+        scaleSub --> EmitMul
+        scaleFour --> EmitMul
+        EmitMul : TAC -> Mul scaledIdx, index, elementSize
+    }
+
+    state "Pointer Math" as PtrMath {
+        EmitMul --> EmitAdda
+        EmitAdda : TAC -> Adda elementAddr, baseAddr, scaledIdx
+    }
+
+    state "Dimension Resolution" as DimRes {
+        EmitAdda --> isIntermediate : Is there another [ ]?
+        EmitAdda --> isFinal : Is this the last index?
+
+        isIntermediate --> PushAddress : push(elementAddr) for next dimension
+        isFinal --> EmitLoad : TAC -> Load result, elementAddr
+        EmitLoad --> PushValue : push(result)
+    }
 ```
 
 Assignment to arrays mirrors the exact same addressing path, then performs `Store` or read-modify-write for compound operators.

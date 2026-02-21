@@ -27,13 +27,38 @@ Expression construction is precedence-layered and creates AST nodes directly at 
 - `relExpr`: `Relation`
 
 ```mermaid
-flowchart TD
-    A["Token stream"] --> B["Primary forms: literal, designator, call, parenthesized expression"]
-    B --> C["Build power nodes"]
-    C --> D["Build multiplicative and logical-and nodes"]
-    D --> E["Build additive and logical-or nodes"]
-    E --> F["Build relation nodes"]
-    F --> G["Typed AST candidate"]
+stateDiagram-v2
+    [*] --> statementSequence
+
+    state "Recursive Descent Core" as RDC {
+        statementSequence --> assignment : match(Ident, '=')
+        statementSequence --> ifStatement : match('if')
+        statementSequence --> whileStatement : match('while')
+        statementSequence --> functionCall : match('call')
+
+        assignment --> expression
+        ifStatement --> expression : parse condition
+        whileStatement --> expression : parse condition
+
+        state "Expression Parsing (Precedence Chain)" as ExprChain {
+            expression --> relExpr
+            relExpr --> addExpr : delegates parsing
+            addExpr --> multExpr : delegates parsing
+            multExpr --> powExpr : delegates parsing
+            powExpr --> groupExpr : delegates parsing
+
+            groupExpr --> Literal : consume Int/Float
+            groupExpr --> Designator : consume Ident
+            groupExpr --> SubExpression : match '(' expression ')'
+        }
+
+        assignment --> ErrorHandler : unexpected token
+        groupExpr --> ErrorHandler : missing ')' or operand
+
+        ErrorHandler --> [*] : throw QuitParseException (Fail-fast)
+    }
+
+    RDC --> [*] : Return Typed AST
 ```
 
 Designators and arrays are built structurally, not as text rewrites:
@@ -47,14 +72,28 @@ Designators and arrays are built structurally, not as text rewrites:
 `computation()` parses functions twice to support forward references and mutual recursion.
 
 ```mermaid
-flowchart TD
-    P1["Pass 1: signature declaration"] --> D1["Build FuncType(params, return)"]
-    D1 --> D2["insertFunction(name, type)"]
-    D2 --> D3["skip body by brace counting"]
-    D3 --> P2["Reset scanner to saved token index"]
-    P2 --> B1["Pass 2: full body parse"]
-    B1 --> B2["Enter scope and insert formal parameters"]
-    B2 --> B3["Build FunctionBody AST"]
+sequenceDiagram
+    participant Scanner
+    participant Parser
+    participant SymbolTable
+
+    Note over Parser: Pass 1: Signature Discovery
+    Parser->>Scanner: currentToken() (Function Decl)
+    Parser->>SymbolTable: tryDeclareFunction(name, paramTypes, retType)
+    alt is duplicate signature
+        SymbolTable-->>Parser: throws Error
+    else is unique
+        SymbolTable-->>Parser: success
+    end
+    Parser->>Scanner: saveTokenIndex()
+    Parser->>Parser: skipFunctionBody() (Brace Counting)
+
+    Note over Parser: Pass 2: Body Parsing
+    Parser->>Scanner: resetToToken(savedTokenIndex - 1)
+    Parser->>SymbolTable: enterScope()
+    Parser->>SymbolTable: insert(formalParameters)
+    Parser->>Parser: parseFunctionBody() -> AST
+    Parser->>SymbolTable: exitScope()
 ```
 
 Key behavior:
@@ -80,13 +119,28 @@ Operation legality is delegated to type objects (`IntType`, `FloatType`, `BoolTy
 That keeps operator semantics centralized in `types/*`, not hardcoded per AST node.
 
 ```mermaid
-flowchart TD
-    A["Visit AST node"] --> B["Visit children first"]
-    B --> C["Collect operand types"]
-    C --> D["Dispatch to type rule: add/sub/mul/div/compare/index/assign"]
-    D --> E{"ErrorType?"}
-    E -- "yes" --> F["Emit TypeError(line,col,message)"]
-    E -- "no" --> G["Set node type and lvalue flag"]
+sequenceDiagram
+    participant AST_Visitor as TypeChecker
+    participant Node as Addition Node
+    participant LeftType as IntType
+    participant RightType as FloatType
+
+    AST_Visitor->>Node: visit(Addition)
+    AST_Visitor->>Node: getLeft() -> LeftChild
+    AST_Visitor->>AST_Visitor: visit(LeftChild) -> IntType
+    AST_Visitor->>Node: getRight() -> RightChild
+    AST_Visitor->>AST_Visitor: visit(RightChild) -> FloatType
+
+    AST_Visitor->>LeftType: add(FloatType)
+    Note over LeftType,RightType: Type constraint logic delegated to Type objects
+    LeftType-->>AST_Visitor: returns FloatType (Promotion)
+
+    alt valid operation
+        AST_Visitor->>Node: setType(FloatType)
+        AST_Visitor->>Node: setLValue(false)
+    else invalid operation (e.g., ErrorType returned)
+        AST_Visitor->>AST_Visitor: throw TypeError("Cannot add types...")
+    end
 ```
 
 ## Non-Trivial Checks Performed
