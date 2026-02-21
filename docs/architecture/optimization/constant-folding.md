@@ -26,17 +26,34 @@ For constant branch conditions:
 - run entry-reachability block deletion afterward.
 
 ```mermaid
-flowchart TD
-    A["inspect branch TAC"] --> B["evaluate condition immediate"]
-    B --> C{"always taken?"}
-    C -- "yes" --> D["replace with Bra(target)"]
-    D --> E["remove non-target successors"]
-    E --> F["delete trailing dead instructions"]
-    C -- "no" --> G{"always not taken?"}
-    G -- "yes" --> H["remove branch TAC"]
-    H --> I["remove target successor edge"]
-    G -- "no" --> J["leave branch unchanged"]
-    F --> K["recompute reachability and prune blocks"]
-    I --> K
-    J --> K
+stateDiagram-v2
+    state "Branch Investigation" as Inspect {
+        [*] --> Evaluate : Check branch TAC condition
+        Evaluate --> DetermineOutcome : Immediate value resolved
+    }
+
+    state "Constant Resolution Paths" as Resolution {
+        DetermineOutcome --> AlwaysTaken : Condition == 1 (True)
+        DetermineOutcome --> NeverTaken : Condition == 0 (False)
+        DetermineOutcome --> Unchanged : Condition not constant
+        Unchanged --> Evaluate : Next block
+    }
+
+    state "Graph Surgery (Always Taken)" as RewriteTaken {
+        AlwaysTaken --> ReplaceBra : Replace conditional branch with unconditional Bra(target)
+        ReplaceBra --> UnlinkFallthrough : Remove non-target successor edges
+        UnlinkFallthrough --> TruncateBlock : Delete dead trailing instructions in block
+    }
+
+    state "Graph Surgery (Never Taken)" as RewriteNever {
+        NeverTaken --> RemoveBranch : Delete conditional branch TAC entirely
+        RemoveBranch --> UnlinkTarget : Remove target successor edge
+    }
+
+    state "Reachability Fixup" as PruneGraph {
+        TruncateBlock --> PruneRecompute : Recompute reachability from Entry
+        UnlinkTarget --> PruneRecompute
+        PruneRecompute --> EliminateBlocks : Rip out disconnected basic blocks
+        EliminateBlocks --> [*]
+    }
 ```

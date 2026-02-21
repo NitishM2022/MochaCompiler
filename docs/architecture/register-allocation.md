@@ -11,17 +11,31 @@ File focus: `compiler/src/ir/regalloc/RegisterAllocator.java`
 ## Allocation Loop
 
 ```mermaid
-flowchart TD
-    A["Input CFG"] --> B["Ensure phi-free IR via SSAElimination"]
-    B --> C["Compute backward liveness to fixpoint"]
-    C --> D["Build interference graph"]
-    D --> E["Try graph coloring with R1..R24"]
-    E --> F{"Coloring succeeded?"}
-    F -- "yes" --> G["Rewrite TAC operands and defs to R#"]
-    G --> H["Remove redundant moves"]
-    F -- "no" --> I["Select spill candidate"]
-    I --> J["Insert load/store spill rewrite"]
-    J --> C
+stateDiagram-v2
+    [*] --> SSAElimination : Ensure Phi-Free IR
+
+    state "Liveness & Interference" as AnalysisPhase {
+        SSAElimination --> Liveness : Compute Backward Liveness Fixpoint
+        Liveness --> Interference : Build Interference Graph (Edges = overlapping live ranges)
+        Interference --> CallerSavePressure : Force Call live-values to interfere with R1..R24
+    }
+
+    state "Graph Coloring (Chaitin-Briggs style)" as ColoringPhase {
+        CallerSavePressure --> TryColor : Attempt to color with 24 physical registers
+        TryColor --> Simplification : Iteratively remove nodes with degree < 24
+    }
+
+    state "Success Path" as RewritePhase {
+        Simplification --> MapRegisters : Graph completely simplified
+        MapRegisters --> RemoveMoves : Rewrite TAC to physical R# and scrub redundant moves
+        RemoveMoves --> [*] : Done
+    }
+
+    state "Failure Path (Spilling)" as SpillPhase {
+        Simplification --> SelectSpill : Graph stuck (degree >= 24)
+        SelectSpill --> InsertSpillTAC : Choose highest-degree node, insert Load/Store logic using Scratch Regs
+        InsertSpillTAC --> AnalysisPhase : restart entire process with new explicit memory TAC
+    }
 ```
 
 ## Liveness And Interference

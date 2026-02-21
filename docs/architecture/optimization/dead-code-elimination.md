@@ -14,19 +14,38 @@ Side-effect filter (`BaseOptimization.hasSideEffects`) blocks elimination of:
 - calls, stores, returns, branches, I/O, terminators.
 
 ```mermaid
-flowchart TD
-    A["build defs + uses"] --> B["seed worklist with defs having no users"]
-    B --> C["pop dead candidate"]
-    C --> D{"already eliminated or side effects?"}
-    D -- "yes" --> E["skip"]
-    D -- "no" --> F["mark eliminated"]
-    F --> G["for each operand def: decrement user set"]
-    G --> H{"operand def now unused and eliminable?"}
-    H -- "yes" --> I["enqueue operand def"]
-    H -- "no" --> J["continue"]
-    E --> K{"worklist empty?"}
-    I --> K
-    J --> K
-    K -- "no" --> C
-    K -- "yes" --> L["prune unreachable blocks"]
+stateDiagram-v2
+    state "Initialization" as Init {
+        [*] --> BuildChains : Build Def/Use chains
+        BuildChains --> SeedQueue : Enqueue defs with 0 users
+    }
+
+    state "Elimination Loop" as Worklist {
+        SeedQueue --> PopCandidate : Loop starts
+        PopCandidate --> CheckValidity
+
+        CheckValidity --> Skip : Already eliminated OR has side-effects
+        Skip --> CheckEmpty
+
+        CheckValidity --> Eliminate : Valid candidate
+        Eliminate --> MarkDead : Mark instruction eliminated
+        MarkDead --> PropagateDeadness : For each operand used by this instruction
+
+        PropagateDeadness --> DecrementUser : Decrement operand's user count
+        DecrementUser --> CheckOperand : Is operand now unused & eliminable?
+
+        CheckOperand --> EnqueueOperand : Yes -> Enqueue it
+        CheckOperand --> NextOperand : No
+
+        EnqueueOperand --> NextOperand
+        NextOperand --> PropagateDeadness : More operands?
+        NextOperand --> CheckEmpty : Done with operands
+
+        CheckEmpty --> PopCandidate : Queue not empty
+        CheckEmpty --> PruneBlocks : Queue empty
+    }
+
+    state "Cleanup" as Cleanup {
+        PruneBlocks --> [*] : Run unreachable-block elimination from Entry
+    }
 ```

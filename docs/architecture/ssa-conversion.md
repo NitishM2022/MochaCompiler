@@ -39,20 +39,30 @@ Then iterates until stable:
 - `Dom(b) = {b} U (intersection over predecessors p of Dom(p))`
 
 ```mermaid
-flowchart TD
-    A["Initialize Dom sets"] --> B["changed = false"]
-    B --> C["for each non-entry block b"]
-    C --> D["intersect predecessor Dom sets"]
-    D --> E["newDom = {b} U intersection"]
-    E --> F{"newDom != Dom(b)?"}
-    F -- "yes" --> G["Dom(b)=newDom; changed=true"]
-    F -- "no" --> H["leave unchanged"]
-    G --> I{"more blocks?"}
-    H --> I
-    I -- "yes" --> C
-    I -- "no" --> J{"changed?"}
-    J -- "yes" --> B
-    J -- "no" --> K["Dominators fixed-point"]
+stateDiagram-v2
+    state "Initialization Phase" as Init {
+        [*] --> SetEntry : Dom(entry) = {entry}
+        SetEntry --> SetOthers : For all b != entry, Dom(b) = {AllBlocks}
+    }
+
+    state "Dataflow Fixpoint Loop" as Fixpoint {
+        SetOthers --> InitChanged : changed = false
+        InitChanged --> IntersectPredecessors : For each b != entry
+
+        IntersectPredecessors --> ComputeNewDom : Intersect Dom(p) for all p ∈ preds(b)
+        ComputeNewDom --> UnionSelf : newDom = {b} ∪ Intersection
+
+        UnionSelf --> CheckChange : newDom != Dom(b)?
+        CheckChange --> MarkChanged : Yes -> Dom(b) = newDom, changed = true
+        CheckChange --> NextBlock : No -> Keep Dom(b)
+
+        MarkChanged --> NextBlock
+        NextBlock --> IntersectPredecessors : More blocks?
+        NextBlock --> EvaluateFixpoint : All blocks checked
+
+        EvaluateFixpoint --> InitChanged : changed == true (Loop again)
+        EvaluateFixpoint --> [*] : changed == false (Stable)
+    }
 ```
 
 ## 2) Immediate Dominator (IDOM) Construction
@@ -77,19 +87,32 @@ This yields the dominator tree edges used later by renaming and CSE.
 That self-loop addition is crucial for loop-carried values so phi insertion can occur on repeat/loop back-edges.
 
 ```mermaid
-flowchart LR
-    A["For each block b"] --> B["idom = IDOM(b)"]
-    B --> C["for each predecessor p of b"]
-    C --> D["runner = p"]
-    D --> E{"runner != idom?"}
-    E -- "yes" --> F["DF(runner).add(b)"]
-    F --> G["runner = IDOM(runner)"]
-    G --> E
-    E -- "no" --> H["next predecessor"]
-    H --> I{"self-loop predecessor exists?"}
-    I -- "yes" --> J["DF(b).add(b)"]
-    I -- "no" --> K["done"]
-    J --> K
+stateDiagram-v2
+    state "Per-Block Outer Loop" as BlockLoop {
+        [*] --> GetIDOM : For each block 'b', idom = IDOM(b)
+        GetIDOM --> PredLoop : For each predecessor 'p' of 'b'
+    }
+
+    state "Runner Walk (Up the IDOM tree)" as RunnerWalk {
+        PredLoop --> CheckRunner : runner = p
+
+        CheckRunner --> AddToDF : runner != idom
+        AddToDF --> MoveUp : DF(runner).add(b)
+        MoveUp --> CheckRunner : runner = IDOM(runner)
+
+        CheckRunner --> NextPred : runner == idom
+    }
+
+    state "Self-Loop Resolution" as SelfLoop {
+        NextPred --> PredLoop : More predecessors
+        NextPred --> CheckSelfLoop : No more predecessors
+
+        CheckSelfLoop --> HandleSelfLoop : 'b' is a predecessor of 'b'
+        HandleSelfLoop --> EndBlock : DF(b).add(b)
+
+        CheckSelfLoop --> EndBlock : No self loop
+        EndBlock --> GetIDOM : Next block 'b'
+    }
 ```
 
 ## 4) Phi Placement (Worklist Over DF)

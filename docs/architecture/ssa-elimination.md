@@ -35,10 +35,21 @@ For each critical edge `pred -> succ` where `succ` has phis:
 4. Rewrite each phi argument key from `pred` to `bridge`.
 
 ```mermaid
-flowchart LR
-    P["Pred with multiple successors"] --> S["Phi block with multiple predecessors"]
-    P --> B["Inserted bridge block"]
-    B --> S
+stateDiagram-v2
+    state "Original Graph Path" as Before {
+        PredBlock --> PhiBlock : Critical Edge (Many Preds, Many Succs)
+    }
+
+    state "Graph Transformation (Critical Edge Elimination)" as Split {
+        PredBlock --> BridgeBlock : Bra bridge
+        note right of BridgeBlock: Inserted Block (Unique ID >= 1000)
+        BridgeBlock --> PhiBlock : Fallthrough / Bra
+    }
+
+    state "Fixup Routines" as Fixups {
+        BridgeBlock --> RetargetBranch : Rewrite PredBlock branches to point to BridgeBlock
+        RetargetBranch --> RewritePhiArgs : Rewrite PhiBlock phi incoming-keys from PredBlock to BridgeBlock
+    }
 ```
 
 This guarantees each predecessor path has a unique insertion point for phi-related copies.
@@ -69,14 +80,23 @@ Algorithm in `resolveParallelCopies`:
 5. Repeat until pending is empty.
 
 ```mermaid
-flowchart TD
-    A["Pending moves"] --> B{"Safe move exists?"}
-    B -- "yes" --> C["Emit safe move and remove it"]
-    C --> A
-    B -- "no" --> D["Cycle detected"]
-    D --> E["Emit Swap for one edge"]
-    E --> F["Rewrite dependent sources"]
-    F --> A
+stateDiagram-v2
+    [*] --> FilterMoves : Remove trivial no-op moves (dest == src)
+
+    state "Safe Emission Loop" as SafeLoop {
+        FilterMoves --> FindSafeMove : Inspect pending moves
+        FindSafeMove --> EmitSafeMove : Found safe (dest not used as src by any other move)
+        EmitSafeMove --> FindSafeMove : Remove from pending
+    }
+
+    state "Cycle Breaking" as BreakCycle {
+        FindSafeMove --> DetectCycle : No safe move exists (but pending > 0)
+        DetectCycle --> EmitSwap : Emit Swap(dest, src) for one dependency edge
+        EmitSwap --> RewriteSources : Rewrite all pending moves using 'dest' to use 'src'
+        RewriteSources --> FindSafeMove : Dependencies unblocked
+    }
+
+    FindSafeMove --> [*] : pending == 0
 ```
 
 This prevents clobbering in cycles like `a <- b, b <- a` without introducing extra virtual temporaries.

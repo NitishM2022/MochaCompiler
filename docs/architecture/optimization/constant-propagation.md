@@ -25,17 +25,32 @@ Data structures:
 ## Worklist Engine
 
 ```mermaid
-flowchart LR
-    A["build def/use + initialize lattice"] --> B["queue all defined vars"]
-    B --> C["pop var"]
-    C --> D["new = evaluate(defSite[var])"]
-    D --> E{"new != old?"}
-    E -- "yes" --> F["lattice[var]=new"]
-    F --> G["enqueue definitions of users(var)"]
-    G --> H{"queue empty?"}
-    E -- "no" --> H
-    H -- "no" --> C
-    H -- "yes" --> I["rewrite operands + phi args with constants"]
+stateDiagram-v2
+    state "Setup" as Setup Phase {
+        [*] --> InitLattice : Def/Use chains built
+        InitLattice --> PopulateQueue : Enqueue all defined variables
+    }
+
+    state "Worklist Iteration" as EngineLoop {
+        PopulateQueue --> PopVar : Loop starts
+        PopVar --> EvaluateDef : 'new_val' = eval(defSite[var])
+
+        EvaluateDef --> CheckChange : Compare 'new_val' to lattice[var]
+
+        CheckChange --> LatticeUpdate : new_val != old_val
+        LatticeUpdate --> EnqueueDependents : Queue definitions of all users(var)
+
+        CheckChange --> QueueCheck : new_val == old_val (No change)
+        EnqueueDependents --> QueueCheck
+
+        QueueCheck --> PopVar : Queue not empty
+        QueueCheck --> RewritePhase : Queue empty (Fixpoint reached)
+    }
+
+    state "Application" as RewritePhase {
+        RewritePhase --> ReplaceOperands : Iterate IR, rewrite operands/phi arguments with CONSTANT values
+        ReplaceOperands --> [*]
+    }
 ```
 
 Mutation point:

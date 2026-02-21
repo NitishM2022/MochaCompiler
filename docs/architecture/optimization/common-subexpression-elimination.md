@@ -17,18 +17,33 @@ Prerequisite:
 Signature includes opcode + operand identity/SSA versions to prevent alias confusion across shadowed symbols.
 
 ```mermaid
-flowchart LR
-    A["enter block with inherited available map"] --> B["copy map to local scope"]
-    B --> C["scan instructions"]
-    C --> D{"pure computation and not Mov?"}
-    D -- "no" --> E["next instruction"]
-    D -- "yes" --> F["sig = expression signature"]
-    F --> G{"sig in local map?"}
-    G -- "yes" --> H["replace with Mov(dest, local[sig])"]
-    G -- "no" --> I["local[sig] = dest"]
-    H --> E
-    I --> E
-    E --> J{"done block?"}
-    J -- "no" --> C
-    J -- "yes" --> K["recurse into dom-tree children with local map"]
+sequenceDiagram
+    participant Pass as CSE DFS
+    participant Scope as Local Available Map
+    participant Inst as Instructions (Block)
+
+    Pass->>Pass: optimizeBlock(block, inheritedMap)
+    Pass->>Scope: localMap = clone(inheritedMap)
+
+    loop For each instruction in block
+        Pass->>Inst: fetch()
+        alt is pure computation (not Mov)
+            Pass->>Pass: sig = getExpressionSignature(Inst)
+            Pass->>Scope: containsKey(sig)?
+
+            alt Match Found (Common Subexpression)
+                Scope-->>Pass: true, returns existingVar
+                Pass->>Inst: replace with Mov(dest, existingVar)
+            else No Match (New Expression)
+                Scope-->>Pass: false
+                Pass->>Scope: put(sig, dest)
+            end
+        else has side-effects / is Mov
+            Pass->>Pass: skip instruction
+        end
+    end
+
+    loop For each Dom-Tree child block
+        Pass->>Pass: RECURSE: optimizeBlock(child, localMap)
+    end
 ```

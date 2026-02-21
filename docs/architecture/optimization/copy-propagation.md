@@ -23,13 +23,30 @@ Operand replacement recursively follows copy chains with a visited set.
 If a cycle appears (`x -> y -> x`), recursion stops and current variable is preserved.
 
 ```mermaid
-flowchart TD
-    A["replace operand value"] --> B{"is variable?"}
-    B -- "no" --> C["return value"]
-    B -- "yes" --> D{"already visited?"}
-    D -- "yes" --> E["return current var"]
-    D -- "no" --> F{"lattice[var] is COPY(next)?"}
-    F -- "no" --> G["return var"]
-    F -- "yes" --> H["mark visited; recurse(next)"]
-    H --> I["unmark visited; return result"]
+sequenceDiagram
+    participant Pass as Replace Operand
+    participant Map as Lattice Map
+    participant Set as Visited Set
+
+    Pass->>Pass: replace(operand)
+    alt is not a variable
+        Pass-->>Pass: return immediate
+    else is variable
+        Pass->>Set: contains(currentVar)?
+        alt Cycle Detected
+            Set-->>Pass: true -> return currentVar
+        else Safe to Proceed
+            Set-->>Pass: false
+            Pass->>Map: get(currentVar)
+            alt not a COPY
+                Map-->>Pass: return currentVar
+            else is COPY(nextVar)
+                Map-->>Pass: returns nextVar
+                Pass->>Set: mark visited(currentVar)
+                Pass->>Pass: RECURSE: replace(nextVar)
+                Pass-->>Pass: nested result returns
+                Pass->>Set: unmark visited(currentVar)
+            end
+        end
+    end
 ```
