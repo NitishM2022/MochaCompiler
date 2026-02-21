@@ -26,7 +26,7 @@ Data structures:
 
 ```mermaid
 stateDiagram-v2
-    state "Setup" as Setup Phase {
+    state "Setup" as SetupPhase {
         [*] --> InitLattice : Def/Use chains built
         InitLattice --> PopulateQueue : Enqueue all defined variables
     }
@@ -48,7 +48,7 @@ stateDiagram-v2
     }
 
     state "Application" as RewritePhase {
-        RewritePhase --> ReplaceOperands : Iterate IR, rewrite operands/phi arguments with CONSTANT values
+        [*] --> ReplaceOperands : Iterate IR, rewrite operands/phi arguments with CONSTANT values
         ReplaceOperands --> [*]
     }
 ```
